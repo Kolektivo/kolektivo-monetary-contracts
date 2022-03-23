@@ -212,10 +212,12 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
             revert StalePriceDeliveredByOracle(asset, oracle);
         }
 
+        // Get amount in 18 decimal precision.
+        uint amountAdjusted = _convertTo18Decimals(asset, amount);
+
         // Calculate the amount of KTT to mint.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        // @todo Currently only supports asset with 18 decimals.
-        uint mintAmount = (amount * price) / 1e18;
+        uint mintAmount = (amountAdjusted * price) / 1e18;
 
         // Mint the KTTs to msg.sender and fetch the asset from msg.sender.
         super._mint(msg.sender, mintAmount);
@@ -260,8 +262,10 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
         // Calculate the amount of assets to withdraw for burned amount of KTTs.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        // @todo Currently only supports asset with 18 decimals.
-        uint withdrawable = (ktts * 1e18) / price;
+        uint withdrawableIn18Decimal = (ktts * 1e18) / price;
+
+        // Adjust to decimal precision of the asset.
+        uint withdrawable = _convertFrom18Decimal(asset, withdrawableIn18Decimal);
 
         // Send the assets to msg.sender.
         ERC20(asset).safeTransfer(msg.sender, withdrawable);
@@ -324,7 +328,6 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 // If the new price is valid, multiply the price with the
                 // asset's balance and add the asset's valuation to the total
                 // valuation.
-                // @todo Currently only supports asset with 18 decimals.
                 uint assetBalanceAdjusted = _convertTo18Decimals(asset, assetBalance);
                 total += (assetBalanceAdjusted * price) / 1e18;
             } else {
@@ -336,7 +339,6 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 // Note that this check should NOT be possible to fail.
                 require(price != 0);
 
-                // @todo Currently only supports asset with 18 decimals.
                 uint assetBalanceAdjusted = _convertTo18Decimals(asset, assetBalance);
                 total += (assetBalanceAdjusted * price) / 1e18;
             }
@@ -591,9 +593,10 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         return (price, true);
     }
 
-    /// @dev Returns the amount for asset in 18 decimal precision.
+    /// @dev Returns the amount of asset in 18 decimal precision.
     function _convertTo18Decimals(address asset, uint amount)
         private
+        view
         returns (uint)
     {
         uint assetDecimals = IERC20Metadata(asset).decimals();
@@ -612,6 +615,32 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
             // decimal precision to the right.
             return amount / 10**(assetDecimals-18);
         }
+    }
+
+    /// @dev Returns the amount in the asset's decimal precision.
+    ///      Expects the amount to be in 18 decimal precision.
+    function _convertFrom18Decimal(address asset, uint amount)
+        private
+        view
+        returns (uint)
+    {
+        uint assetDecimals = IERC20Metadata(asset).decimals();
+
+        if (assetDecimals == 18) {
+            // No decimal adjustment neccessary.
+            return amount;
+        }
+
+        if (assetDecimals < 18) {
+            // If asset has less than 18 decimals, move amount by difference of
+            // decimal precision to the right.
+            return amount / 10**(18-assetDecimals);
+        } else {
+            // If asset has more than 18 decimals, move amount by difference of
+            // decimal precision to the left.
+            return amount * 10**(assetDecimals-18);
+        }
+
     }
 
 }

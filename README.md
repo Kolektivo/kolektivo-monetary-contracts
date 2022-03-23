@@ -16,6 +16,22 @@ To install with [**Foundry**](https://github.com/gakonst/foundry):
 forge install byterocket/KTT-Reserve
 ```
 
+## Usage
+
+Common tasks are executed through a `Makefile`:
+
+```
+make help
+> build                    Build project
+> clean                    Remove build artifacts
+> test                     Run whole testsuite
+> testKOL                  Run KOL token tests
+> testOracle               Run Oracle tests
+> testReserve              Run Reserve tests
+> testTreasury             Run Treasury tests
+> update                   Update dependencies
+```
+
 # Dependencies
 
 - [byterocket's solrocket](https://github.com/byterocket/solrocket)

@@ -285,6 +285,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
     /// @dev Computes the total valuation of assets held in the treasury and
     ///      uses that value as KTT's supply target.
+    /// @dev Has to be in same decimal precision as token, i.e. 18.
     function _supplyTarget()
         internal
         override(ElasticReceiptToken)
@@ -305,8 +306,11 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
             asset = supportedAssets[i];
             assetBalance = ERC20(asset).balanceOf(address(this));
 
-            // Continue or break early if there is no asset balance.
-            // @todo Really? Does mean price is not updated.
+            oracle = oraclePerAsset[asset];
+            (price, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
+
+            // Continue/Break early if there is not asset balance.
+            // Note to query oracle anyway to update last price.
             if (assetBalance == 0) {
                 if (i + 1 == len) {
                     break;
@@ -315,9 +319,6 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                     continue;
                 }
             }
-
-            oracle = oraclePerAsset[asset];
-            (price, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
 
             if (valid) {
                 // If the new price is valid, multiply the price with the
@@ -331,8 +332,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 // the total valuation.
                 price = lastPricePerAsset[asset];
 
-                // Revert if no cached price exists.
-                // @todo This is bad because it halts all transfers of KTT.
+                // Note that this check should NOT be possible to fail.
                 require(price != 0);
 
                 // @todo Currently only supports asset with 18 decimals.

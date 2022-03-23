@@ -4,3 +4,6 @@
 [submodule "lib/solrocket"]
 	path = lib/solrocket
 	url = https://github.com/byterocket/solrocket
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/rari-capital/solmate

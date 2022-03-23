@@ -41,7 +41,7 @@ contract TreasuryTotalValuation is TreasuryTest {
 
         for (uint i; i < amount; i++) {
             // Get "random" values for price and balance.
-            // Make sure that price is never zero.
+            // Note to make sure that price is never zero.
             uint price = (amount % (i+1)) + 1;
             uint balance = amount % (i+1);
 
@@ -73,6 +73,30 @@ contract TreasuryTotalValuation is TreasuryTest {
         }
 
         return totalValuation;
+    }
+
+    function testTotalValuationWithAssetsUsingDifferentDecimalPrecision()
+        public
+    {
+        // Asset 1:
+        // price = 1e18, decimals = 20, balance = 1e20
+        // => valuation = 1$
+        OracleMock o1 = new OracleMock();
+        o1.setDataAndValid(1e18, true);
+        ERC20Mock t1 = new ERC20Mock("T1", "Token 1", uint8(20));
+        treasury.supportAsset(address(t1), address(o1));
+        t1.mint(address(treasury), 1e20); // 1 USD
+
+        // Asset 2:
+        // price = 2e18, decimals = 5, balance = 1e5
+        // => valuation = 2$
+        OracleMock o2 = new OracleMock();
+        o2.setDataAndValid(2e18, true);
+        ERC20Mock t2 = new ERC20Mock("T2", "Token 2", uint8(5));
+        treasury.supportAsset(address(t2), address(o2));
+        t2.mint(address(treasury), 1e5); // 2 USD
+
+        assertEq(treasury.totalValuation(), 3e18);
     }
 
 }

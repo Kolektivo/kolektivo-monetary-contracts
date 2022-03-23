@@ -325,7 +325,8 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 // asset's balance and add the asset's valuation to the total
                 // valuation.
                 // @todo Currently only supports asset with 18 decimals.
-                total += (assetBalance * price) / 1e18;
+                uint assetBalanceAdjusted = _convertTo18Decimals(asset, assetBalance);
+                total += (assetBalanceAdjusted * price) / 1e18;
             } else {
                 // If the new price is invalid, multiply the last cached price
                 // with the asset's balance and add the asset's valuation to
@@ -336,7 +337,8 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 require(price != 0);
 
                 // @todo Currently only supports asset with 18 decimals.
-                total += (assetBalance * price) / 1e18;
+                uint assetBalanceAdjusted = _convertTo18Decimals(asset, assetBalance);
+                total += (assetBalanceAdjusted * price) / 1e18;
             }
 
             unchecked { ++i; }
@@ -587,6 +589,29 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         lastPricePerAsset[asset] = price;
 
         return (price, true);
+    }
+
+    /// @dev Returns the amount for asset in 18 decimal precision.
+    function _convertTo18Decimals(address asset, uint amount)
+        private
+        returns (uint)
+    {
+        uint assetDecimals = IERC20Metadata(asset).decimals();
+
+        if (assetDecimals == 18) {
+            // No decimal adjustment neccessary.
+            return amount;
+        }
+
+        if (assetDecimals < 18) {
+            // If asset has less than 18 decimals, move amount by difference of
+            // decimal precision to the left.
+            return amount * 10**(18-assetDecimals);
+        } else {
+            // If asset has more than 18 decimals, move amount by difference of
+            // decimal precision to the right.
+            return amount / 10**(assetDecimals-18);
+        }
     }
 
 }

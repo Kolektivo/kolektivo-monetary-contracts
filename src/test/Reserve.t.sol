@@ -11,14 +11,24 @@ import {ERC20Mock} from "./utils/mocks/ERC20Mock.sol";
 contract ReserveTest is DSTest {
     HEVM internal constant EVM = HEVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    // SuT
+    // SuT.
     Reserve reserve;
 
-    // Mocks
+    // Events copied from SuT.
+    // Note that the Event declarations are needed to test for emission.
+    event BackingInBPSChanged(uint oldBackingInBPS, uint newBackingInBPS);
+    event MinBackingInBPSChanged(uint oldMinBackingInBPS,
+                                 uint newMinBackingInBPS);
+    event IncurredDebt(address indexed who, uint ktts);
+    event PayedDebt(address indexed who, uint ktts);
+    event Deposit(address indexed who, uint ktts);
+    event Withdrawal(address indexed who, uint ktts);
+
+    // Mocks.
     ERC20Mock kol;
     ERC20Mock ktt;
 
-    // Test constants
+    // Test constants.
     uint constant DEFAULT_MIN_BACKING = 7_500; // 75%
     uint constant KOL_DECIMALS = 18;
     uint constant KTT_DECIMALS = 9;
@@ -117,16 +127,24 @@ contract ReserveTest is DSTest {
     // Debt Management
 
     function testSetMinBackingInBPS(uint to) public {
-        if (to >= MIN_BACKING_IN_BPS) {
-            reserve.setMinBackingInBPS(to);
+        uint before = reserve.minBackingInBPS();
 
-            assertEq(reserve.minBackingInBPS(), to);
-        } else {
+        if (to < MIN_BACKING_IN_BPS) {
             try reserve.setMinBackingInBPS(to) {
                 revert();
             } catch {
                 // Fails due to being smaller than MIN_BACKING_IN_BPS.
             }
+        } else {
+            // Only expect an event if state changed.
+            if (before != to)   {
+                EVM.expectEmit(true, true, true, true);
+                emit MinBackingInBPSChanged(before, to);
+            }
+
+            reserve.setMinBackingInBPS(to);
+
+            assertEq(reserve.minBackingInBPS(), to);
         }
     }
 
@@ -219,6 +237,11 @@ contract ReserveTest is DSTest {
         EVM.startPrank(user);
         {
             ktt.approve(address(reserve), 1e9);
+
+            // Expect event emission.
+            EVM.expectEmit(true, true, true, true);
+            emit Deposit(user, 1e9);
+
             reserve.deposit(1e9);
         }
         EVM.stopPrank();
@@ -251,6 +274,12 @@ contract ReserveTest is DSTest {
         {
             ktt.approve(address(reserve), 10e9);
             reserve.deposit(10e9);
+
+            // Expect event emission.
+            // Note that Withdrawal event is denominated in KTT.
+            EVM.expectEmit(true, true, true, true);
+            emit Withdrawal(user, 5e9);
+
             reserve.withdraw(5e18); // Withdraw half of the KOL tokens.
         }
         EVM.stopPrank();

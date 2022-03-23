@@ -146,6 +146,11 @@ contract Reserve is Ownable, Whitelisted {
     function setMinBackingInBPS(uint minBackingInBPS_) external onlyOwner {
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
 
+        // Only emit event is state changed.
+        if (minBackingInBPS == minBackingInBPS_) {
+            return;
+        }
+
         emit MinBackingInBPSChanged(minBackingInBPS, minBackingInBPS_);
 
         minBackingInBPS = minBackingInBPS_;
@@ -157,6 +162,8 @@ contract Reserve is Ownable, Whitelisted {
     {
         // Note to not create debt without any reserve backing.
         require(_reserveAdjusted() != 0);
+
+        // @todo Emit event, adjust tests.
 
         // Note that this function is KTT denominated!
         uint kols = kttToKol(ktts);
@@ -176,6 +183,8 @@ contract Reserve is Ownable, Whitelisted {
         onlyOwner
     {
         _kol.burn(msg.sender, kols);
+
+        // @todo Emit event, adjust tests.
 
         _updateBackingInBPS();
 

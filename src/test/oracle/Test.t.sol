@@ -19,6 +19,21 @@ abstract contract OracleTest is DSTest {
     // SuT.
     Oracle oracle;
 
+    // Events copied from SuT.
+    // Note that the Event declarations are needed to test for emission.
+    event ProviderReportPushed(address indexed provider,
+                               uint payload,
+                               uint timestamp);
+    event ProviderReportsPurged(address indexed purger,
+                                address indexed provider);
+    event ReportTimestampOutOfRange(address indexed provider);
+    event ProviderAdded(address indexed provider);
+    event ProviderRemoved(address indexed provider);
+    event MinimumProvidersChanged(uint oldMinimumProviders,
+                                  uint newMinimumProviders);
+    event OracleMarkedAsInvalid();
+    event OracleMarkedAsValid();
+
     // Initial settings.
     uint internal reportExpirationTime = 120 minutes;
     uint internal reportDelay = 30 minutes;

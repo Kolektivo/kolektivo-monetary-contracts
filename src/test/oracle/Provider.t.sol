@@ -11,6 +11,10 @@ contract OracleProvider is OracleTest {
     function testPushReport(uint payload) public {
         setUpProviders();
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit ProviderReportPushed(p1, payload, block.timestamp);
+
         pushValidReport(p1, payload);
 
         // Expect pushed payload being delivered from oracle.
@@ -53,6 +57,10 @@ contract OracleProvider is OracleTest {
         (data, valid) = oracle.getData();
         assertEq(data, 10);
         assertTrue(valid);
+
+        // Expect event emission
+        EVM.expectEmit(true, true, true, true);
+        emit ProviderReportsPurged(p1, p1);
 
         // Purge reports.
         EVM.prank(p1);

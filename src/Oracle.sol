@@ -46,6 +46,12 @@ contract Oracle is Ownable, IOracle {
                                uint payload,
                                uint timestamp);
 
+    /// @notice Emitted when reports from a provider are purged.
+    /// @param purger The address who purged the reports.
+    /// @param provider The address of the provider whos reports were purged.
+    event ProviderReportsPurged(address indexed purger,
+                                address indexed provider);
+
     /// @notice Emitted when a report's timestamp is out of range.
     /// @param provider The addresss of the provider whos report was invalid.
     event ReportTimestampOutOfRange(address indexed provider);
@@ -63,12 +69,6 @@ contract Oracle is Ownable, IOracle {
     /// @param newMinimumProviders The new number of minimum providers.
     event MinimumProvidersChanged(uint oldMinimumProviders,
                                   uint newMinimumProviders);
-
-    /// @notice Emitted when reports from a provider are purged.
-    /// @param purger The address who purged the reports.
-    /// @param provider The address of the provider whos reports were purged.
-    event ProviderReportsPurged(address indexed purger,
-                                address indexed provider);
 
     /// @notice Emitted when the oracle is marked as invalid.
     event OracleMarkedAsInvalid();
@@ -247,6 +247,11 @@ contract Oracle is Ownable, IOracle {
     function setMinimumProviders(uint minimumProviders_) external onlyOwner {
         // Make sure that at least one provider has to deliver reports.
         require(minimumProviders_ != 0);
+
+        // Only emit event if state changed.
+        if (minimumProviders == minimumProviders_) {
+            return;
+        }
 
         emit MinimumProvidersChanged(minimumProviders, minimumProviders_);
 

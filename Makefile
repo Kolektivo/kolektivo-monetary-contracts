@@ -23,7 +23,7 @@ testTreasury: ## Run Treasury tests
 	@forge test -vvv --match-contract "Treasury"
 
 .PHONY: testKOL
-testKOL: ## Run KOL token tests
+testKOL: ## Run KOL Token tests
 	@forge test -vvv --match-contract "KOL"
 
 .PHONY: testReserve

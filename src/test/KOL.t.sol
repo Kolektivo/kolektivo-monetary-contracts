@@ -10,10 +10,14 @@ import {HEVM} from "./utils/HEVM.sol";
 contract KOLTest is DSTest {
     HEVM internal constant EVM = HEVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    // SuT
+    // SuT.
     KOL kol;
 
-    // Test constants
+    // Events copied from SuT.
+    // Note that the Event declarations are needed to test for emission.
+    event MintBurnerChanged(address oldMintBurner, address newMintBurner);
+
+    // Test constants.
     address constant MINT_BURNER = address(1);
 
     function setUp() public {
@@ -63,6 +67,11 @@ contract KOLTest is DSTest {
         ) {
             return;
         }
+        address oldMintBurner = kol.mintBurner();
+
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit MintBurnerChanged(oldMintBurner, to);
 
         kol.setMintBurner(to);
         assertEq(kol.mintBurner(), to);

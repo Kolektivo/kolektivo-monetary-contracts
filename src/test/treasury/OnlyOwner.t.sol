@@ -17,8 +17,8 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // We need to support one asset, otherwise functions can fail with
         // AssetIsNotSupported instead of OnlyCallableByOwner.
-        // Note that the asset also needs a functioning oracle to be accepted
-        //      as supported.
+        // Note that the asset also needs a functional oracle to be accepted
+        // as supported.
         address asset = address(1);
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
@@ -156,7 +156,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetMarkedAsSupported(asset, address(oracle));
+
         treasury.supportAsset(asset, address(oracle));
+
         // Function should be idempotent.
         treasury.supportAsset(asset, address(oracle));
 
@@ -219,7 +224,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetMarkedAsUnsupported(asset);
+
         treasury.unsupportAsset(asset);
+
         // Function should be idempotent.
         treasury.unsupportAsset(asset);
 
@@ -244,7 +254,13 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(2, true);
+
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetOracleUpdated(asset, address(oracle1), address(oracle2));
+
         treasury.updateAssetOracle(asset, address(oracle2));
+
         // Function should be idempotent.
         treasury.updateAssetOracle(asset, address(oracle2));
 
@@ -282,7 +298,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Check that asset is not supported for bonding.
         assertTrue(!treasury.isSupportedForBonding(asset));
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetMarkedAsSupportedForBonding(asset);
+
         treasury.supportAssetForBonding(asset);
+
         // Function should be idempotent.
         treasury.supportAssetForBonding(asset);
 
@@ -296,7 +317,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAsset(asset, address(oracle));
         treasury.supportAssetForBonding(asset);
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetMarkedAsUnsupportedForBonding(asset);
+
         treasury.unsupportAssetForBonding(asset);
+
         // Function should be idempotent.
         treasury.unsupportAssetForBonding(asset);
 
@@ -322,7 +348,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Check that asset is not supported for unbonding.
         assertTrue(!treasury.isSupportedForUnbonding(asset));
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetMarkedAsSupportedForUnbonding(asset);
+
         treasury.supportAssetForUnbonding(asset);
+
         // Function should be idempotent.
         treasury.supportAssetForUnbonding(asset);
 
@@ -336,7 +367,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAsset(asset, address(oracle));
         treasury.supportAssetForUnbonding(asset);
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetMarkedAsUnsupportedForUnbonding(asset);
+
         treasury.unsupportAssetForUnbonding(asset);
+
         // Function should be idempotent.
         treasury.unsupportAssetForUnbonding(asset);
 
@@ -344,7 +380,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(!treasury.isSupportedForUnbonding(asset));
     }
 
-    function testFailSupportAssetForUnbondingWhileAssetNotSupported(address asset)
+    function testFailSupportAssetForUnbondingWhileAssetNotSupported(
+        address asset
+    )
         public
     {
         OracleMock oracle = new OracleMock();

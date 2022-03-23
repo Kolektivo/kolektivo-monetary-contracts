@@ -19,6 +19,25 @@ abstract contract TreasuryTest is DSTest {
     // SuT.
     Treasury treasury;
 
+    // Events copied from SuT.
+    // Note that the Event declarations are needed to test for emission.
+    event AssetMarkedAsSupported(address indexed asset,
+                                 address indexed oracle);
+    event AssetMarkedAsUnsupported(address indexed asset);
+    event AssetOracleUpdated(address indexed asset,
+                             address indexed oldOracle,
+                             address indexed newOracle);
+    event AssetMarkedAsSupportedForBonding(address indexed asset);
+    event AssetMarkedAsSupportedForUnbonding(address indexed asset);
+    event AssetMarkedAsUnsupportedForBonding(address indexed asset);
+    event AssetMarkedAsUnsupportedForUnbonding(address indexed asset);
+    event AssetsBonded(address indexed who,
+                       address indexed asset,
+                       uint kttsMinted);
+    event AssetsUnbonded(address indexed who,
+                         address indexed asset,
+                         uint kttsBurned);
+
     // Constants copied from elastic-receipt-token.
     // For more info see elastic-receipt-token.
     uint internal constant MAX_SUPPLY = 1_000_000_000e18;

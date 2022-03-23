@@ -158,7 +158,7 @@ contract TreasuryBonding is TreasuryTest {
     //----------------------------------
     // Bonding
 
-    function testFailCanNotUnboundToZero(address user, uint amount)
+    function testFailCanNotUnbondToZero(address user, uint amount)
         public
         validUser(user, true)
         validAmount(amount, true)
@@ -192,6 +192,10 @@ contract TreasuryBonding is TreasuryTest {
         // Mark token as unbondable.
         treasury.supportAssetForUnbonding(address(token));
 
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetsBonded(user, address(token), amount);
+
         // Bond tokens.
         EVM.prank(user);
         treasury.bond(address(token), amount);
@@ -213,6 +217,11 @@ contract TreasuryBonding is TreasuryTest {
             return;
         }
         uint tokensUnbonded = amount - 1;
+
+        // Expect event emission.
+        EVM.expectEmit(true, true, true, true);
+        emit AssetsUnbonded(user, address(token), tokensUnbonded);
+
         EVM.prank(user);
         treasury.unbond(address(token), tokensUnbonded);
 

@@ -351,7 +351,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
     //----------------------------------
     // Emergency Functions
-    // For more info see https://github.com/byterocket/KTT-Treasury/issues/1.
+    // For more info see Issue #2.
 
     /// @notice Executes a call on a target.
     /// @dev Only callable by owner.

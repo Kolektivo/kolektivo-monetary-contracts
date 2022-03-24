@@ -32,8 +32,6 @@ interface IOracle {
  *      - If a variable does include the term `wad` the decimal precision is
  *        18.
  *
- *
- *
  * @author byterocket
  */
 contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
@@ -610,8 +608,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         return (priceWad, true);
     }
 
-    /// @dev Returns the amount of asset in wad format, i.e. 18 decimal
-    ///      precision.
+    /// @dev Returns the amount in wad format, i.e. 18 decimal precision.
     function _convertToWad(address asset, uint amount)
         private
         view
@@ -635,7 +632,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         }
     }
 
-    /// @dev Returns the amount in the asset's decimal precision.
+    /// @dev Returns the amount in the asset's decimal precision format.
     ///      Expects the amount to be in wad format, i.e. 18 decimal precision.
     function _convertFromWad(address asset, uint amount)
         private

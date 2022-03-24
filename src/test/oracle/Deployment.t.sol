@@ -21,7 +21,7 @@ contract OracleDeployment is OracleTest {
     }
 
     function testFailConstructorMinimumProvidersIsZero() public {
-        // Fails due to having zero as minimum providers required.
+        // Fails due to having zero as minimum providers.
         oracle = new Oracle(
             reportExpirationTime,
             reportDelay,

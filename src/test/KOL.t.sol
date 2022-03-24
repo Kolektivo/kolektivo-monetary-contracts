@@ -3,12 +3,26 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 
+import "forge-std/stdlib.sol";
+import "forge-std/Vm.sol";
+
 import "../KOL.sol";
 
-import {HEVM} from "./utils/HEVM.sol";
+/**
+ * Errors library for KOL's custom errors.
+ * Enables checking with errors with vm.expectRevert(Errors.<Error>).
+ */
+library Errors {
+    // Inherited from solrocket/Ownable.sol.
+    bytes internal constant OnlyCallableByOwner
+        = abi.encodeWithSignature("OnlyCallableByOwner()");
+
+    bytes internal constant OnlyCallableByMintBurner
+        = abi.encodeWithSignature("OnlyCallableByMintBurner()");
+}
 
 contract KOLTest is DSTest {
-    HEVM internal constant EVM = HEVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    Vm internal constant vm = Vm(HEVM_ADDRESS);
 
     // SuT.
     KOL kol;
@@ -50,13 +64,10 @@ contract KOLTest is DSTest {
             return;
         }
 
-        EVM.startPrank(caller);
+        vm.startPrank(caller);
 
-        try kol.setMintBurner(address(2)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        kol.setMintBurner(address(2));
     }
 
     function testSetMintBurner(address to) public {
@@ -70,7 +81,7 @@ contract KOLTest is DSTest {
         address oldMintBurner = kol.mintBurner();
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit MintBurnerChanged(oldMintBurner, to);
 
         kol.setMintBurner(to);
@@ -103,24 +114,18 @@ contract KOLTest is DSTest {
             return;
         }
 
-        EVM.startPrank(caller);
+        vm.startPrank(caller);
 
-        try kol.mint(caller, 1e18) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByMintBurner;
-        }
+        vm.expectRevert(Errors.OnlyCallableByMintBurner);
+        kol.mint(caller, 1e18);
 
-        try kol.burn(caller, 1e18) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByMintBurner;
-        }
+        vm.expectRevert(Errors.OnlyCallableByMintBurner);
+        kol.burn(caller, 1e18);
     }
 
 
     function testMint(address to, uint amount) public {
-        EVM.prank(MINT_BURNER);
+        vm.prank(MINT_BURNER);
         kol.mint(to, amount);
 
         assertEq(kol.balanceOf(to), amount);
@@ -132,12 +137,12 @@ contract KOLTest is DSTest {
             return;
         }
 
-        EVM.startPrank(MINT_BURNER);
+        vm.startPrank(MINT_BURNER);
         {
             kol.mint(to, amount);
             kol.burn(to, amount - 1);
         }
-        EVM.stopPrank();
+        vm.stopPrank();
 
         assertEq(kol.balanceOf(to), 1);
         assertEq(kol.totalSupply(), 1);

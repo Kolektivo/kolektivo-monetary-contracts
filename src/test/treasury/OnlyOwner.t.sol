@@ -24,82 +24,51 @@ contract TreasuryOnlyOwner is TreasuryTest {
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
 
-        EVM.startPrank(caller);
+        vm.startPrank(caller);
 
         //----------------------------------
         // Emergency Functions
 
         bytes memory callData = bytes("");
 
-        try treasury.executeTx(address(0), callData) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.executeTx(address(0), callData);
 
         //----------------------------------
         // Whitelist Management
 
-        try treasury.addToWhitelist(address(1)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.addToWhitelist(address(1));
 
-        try treasury.removeFromWhitelist(address(1)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.removeFromWhitelist(address(1));
 
         //----------------------------------
         // Asset and Oracle Management
 
-        try treasury.supportAsset(address(1), address(2)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.supportAsset(address(1), address(2));
 
-        try treasury.unsupportAsset(address(1)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.unsupportAsset(address(1));
 
-        try treasury.updateAssetOracle(asset, address(oracle)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.updateAssetOracle(asset, address(oracle));
 
         //----------------------------------
         // Un/Bonding Management
 
-        try treasury.supportAssetForBonding(asset) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.supportAssetForBonding(asset);
 
-        try treasury.unsupportAssetForBonding(asset) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.unsupportAssetForBonding(asset);
 
-        try treasury.supportAssetForUnbonding(asset) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.supportAssetForUnbonding(asset);
 
-        try treasury.unsupportAssetForUnbonding(asset) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
-
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.unsupportAssetForUnbonding(asset);
     }
 
     //----------------------------------
@@ -115,7 +84,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.executeTx(target, callData);
     }
 
-    function testFailExecuteTx() public {
+    function testFailExecuteOnlyOwnerTx() public {
         // Call an onlyOwner function on the treasury.
         address target = address(treasury);
         bytes memory callData = abi.encodeWithSignature(
@@ -123,6 +92,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
             address(0)
         );
 
+        // Fails with OnlyCallableByOwner.
         treasury.executeTx(target, callData);
     }
 
@@ -157,7 +127,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         oracle.setDataAndValid(1, true);
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetMarkedAsSupported(asset, address(oracle));
 
         treasury.supportAsset(asset, address(oracle));
@@ -204,19 +174,25 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Set oracle as invalid but data as non-zero.
         oracle.setDataAndValid(1, false);
-        try treasury.supportAsset(asset, address(oracle)) {
-            revert();
-        } catch {
-            // Fails with StalePriceDeliveredByOracle.
-        }
+
+        vm.expectRevert(
+            Errors.StalePriceDeliveredByOracle(asset, address(oracle))
+        );
+        treasury.supportAsset(asset, address(oracle));
+    }
+
+    function testSupportAssetDoesNotAcceptOraclePriceOfZero(address asset)
+        public
+    {
+        OracleMock oracle = new OracleMock();
 
         // Set oracle as valid but data as zero.
         oracle.setDataAndValid(0, true);
-        try treasury.supportAsset(asset, address(oracle)) {
-            revert();
-        } catch {
-            // Fails with StalePriceDeliveredByOracle.
-        }
+
+        vm.expectRevert(
+            Errors.StalePriceDeliveredByOracle(asset, address(oracle))
+        );
+        treasury.supportAsset(asset, address(oracle));
     }
 
     function testUnsupportAsset(address asset) public {
@@ -225,7 +201,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAsset(asset, address(oracle));
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetMarkedAsUnsupported(asset);
 
         treasury.unsupportAsset(asset);
@@ -256,7 +232,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         oracle2.setDataAndValid(2, true);
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetOracleUpdated(asset, address(oracle1), address(oracle2));
 
         treasury.updateAssetOracle(asset, address(oracle2));
@@ -269,22 +245,45 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Check that asset's last price was updated.
         assertEq(treasury.lastPricePerAsset(asset), 2);
+    }
+
+    function testUpdateAssetOracleDoesNotAcceptInvalidOracle(address asset)
+        public
+    {
+        // Setup asset with first oracle.
+        OracleMock oracle1 = new OracleMock();
+        oracle1.setDataAndValid(1, true);
+        treasury.supportAsset(asset, address(oracle1));
+
+        // Create second oracle being invalid but data non-zero.
+        OracleMock oracle2 = new OracleMock();
+        oracle2.setDataAndValid(1, false);
 
         // Check that invalid oracle is not accepted.
-        oracle1.setDataAndValid(1, false);
-        try treasury.updateAssetOracle(asset, address(oracle1)) {
-            revert();
-        } catch {
-            // Fails with StalePriceDeliveredByOracle.
-        }
+        vm.expectRevert(
+            Errors.StalePriceDeliveredByOracle(asset, address(oracle2))
+        );
+        treasury.updateAssetOracle(asset, address(oracle2));
+    }
+
+    function testUpdateAssetOracleDoesNotAcceptOraclePriceOfZero(address asset)
+        public
+    {
+        // Setup asset with first oracle.
+        OracleMock oracle1 = new OracleMock();
+        oracle1.setDataAndValid(1, true);
+        treasury.supportAsset(asset, address(oracle1));
+
+        // Create second oracle being vali but data zero.
+        OracleMock oracle2 = new OracleMock();
+        oracle2.setDataAndValid(0, true);
 
         // Check that oracle data of zero is not accepted.
-        oracle1.setDataAndValid(0, true);
-        try treasury.updateAssetOracle(asset, address(oracle1)) {
-            revert();
-        } catch {
-            // Fails with StalePriceDeliveredByOracle.
-        }
+        oracle2.setDataAndValid(0, true);
+        vm.expectRevert(
+            Errors.StalePriceDeliveredByOracle(asset, address(oracle2))
+        );
+        treasury.updateAssetOracle(asset, address(oracle2));
     }
 
     //----------------------------------
@@ -299,7 +298,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(!treasury.isSupportedForBonding(asset));
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetMarkedAsSupportedForBonding(asset);
 
         treasury.supportAssetForBonding(asset);
@@ -318,7 +317,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAssetForBonding(asset);
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetMarkedAsUnsupportedForBonding(asset);
 
         treasury.unsupportAssetForBonding(asset);
@@ -349,7 +348,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(!treasury.isSupportedForUnbonding(asset));
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetMarkedAsSupportedForUnbonding(asset);
 
         treasury.supportAssetForUnbonding(asset);
@@ -368,7 +367,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAssetForUnbonding(asset);
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetMarkedAsUnsupportedForUnbonding(asset);
 
         treasury.unsupportAssetForUnbonding(asset);

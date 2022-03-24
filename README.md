@@ -38,6 +38,10 @@ make help
 - [merkleplant's ElasticReceiptToken](https://github.com/pmerkleplant/elastic-receipt-token)
 - [Rari Capital's solmate](https://github.com/rari-capital/solmate)
 
+## Test Dependencies
+
+- [brockelmore's forge-std](https://github.com/brockelmore/forge-std)
+
 ## Safety
 
 This is experimental software and is provided on an "as is" and

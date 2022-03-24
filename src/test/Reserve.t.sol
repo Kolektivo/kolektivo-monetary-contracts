@@ -3,13 +3,37 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 
+import "forge-std/stdlib.sol";
+import "forge-std/Vm.sol";
+
 import "../Reserve.sol";
 
-import {HEVM} from "./utils/HEVM.sol";
 import {ERC20Mock} from "./utils/mocks/ERC20Mock.sol";
 
+/**
+ * Errors library for Reserve's custom errors.
+ * Enables checking with errors with vm.expectRevert(Errors.<Error>).
+ */
+library Errors {
+    // Inherited from solrocket/Ownable.sol.
+    bytes internal constant OnlyCallableByOwner
+        = abi.encodeWithSignature("OnlyCallableByOwner()");
+
+    function SupplyExceedsReserveLimit(uint backingInBPS, uint minBackingInBPS)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSignature(
+            "SupplyExceedsReserveLimit(uint,uint)",
+            backingInBPS,
+            minBackingInBPS
+        );
+    }
+}
+
 contract ReserveTest is DSTest {
-    HEVM internal constant EVM = HEVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    Vm internal constant vm = Vm(HEVM_ADDRESS);
 
     // SuT.
     Reserve reserve;
@@ -84,43 +108,28 @@ contract ReserveTest is DSTest {
             return;
         }
 
-        EVM.startPrank(caller);
+        vm.startPrank(caller);
 
         //----------------------------------
         // Debt Management
 
-        try reserve.setMinBackingInBPS(DEFAULT_MIN_BACKING) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.setMinBackingInBPS(DEFAULT_MIN_BACKING);
 
-        try reserve.incurDebt(1) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.incurDebt(1);
 
-        try reserve.payDebt(1) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.payDebt(1);
 
         //----------------------------------
         // Whitelist Management
 
-        try reserve.addToWhitelist(address(0)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.addToWhitelist(address(0));
 
-        try reserve.removeFromWhitelist(address(0)) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.removeFromWhitelist(address(0));
     }
 
     //----------------------------------
@@ -138,7 +147,7 @@ contract ReserveTest is DSTest {
         } else {
             // Only expect an event if state changed.
             if (before != to)   {
-                EVM.expectEmit(true, true, true, true);
+                vm.expectEmit(true, true, true, true);
                 emit MinBackingInBPSChanged(before, to);
             }
 
@@ -154,12 +163,12 @@ contract ReserveTest is DSTest {
         // Deposit some KTTs so that reserve is unequal to zero.
         reserve.addToWhitelist(address(1));
         ktt.mint(address(1), 75e7);
-        EVM.startPrank(address(1));
+        vm.startPrank(address(1));
         {
             ktt.approve(address(reserve), 75e7);
             reserve.deposit(75e7);
         }
-        EVM.stopPrank();
+        vm.stopPrank();
 
         // max debt amount is 25e7 because 75% is debt limit and 75e7 is
         // in the reserve.
@@ -184,12 +193,12 @@ contract ReserveTest is DSTest {
         // Deposit some KTTs so that reserve is unequal to zero.
         reserve.addToWhitelist(address(1));
         ktt.mint(address(1), 75e7);
-        EVM.startPrank(address(1));
+        vm.startPrank(address(1));
         {
             ktt.approve(address(reserve), 75e7);
             reserve.deposit(75e7);
         }
-        EVM.stopPrank();
+        vm.stopPrank();
 
         // max debt amount is 25e7 because 75% is debt limit and 75e7 is
         // in the reserve.
@@ -234,17 +243,17 @@ contract ReserveTest is DSTest {
 
         ktt.mint(user, 1e9);
 
-        EVM.startPrank(user);
+        vm.startPrank(user);
         {
             ktt.approve(address(reserve), 1e9);
 
             // Expect event emission.
-            EVM.expectEmit(true, true, true, true);
+            vm.expectEmit(true, true, true, true);
             emit Deposit(user, 1e9);
 
             reserve.deposit(1e9);
         }
-        EVM.stopPrank();
+        vm.stopPrank();
 
         assertEq(ktt.balanceOf(user), 0);
         assertEq(ktt.balanceOf(address(reserve)), 1e9);
@@ -270,19 +279,19 @@ contract ReserveTest is DSTest {
         reserve.addToWhitelist(user);
         ktt.mint(user, 10e9);
 
-        EVM.startPrank(user);
+        vm.startPrank(user);
         {
             ktt.approve(address(reserve), 10e9);
             reserve.deposit(10e9);
 
             // Expect event emission.
             // Note that Withdrawal event is denominated in KTT.
-            EVM.expectEmit(true, true, true, true);
+            vm.expectEmit(true, true, true, true);
             emit Withdrawal(user, 5e9);
 
             reserve.withdraw(5e18); // Withdraw half of the KOL tokens.
         }
-        EVM.stopPrank();
+        vm.stopPrank();
 
         assertEq(ktt.balanceOf(user), 5e9);
         assertEq(ktt.balanceOf(address(reserve)), 5e9);

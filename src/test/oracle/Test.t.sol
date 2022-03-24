@@ -3,9 +3,30 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 
+import "forge-std/stdlib.sol";
+import "forge-std/Vm.sol";
+
 import "../../Oracle.sol";
 
-import {HEVM} from "../utils/HEVM.sol";
+/**
+ * Errors library for Oracle's custom errors.
+ * Enables checking with errors with vm.expectRevert(Errors.<Error>).
+ */
+library Errors {
+    // Inherited from solrocket/Ownable.sol.
+    bytes internal constant OnlyCallableByOwner
+        = abi.encodeWithSignature("OnlyCallableByOwner()");
+
+    function InvalidProvider(address who) internal pure returns (bytes memory) {
+        return abi.encodeWithSignature(
+            "InvalidProvider(address)",
+            who
+        );
+    }
+
+    bytes internal constant NewReportTooSoonAfterPastReport
+        = abi.encodeWithSignature("NewReportTooSoonAfterPastReport()");
+}
 
 /**
  * @dev Root contract for Oracle Test Contracts.
@@ -14,7 +35,7 @@ import {HEVM} from "../utils/HEVM.sol";
  *      variables used throughout testing.
  */
 abstract contract OracleTest is DSTest {
-    HEVM internal constant EVM = HEVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    Vm internal constant vm = Vm(HEVM_ADDRESS);
 
     // SuT.
     Oracle oracle;
@@ -55,7 +76,7 @@ abstract contract OracleTest is DSTest {
         );
 
         // Set block.timestamp to something higher than 1.
-        EVM.warp(1 days);
+        vm.warp(1 days);
     }
 
     function setUpProviders() public {
@@ -65,11 +86,11 @@ abstract contract OracleTest is DSTest {
     }
 
     function pushValidReport(address provider, uint payload) public {
-        EVM.prank(provider);
+        vm.prank(provider);
         oracle.pushReport(payload);
 
         // Wait reportDelay seconds so that report gets valid.
-        EVM.warp(block.timestamp + reportDelay);
+        vm.warp(block.timestamp + reportDelay);
     }
 
 }

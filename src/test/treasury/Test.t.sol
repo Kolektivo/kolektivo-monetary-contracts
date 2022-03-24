@@ -3,9 +3,65 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 
+import "forge-std/stdlib.sol";
+import "forge-std/Vm.sol";
+
 import "../../Treasury.sol";
 
-import {HEVM} from "../utils/HEVM.sol";
+/**
+ * Errors library for Treasury's custom errors.
+ * Enables checking with errors with vm.expectRevert(Errors.<Error>).
+ */
+library Errors {
+    // Inherited from solrocket/Ownable.sol.
+    bytes internal constant OnlyCallableByOwner
+        = abi.encodeWithSignature("OnlyCallableByOwner()");
+
+    function AssetIsNotBondable(address asset)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSignature(
+            "AssetIsNotBondable(address)",
+            asset
+        );
+    }
+
+    function AssetIsNotUnbondable(address asset)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSignature(
+            "AssetIsNotUnbondable(address)",
+            asset
+        );
+    }
+
+    function AssetIsNotSupported(address asset)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSignature(
+            "AssetIsNotSupported(address)",
+            asset
+        );
+    }
+
+    function StalePriceDeliveredByOracle(address asset, address oracle)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSignature(
+            "StalePriceDeliveredByOracle(address,address)",
+            asset,
+            oracle
+        );
+    }
+}
 
 /**
  * @dev Root Contract for Treasury Test Contracts.
@@ -14,7 +70,7 @@ import {HEVM} from "../utils/HEVM.sol";
  *      variables used throughout testing.
  */
 abstract contract TreasuryTest is DSTest {
-    HEVM internal constant EVM = HEVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    Vm internal constant vm = Vm(HEVM_ADDRESS);
 
     // SuT.
     Treasury treasury;

@@ -43,12 +43,14 @@ contract TreasuryBonding is TreasuryTest {
     //--------------------------------------------------------------------------
     // setUp Functions
 
-    function setUpForBonding(address user, uint price, uint amount)
-        public
-        returns (ERC20Mock, OracleMock)
-    {
+    function setUpForBonding(
+        address user,
+        uint price,
+        uint amount,
+        uint decimals
+    ) public returns (ERC20Mock, OracleMock) {
         // Create token and oracle.
-        ERC20Mock token = new ERC20Mock("TKN", "Token", uint8(18));
+        ERC20Mock token = new ERC20Mock("TKN", "Token", uint8(decimals));
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(price, true);
 
@@ -61,7 +63,7 @@ contract TreasuryBonding is TreasuryTest {
         token.mint(user, amount);
 
         // Approve user's tokens for treasury.
-        EVM.prank(user);
+        vm.prank(user);
         token.approve(address(treasury), type(uint).max);
 
         return (token, oracle);
@@ -80,13 +82,13 @@ contract TreasuryBonding is TreasuryTest {
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount);
+        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
         // Set token's oracle to invalid.
         oracle.setValid(false);
 
         // Fails with StalePriceDeliveredByOracle.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.bond(address(token), amount);
     }
 
@@ -97,13 +99,13 @@ contract TreasuryBonding is TreasuryTest {
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount);
+        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
         // Set token's oracle price to 0.
         oracle.setData(0);
 
         // Fails with StalePriceDeliveredByOracle.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.bond(address(token), amount);
     }
 
@@ -114,20 +116,20 @@ contract TreasuryBonding is TreasuryTest {
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount);
+        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
         // Mark token as unbondable.
         treasury.supportAssetForUnbonding(address(token));
 
         // Bond tokens.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Set token's oracle to invalid.
         oracle.setValid(false);
 
         // Fails with StalePriceDelivered.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.unbond(address(token), amount);
     }
 
@@ -138,20 +140,20 @@ contract TreasuryBonding is TreasuryTest {
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount);
+        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
         // Mark token as unbondable.
         treasury.supportAssetForUnbonding(address(token));
 
         // Bond tokens.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Set oracle's price to zero.
         oracle.setData(0);
 
         // Fails with StalePriceDelivered.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.unbond(address(token), amount);
     }
 
@@ -165,17 +167,17 @@ contract TreasuryBonding is TreasuryTest {
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount);
+        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
         // Mark token as unbondable.
         treasury.supportAssetForUnbonding(address(token));
 
         // Bond tokens.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Unbond all tokens.
-        EVM.prank(user);
+        vm.prank(user);
         // Fails with a Division by 0 in ElasticReceiptToken.
         treasury.unbond(address(token), amount);
     }
@@ -187,17 +189,17 @@ contract TreasuryBonding is TreasuryTest {
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount);
+        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
         // Mark token as unbondable.
         treasury.supportAssetForUnbonding(address(token));
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetsBonded(user, address(token), amount);
 
         // Bond tokens.
-        EVM.prank(user);
+        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Check that user received amount of KTT tokens.
@@ -219,10 +221,10 @@ contract TreasuryBonding is TreasuryTest {
         uint tokensUnbonded = amount - 1;
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit AssetsUnbonded(user, address(token), tokensUnbonded);
 
-        EVM.prank(user);
+        vm.prank(user);
         treasury.unbond(address(token), tokensUnbonded);
 
         // Check that user received the tokens unbonded.
@@ -235,5 +237,78 @@ contract TreasuryBonding is TreasuryTest {
         // Check that KTT's total supply equals the treasury's valuation.
         assertEq(treasury.totalSupply(), amount - tokensUnbonded);
     }
+
+    /*
+    function testBondingAndUnbondingWithAssetsUsingDifferentPrecision() public {
+        address user = address(1);
+        uint amount = 1e18;
+        uint[2] memory decimals = [uint(9), 25];
+
+        for (uint i; i < decimals.length; i++) {
+            uint decimal = decimals[i];
+
+            // Calculate the USD amount the amount represents.
+            uint usdAmount =
+                18 >= decimal
+                    // If token uses less decimals, move by diff of decimals
+                    // to the left.
+                    ? amount * 10**(18-decimal)
+                    // If token uses more decimals, move by diff of decimals
+                    // to the right.
+                    : amount / 10**(decimal-18);
+
+            ERC20Mock token;
+            OracleMock oracle;
+            (token, oracle) = setUpForBonding(
+                user,
+                ONE_USD,
+                amount,
+                decimals[i]
+            );
+
+            // Mark token as unbondable.
+            treasury.supportAssetForUnbonding(address(token));
+
+            // Bond tokens.
+            vm.prank(user);
+            treasury.bond(address(token), amount);
+
+            // Check that user received amount of KTT tokens.
+            assertEq(treasury.balanceOf(user), usdAmount);
+            // Check that user does not have any tokens anymore.
+            assertEq(token.balanceOf(user), 0);
+            // Check that treasury now holds the tokens.
+            assertEq(token.balanceOf(address(treasury)), amount);
+            // Check that treasury's total valuation equals the amount bonded.
+            assertEq(treasury.totalValuation(), usdAmount);
+            // Check that KTT's total supply equals the treasury's valuation.
+            assertEq(treasury.totalSupply(), usdAmount);
+
+            // Note that not all assets can be unbonded.
+            usdAmount--;
+            uint tokenNotWithdrawed =
+                18 >= decimal
+                    ? usdAmount / 10**(18-decimal)
+                    : usdAmount * 10**(decimal-18);
+
+            // Expect event emission.
+            vm.expectEmit(true, true, true, true);
+            emit AssetsUnbonded(user, address(token), usdAmount);
+
+            vm.prank(user);
+            treasury.unbond(address(token), usdAmount);
+
+            // Check that user received the tokens unbonded.
+            assertEq(token.balanceOf(user), amount);
+            // Check that user's KTT tokens got burned.
+            assertEq(treasury.balanceOf(user), tokenNotWithdrawed);
+            // Check that treasury's total valuation decreased by the amount of
+            // tokens unbonded.
+            assertEq(treasury.totalValuation(), tokenNotWithdrawed);
+            // Check that KTT's total supply equals the treasury's valuation.
+            assertEq(treasury.totalSupply(), tokenNotWithdrawed);
+        }
+    }
+    */
 
 }

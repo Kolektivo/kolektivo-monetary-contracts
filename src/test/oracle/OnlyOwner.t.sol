@@ -12,37 +12,22 @@ contract OracleOnlyOwner is OracleTest {
         if (caller == oracle.owner()) {
             return;
         }
-        EVM.startPrank(caller);
+        vm.startPrank(caller);
 
-        try oracle.setIsValid(true) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        oracle.setIsValid(true);
 
-        try oracle.setMinimumProviders(1) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        oracle.setMinimumProviders(1);
 
-        try oracle.purgeReportsFrom(p1) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        oracle.purgeReportsFrom(p1);
 
-        try oracle.addProvider(caller) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        oracle.addProvider(caller);
 
-        try oracle.removeProvider(p1) {
-            revert();
-        } catch {
-            // Fails with OnlyCallableByOwner.
-        }
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        oracle.removeProvider(p1);
     }
 
     function testSetIsValid(bool to) public {
@@ -52,13 +37,13 @@ contract OracleOnlyOwner is OracleTest {
         } else {
             if (to) {
                 // Expect event emission.
-                EVM.expectEmit(true, true, true, true);
+                vm.expectEmit(true, true, true, true);
                 emit OracleMarkedAsValid();
 
                 oracle.setIsValid(to);
             } else {
                 // Expect event emission.
-                EVM.expectEmit(true, true, true, true);
+                vm.expectEmit(true, true, true, true);
                 emit OracleMarkedAsInvalid();
 
                 oracle.setIsValid(to);
@@ -72,15 +57,13 @@ contract OracleOnlyOwner is OracleTest {
         uint before = oracle.minimumProviders();
 
         if (to == 0) {
-            try oracle.setMinimumProviders(to) {
-                revert();
-            } catch {
-                // Fails due to minimum providers of zero not allowed.
-            }
+            // Fails due to minimum providers of zero not allowed.
+            vm.expectRevert(bytes(""));
+            oracle.setMinimumProviders(to);
         } else {
             // Only expect an event if state changed.
             if (before != to) {
-                EVM.expectEmit(true, true, true, true);
+                vm.expectEmit(true, true, true, true);
                 emit MinimumProvidersChanged(before, to);
             }
 
@@ -103,7 +86,7 @@ contract OracleOnlyOwner is OracleTest {
         assertTrue(valid);
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit ProviderReportsPurged(address(this), p1);
 
         // Purge reports from provider.
@@ -115,14 +98,14 @@ contract OracleOnlyOwner is OracleTest {
         assertTrue(!valid);
     }
 
-    function testFailPurgeReportsFromInvalidProvider() public {
-        // Fails with InvalidProvider.
+    function testPurgeReportsFromInvalidProvider() public {
+        vm.expectRevert(Errors.InvalidProvider(address(0)));
         oracle.purgeReportsFrom(address(0));
     }
 
     function testAddProvider() public {
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit ProviderAdded(p1);
 
         oracle.addProvider(p1);
@@ -131,7 +114,7 @@ contract OracleOnlyOwner is OracleTest {
         oracle.addProvider(p1);
 
         // Check that p1 is eligible to push reports.
-        EVM.prank(p1);
+        vm.prank(p1);
         oracle.pushReport(1);
     }
 
@@ -139,7 +122,7 @@ contract OracleOnlyOwner is OracleTest {
         setUpProviders();
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit ProviderRemoved(p1);
 
         oracle.removeProvider(p1);
@@ -147,12 +130,11 @@ contract OracleOnlyOwner is OracleTest {
         // Function should be idempotent.
         oracle.removeProvider(p1);
 
-        EVM.prank(p1);
-        try oracle.pushReport(1) {
-            revert();
-        } catch {
-            // Fails due to p1 not eligible to push reports anymore.
-        }
+        // Provider should not be able to push any new reports.
+        vm.prank(p1);
+
+        vm.expectRevert(Errors.InvalidProvider(p1));
+        oracle.pushReport(1);
     }
 
 }

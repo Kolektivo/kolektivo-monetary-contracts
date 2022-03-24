@@ -12,7 +12,7 @@ contract OracleProvider is OracleTest {
         setUpProviders();
 
         // Expect event emission.
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit ProviderReportPushed(p1, payload, block.timestamp);
 
         pushValidReport(p1, payload);
@@ -27,7 +27,7 @@ contract OracleProvider is OracleTest {
 
     function testFailPushReportInvalidProvider(address caller) public {
         // Fails with InvalidProvider.
-        EVM.prank(caller);
+        vm.prank(caller);
         oracle.pushReport(10);
     }
 
@@ -35,14 +35,14 @@ contract OracleProvider is OracleTest {
         setUpProviders();
 
         // Push first report.
-        EVM.prank(p1);
+        vm.prank(p1);
         oracle.pushReport(10);
 
         // Wait less than reportDelay seconds.
-        EVM.warp(block.timestamp + reportDelay - 1 seconds);
+        vm.warp(block.timestamp + reportDelay - 1 seconds);
 
         // Fails with NewReportTooSoonAfterPastReport.
-        EVM.prank(p1);
+        vm.prank(p1);
         oracle.pushReport(10);
     }
 
@@ -59,11 +59,11 @@ contract OracleProvider is OracleTest {
         assertTrue(valid);
 
         // Expect event emission
-        EVM.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
         emit ProviderReportsPurged(p1, p1);
 
         // Purge reports.
-        EVM.prank(p1);
+        vm.prank(p1);
         oracle.purgeReports();
 
         // Expect oracle data to be invalid.
@@ -74,7 +74,7 @@ contract OracleProvider is OracleTest {
 
     function testFailPurgeReportsInvalidProvider(address caller) public {
         // Fails with InvalidProvider.
-        EVM.prank(caller);
+        vm.prank(caller);
         oracle.purgeReports();
     }
 

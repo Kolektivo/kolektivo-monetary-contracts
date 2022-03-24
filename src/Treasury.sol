@@ -21,7 +21,7 @@ interface IOracle {
 /**
  * @title Treasury
  *
- * @dev A treasury in which whitelisted address can un/bond assets.
+ * @dev A treasury in which whitelisted addresses can un/bond assets.
  *      The treasury token (KTT) is continously synced to the treasury's total
  *      value in USD of assets held. This is made possible by inheriting from
  *      the ElasticReceiptToken.

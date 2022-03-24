@@ -10,3 +10,6 @@
 [submodule "lib/elastic-receipt-token"]
 	path = lib/elastic-receipt-token
 	url = https://github.com/pmerkleplant/elastic-receipt-token
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/brockelmore/forge-std

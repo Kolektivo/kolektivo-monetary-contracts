@@ -10,10 +10,18 @@ interface IOracle {
 }
 
 /**
- * @title KTT's Oracle
+ * @title Median Oracle
  *
- * @dev Provides value onchain that's aggregated from a whitelisted set of
- *      providers.
+ * @dev An oracle in which whitelisted providers can push reports.
+ *      The oracle's data is defined as the median from each provider's reports
+ *      average.
+ *
+ *      A provider's report becomes valid some time after the report was pushed
+ *      (see reportDelay) and invalid again after some time
+ *      (see reportExpirationTime).
+ *
+ *      The average of a provider's valid reports is used for the median
+ *      calculation.
  *
  * @author Ampleforth
  * @author byterocket

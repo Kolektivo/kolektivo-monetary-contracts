@@ -75,7 +75,7 @@ contract TreasuryTotalValuation is TreasuryTest {
         return totalValuation;
     }
 
-    function testTotalValuationWithAssetsUsingDifferentDecimalPrecision()
+    function testTotalValuationWithAssetsWithNonWadAssets()
         public
     {
         // Asset 1:

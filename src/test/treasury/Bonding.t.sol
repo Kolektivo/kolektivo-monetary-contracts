@@ -238,77 +238,97 @@ contract TreasuryBonding is TreasuryTest {
         assertEq(treasury.totalSupply(), amount - tokensUnbonded);
     }
 
-    /*
-    function testBondingAndUnbondingWithAssetsUsingDifferentPrecision() public {
-        address user = address(1);
-        uint amount = 1e18;
-        uint[2] memory decimals = [uint(9), 25];
+    function testBondingAndUnbondingWithNonWadAssets(address user, bool unbondT1)
+        public
+        validUser(user, false)
+    {
+        //----------------------------------
+        // Bonding
 
-        for (uint i; i < decimals.length; i++) {
-            uint decimal = decimals[i];
+        // Asset 1:
+        // price = 1e18 (1$), decimals = 20, balance = 1e20
+        // => total value = 1$
+        ERC20Mock t1;
+        OracleMock o1;
+        (t1, o1) = setUpForBonding(user, ONE_USD, 1e20, 20);
 
-            // Calculate the USD amount the amount represents.
-            uint usdAmount =
-                18 >= decimal
-                    // If token uses less decimals, move by diff of decimals
-                    // to the left.
-                    ? amount * 10**(18-decimal)
-                    // If token uses more decimals, move by diff of decimals
-                    // to the right.
-                    : amount / 10**(decimal-18);
+        // Bond t1.
+        vm.prank(user);
+        treasury.bond(address(t1), 1e20);
 
-            ERC20Mock token;
-            OracleMock oracle;
-            (token, oracle) = setUpForBonding(
-                user,
-                ONE_USD,
-                amount,
-                decimals[i]
-            );
+        // Check that user received amount of KTT tokens.
+        assertEq(treasury.balanceOf(user), 1e18);
+        // Check that user does not have any t1 anymore.
+        assertEq(t1.balanceOf(user), 0);
+        // Check that treasury now holds the t1.
+        assertEq(t1.balanceOf(address(treasury)), 1e20);
+        // Check that treasury's total valuation equals the amount bonded.
+        assertEq(treasury.totalValuation(), 1e18);
+        // Check that KTT's total supply equals the treasury's valuation.
+        assertEq(treasury.totalSupply(), 1e18);
 
-            // Mark token as unbondable.
-            treasury.supportAssetForUnbonding(address(token));
+        // Asset 2:
+        // price = 2e18 (2$), decimals = 9, balance = 2e9
+        // => total value = 4$
+        ERC20Mock t2;
+        OracleMock o2;
+        (t2, o2) = setUpForBonding(user, ONE_USD * 2, 2e9, 9);
 
-            // Bond tokens.
+        // Bond t2.
+        vm.prank(user);
+        treasury.bond(address(t2), 2e9);
+
+        // Check that user received amount of KTT tokens.
+        assertEq(treasury.balanceOf(user), 1e18 + (2e18 * 2));
+        // Check that user does not have any t2 anymore.
+        assertEq(t2.balanceOf(user), 0);
+        // Check that treasury now holds the t2.
+        assertEq(t2.balanceOf(address(treasury)), 2e9);
+        // Check that treasury's total valuation equals the amount bonded.
+        assertEq(treasury.totalValuation(), 1e18 + (2e18 * 2));
+        // Check that KTT's total supply equals the treasury's valuation.
+        assertEq(treasury.totalSupply(), 1e18 + (2e18 * 2));
+
+        //----------------------------------
+        // Unbonding
+        // Note that we cannot unbond all tokens.
+        // Therefore only unbond one of the two tokens.
+
+        if (unbondT1) {
+            // Mark t1 as unbondable.
+            treasury.supportAssetForUnbonding(address(t1));
+
+            // User unbonds t1.
             vm.prank(user);
-            treasury.bond(address(token), amount);
+            treasury.unbond(address(t1), 1e18);
 
-            // Check that user received amount of KTT tokens.
-            assertEq(treasury.balanceOf(user), usdAmount);
-            // Check that user does not have any tokens anymore.
-            assertEq(token.balanceOf(user), 0);
-            // Check that treasury now holds the tokens.
-            assertEq(token.balanceOf(address(treasury)), amount);
-            // Check that treasury's total valuation equals the amount bonded.
-            assertEq(treasury.totalValuation(), usdAmount);
-            // Check that KTT's total supply equals the treasury's valuation.
-            assertEq(treasury.totalSupply(), usdAmount);
-
-            // Note that not all assets can be unbonded.
-            usdAmount--;
-            uint tokenNotWithdrawed =
-                18 >= decimal
-                    ? usdAmount / 10**(18-decimal)
-                    : usdAmount * 10**(decimal-18);
-
-            // Expect event emission.
-            vm.expectEmit(true, true, true, true);
-            emit AssetsUnbonded(user, address(token), usdAmount);
-
-            vm.prank(user);
-            treasury.unbond(address(token), usdAmount);
-
-            // Check that user received the tokens unbonded.
-            assertEq(token.balanceOf(user), amount);
+            // Check that user received the t1 unbonded.
+            assertEq(t1.balanceOf(user), 1e20);
             // Check that user's KTT tokens got burned.
-            assertEq(treasury.balanceOf(user), tokenNotWithdrawed);
+            assertEq(treasury.balanceOf(user), 2e18 * 2);
             // Check that treasury's total valuation decreased by the amount of
             // tokens unbonded.
-            assertEq(treasury.totalValuation(), tokenNotWithdrawed);
+            assertEq(treasury.totalValuation(), 2e18 * 2);
             // Check that KTT's total supply equals the treasury's valuation.
-            assertEq(treasury.totalSupply(), tokenNotWithdrawed);
+            assertEq(treasury.totalSupply(), 2e18 * 2);
+        } else {
+            // Mark t2 as unbondable.
+            treasury.supportAssetForUnbonding(address(t2));
+
+            // User unbonds t2.
+            vm.prank(user);
+            treasury.unbond(address(t2), 2e18 * 2);
+
+            // Check that user received the t1 unbonded.
+            assertEq(t2.balanceOf(user), 2e9);
+            // Check that user's KTT tokens got burned.
+            assertEq(treasury.balanceOf(user), 1e18);
+            // Check that treasury's total valuation decreased by the amount of
+            // tokens unbonded.
+            assertEq(treasury.totalValuation(), 1e18);
+            // Check that KTT's total supply equals the treasury's valuation.
+            assertEq(treasury.totalSupply(), 1e18);
         }
     }
-    */
 
 }

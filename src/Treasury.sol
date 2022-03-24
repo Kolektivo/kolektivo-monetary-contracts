@@ -18,6 +18,24 @@ interface IOracle {
     function getData() external returns (uint, bool);
 }
 
+/**
+ * @title Treasury
+ *
+ * @dev A treasury in which whitelisted address can un/bond assets.
+ *      The treasury token (KTT) is continously synced to the treasury's total
+ *      value in USD of assets held. This is made possible by inheriting from
+ *      the ElasticReceiptToken.
+ *
+ *      Naming Conventions for non-public variables:
+ *      - If a variable does NOT include the term `wad` the decimal precision
+ *        is either unknown or unequal to 18.
+ *      - If a variable does include the term `wad` the decimal precision is
+ *        18.
+ *
+ *
+ *
+ * @author byterocket
+ */
 contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     using SafeTransferLib for ERC20;
 
@@ -117,31 +135,28 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @notice Modifier to guarantee function is only callable for supported
     ///         assets.
     modifier isSupported(address asset) {
-        if (oraclePerAsset[asset] != address(0)) {
-            _;
-        } else {
+        if (oraclePerAsset[asset] == address(0)) {
             revert AssetIsNotSupported(asset);
         }
+        _;
     }
 
     /// @notice Modifier to guarantee function is only callable for bondable
     ///         assets.
     modifier isBondable(address asset) {
-        if (isSupportedForBonding[asset]) {
-            _;
-        } else {
+        if (!isSupportedForBonding[asset]) {
             revert AssetIsNotBondable(asset);
         }
+        _;
     }
 
     /// @notice Modifier to guarantee function is only callable for unbondable
     ///         assets.
     modifier isUnbondable(address asset) {
-        if (isSupportedForUnbonding[asset]) {
-            _;
-        } else {
+        if (!isSupportedForUnbonding[asset]) {
             revert AssetIsNotUnbondable(asset);
         }
+        _;
     }
 
     //--------------------------------------------------------------------------
@@ -171,6 +186,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @notice A mapping of supported assets to its last reported price.
     /// @dev The last reported price is used in case the latest oracle fetch
     ///      is invalid.
+    /// @dev Note that the price uses 18 decimal precision.
     mapping(address => uint) public lastPricePerAsset;
 
     //--------------------------------------------------------------------------
@@ -203,28 +219,28 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         require(oracle != address(0));
 
         // Get the current price of the asset.
-        uint price;
+        uint priceWad;
         bool valid;
-        (price, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
+        (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
 
         // Do not use a cached price for bonding.
         if (!valid) {
             revert StalePriceDeliveredByOracle(asset, oracle);
         }
 
-        // Get amount in 18 decimal precision.
-        uint amountAdjusted = _convertTo18Decimals(asset, amount);
+        // Convert amount to wad.
+        uint amountWad = _convertToWad(asset, amount);
 
-        // Calculate the amount of KTT to mint.
+        // Calculate the amount of KTTs to mint.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        uint mintAmount = (amountAdjusted * price) / 1e18;
+        uint mintWad = (amountWad * priceWad) / 1e18;
 
         // Mint the KTTs to msg.sender and fetch the asset from msg.sender.
-        super._mint(msg.sender, mintAmount);
+        super._mint(msg.sender, mintWad);
         ERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
 
         // Notify off-chain services.
-        emit AssetsBonded(msg.sender, asset, mintAmount);
+        emit AssetsBonded(msg.sender, asset, mintWad);
     }
 
     /// @notice Unbonds an amount of KTTs in exchange for an amount of one
@@ -232,13 +248,13 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @dev Only callable if address is whitelisted.
     /// @dev Only callable for unbondable assets.
     /// @param asset The asset to unbond.
-    /// @param ktts The amount of KTT tokens to burn.
-    function unbond(address asset, uint ktts)
+    /// @param kttWad The amount of KTT tokens to burn.
+    function unbond(address asset, uint kttWad)
         external
         // Note that if an asset is unbondable, it is also supported.
         // isSupported(asset)
         isUnbondable(asset)
-        validAmount(ktts)
+        validAmount(kttWad)
         onlyWhitelisted
     {
         address oracle = oraclePerAsset[asset];
@@ -246,9 +262,9 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         require(oracle != address(0));
 
         // Get the current price of the asset.
-        uint price;
+        uint priceWad;
         bool valid;
-        (price, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
+        (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
 
         // Do not use a cached price for unbonding.
         if (!valid) {
@@ -258,20 +274,20 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         // Burn KTTs from msg.sender.
         // Note to update the KTT amount which could have changed due to
         // rebasing.
-        ktts = super._burn(msg.sender, ktts);
+        kttWad = super._burn(msg.sender, kttWad);
 
         // Calculate the amount of assets to withdraw for burned amount of KTTs.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        uint withdrawableIn18Decimal = (ktts * 1e18) / price;
+        uint withdrawableWad = (kttWad * 1e18) / priceWad;
 
         // Adjust to decimal precision of the asset.
-        uint withdrawable = _convertFrom18Decimal(asset, withdrawableIn18Decimal);
+        uint withdrawable = _convertFromWad(asset, withdrawableWad);
 
         // Send the assets to msg.sender.
         ERC20(asset).safeTransfer(msg.sender, withdrawable);
 
         // Notify off-chain services.
-        emit AssetsUnbonded(msg.sender, asset, ktts);
+        emit AssetsUnbonded(msg.sender, asset, kttWad);
     }
 
     //--------------------------------------------------------------------------
@@ -299,11 +315,12 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         address asset;
         address oracle;
         uint assetBalance;
-        uint price;
+        uint assetBalanceWad;
+        uint priceWad;
         bool valid;
 
         // The total valuation of assets in the treasury.
-        uint total;
+        uint totalWad;
 
         uint len = supportedAssets.length;
         for (uint i; i < len; ) {
@@ -311,7 +328,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
             assetBalance = ERC20(asset).balanceOf(address(this));
 
             oracle = oraclePerAsset[asset];
-            (price, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
+            (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
 
             // Continue/Break early if there is not asset balance.
             // Note to query oracle anyway to update last price.
@@ -328,26 +345,26 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 // If the new price is valid, multiply the price with the
                 // asset's balance and add the asset's valuation to the total
                 // valuation.
-                uint assetBalanceAdjusted = _convertTo18Decimals(asset, assetBalance);
-                total += (assetBalanceAdjusted * price) / 1e18;
+                assetBalanceWad = _convertToWad(asset, assetBalance);
+                totalWad += (assetBalanceWad * priceWad) / 1e18;
             } else {
                 // If the new price is invalid, multiply the last cached price
                 // with the asset's balance and add the asset's valuation to
                 // the total valuation.
-                price = lastPricePerAsset[asset];
+                priceWad = lastPricePerAsset[asset];
 
                 // Note that this check should NOT be possible to fail.
-                require(price != 0);
+                require(priceWad != 0);
 
-                uint assetBalanceAdjusted = _convertTo18Decimals(asset, assetBalance);
-                total += (assetBalanceAdjusted * price) / 1e18;
+                assetBalanceWad = _convertToWad(asset, assetBalance);
+                totalWad += (assetBalanceWad * priceWad) / 1e18;
             }
 
             unchecked { ++i; }
         }
 
         // Return the total valuation of assets in the treasury.
-        return total;
+        return totalWad;
     }
 
     //--------------------------------------------------------------------------
@@ -578,69 +595,69 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         private
         returns (uint, bool)
     {
-        uint price;
+        uint priceWad;
         bool valid;
-        (price, valid) = IOracle(oracle).getData();
+        (priceWad, valid) = IOracle(oracle).getData();
 
         // Return false if oracle is invalid or price is zero.
-        if (!valid || price == 0) {
+        if (!valid || priceWad == 0) {
             return (0, false);
         }
 
         // Cache current price.
-        lastPricePerAsset[asset] = price;
+        lastPricePerAsset[asset] = priceWad;
 
-        return (price, true);
+        return (priceWad, true);
     }
 
-    /// @dev Returns the amount of asset in 18 decimal precision.
-    function _convertTo18Decimals(address asset, uint amount)
+    /// @dev Returns the amount of asset in wad format, i.e. 18 decimal
+    ///      precision.
+    function _convertToWad(address asset, uint amount)
         private
         view
         returns (uint)
     {
-        uint assetDecimals = IERC20Metadata(asset).decimals();
+        uint decimals = IERC20Metadata(asset).decimals();
 
-        if (assetDecimals == 18) {
+        if (decimals == 18) {
             // No decimal adjustment neccessary.
             return amount;
         }
 
-        if (assetDecimals < 18) {
+        if (decimals < 18) {
             // If asset has less than 18 decimals, move amount by difference of
             // decimal precision to the left.
-            return amount * 10**(18-assetDecimals);
+            return amount * 10**(18-decimals);
         } else {
             // If asset has more than 18 decimals, move amount by difference of
             // decimal precision to the right.
-            return amount / 10**(assetDecimals-18);
+            return amount / 10**(decimals-18);
         }
     }
 
     /// @dev Returns the amount in the asset's decimal precision.
-    ///      Expects the amount to be in 18 decimal precision.
-    function _convertFrom18Decimal(address asset, uint amount)
+    ///      Expects the amount to be in wad format, i.e. 18 decimal precision.
+    function _convertFromWad(address asset, uint amount)
         private
         view
         returns (uint)
     {
-        uint assetDecimals = IERC20Metadata(asset).decimals();
+        uint decimals = IERC20Metadata(asset).decimals();
 
-        if (assetDecimals == 18) {
+        if (decimals == 18) {
             // No decimal adjustment neccessary.
             return amount;
         }
 
-        if (assetDecimals < 18) {
+        if (decimals < 18) {
             // If asset has less than 18 decimals, move amount by difference of
             // decimal precision to the right.
-            return amount / 10**(18-assetDecimals);
+            return amount / 10**(18-decimals);
         } else {
             // If asset has more than 18 decimals, move amount by difference of
             // decimal precision to the left.
-            return amount * 10**(assetDecimals-18);
+            return amount * 10**(decimals-18);
         }
-
     }
 
 }

@@ -58,6 +58,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev The min amount in bps of reserve to supply.
     uint private constant MIN_BACKING_IN_BPS = 5_000; // 50%
 
+    // @todo This is wrong! KTT uses 18 decimals!
     uint private constant KTT_DECIMALS = 9;
     uint private constant KOL_DECIMALS = 18;
 
@@ -264,6 +265,8 @@ contract Reserve is Ownable, Whitelisted {
     function _supply() private view returns (uint) {
         return _kol.totalSupply();
     }
+
+    // @todo Propably uneccessary. KTT uses 18 decimals!
 
     // Note that KOL and KTT have different precision decimals.
     function kolToKtt(uint kols) private pure returns (uint) {

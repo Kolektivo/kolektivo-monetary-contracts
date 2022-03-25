@@ -10,7 +10,7 @@ import "../KOL.sol";
 
 /**
  * Errors library for KOL's custom errors.
- * Enables checking with errors with vm.expectRevert(Errors.<Error>).
+ * Enables checking for errors with vm.expectRevert(Errors.<Error>).
  */
 library Errors {
     // Inherited from solrocket/Ownable.sol.

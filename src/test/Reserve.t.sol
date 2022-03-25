@@ -12,7 +12,7 @@ import {ERC20Mock} from "./utils/mocks/ERC20Mock.sol";
 
 /**
  * Errors library for Reserve's custom errors.
- * Enables checking with errors with vm.expectRevert(Errors.<Error>).
+ * Enables checking for errors with vm.expectRevert(Errors.<Error>).
  */
 library Errors {
     // Inherited from solrocket/Ownable.sol.

@@ -1,14 +1,14 @@
 #!/bin/bash
 #
 # Deployment script for the Oracle.sol contract.
-# It MUST be called from the repo's root directory!
+# MUST be called from the repo's root directory!
 #
 # Deployment is done through a `foundry create` call.
 
-## Foundry Variables
+## Foundry Variables.
 # The keystore file.
 KEYSTORE=
-# The RPC endpoint
+# The RPC endpoint.
 RPC_URL=
 # The chain, e.g. mainnet, kovan...
 CHAIN=
@@ -18,7 +18,7 @@ ARG1_ReportExpirationTime=
 ARG2_ReportDelay=
 ARG3_MinimumProviders=
 
-# The deploy command
+# The deploy command.
 forge create                        \
     ./src/Oracle.sol                \
     --chain $CHAIN                  \

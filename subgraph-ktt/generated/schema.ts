@@ -16,6 +16,11 @@ export class KTT extends Entity {
     super();
     this.set("id", Value.fromString(id));
 
+    this.set("block", Value.fromBigInt(BigInt.zero()));
+    this.set("timestamp", Value.fromBigInt(BigInt.zero()));
+    this.set("transaction", Value.fromBytes(Bytes.empty()));
+    this.set("owner", Value.fromBytes(Bytes.empty()));
+    this.set("pendingOwner", Value.fromBytes(Bytes.empty()));
     this.set("balances", Value.fromStringArray(new Array(0)));
     this.set("approvals", Value.fromStringArray(new Array(0)));
   }
@@ -45,6 +50,33 @@ export class KTT extends Entity {
     this.set("id", Value.fromString(value));
   }
 
+  get block(): BigInt {
+    let value = this.get("block");
+    return value!.toBigInt();
+  }
+
+  set block(value: BigInt) {
+    this.set("block", Value.fromBigInt(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+
+  get transaction(): Bytes {
+    let value = this.get("transaction");
+    return value!.toBytes();
+  }
+
+  set transaction(value: Bytes) {
+    this.set("transaction", Value.fromBytes(value));
+  }
+
   get supportedAssets(): Array<string> {
     let value = this.get("supportedAssets");
     return value!.toStringArray();
@@ -70,6 +102,24 @@ export class KTT extends Entity {
 
   set supportedAssetsForUnbonding(value: Array<string>) {
     this.set("supportedAssetsForUnbonding", Value.fromStringArray(value));
+  }
+
+  get owner(): Bytes {
+    let value = this.get("owner");
+    return value!.toBytes();
+  }
+
+  set owner(value: Bytes) {
+    this.set("owner", Value.fromBytes(value));
+  }
+
+  get pendingOwner(): Bytes {
+    let value = this.get("pendingOwner");
+    return value!.toBytes();
+  }
+
+  set pendingOwner(value: Bytes) {
+    this.set("pendingOwner", Value.fromBytes(value));
   }
 
   get balances(): Array<string> {
@@ -222,6 +272,8 @@ export class Oracle extends Entity {
     this.set("block", Value.fromBigInt(BigInt.zero()));
     this.set("timestamp", Value.fromBigInt(BigInt.zero()));
     this.set("transaction", Value.fromBytes(Bytes.empty()));
+    this.set("owner", Value.fromBytes(Bytes.empty()));
+    this.set("pendingOwner", Value.fromBytes(Bytes.empty()));
     this.set("isValid", Value.fromBoolean(false));
     this.set("minimumProviders", Value.fromBigInt(BigInt.zero()));
     this.set("asset", Value.fromBytes(Bytes.empty()));
@@ -277,6 +329,24 @@ export class Oracle extends Entity {
 
   set transaction(value: Bytes) {
     this.set("transaction", Value.fromBytes(value));
+  }
+
+  get owner(): Bytes {
+    let value = this.get("owner");
+    return value!.toBytes();
+  }
+
+  set owner(value: Bytes) {
+    this.set("owner", Value.fromBytes(value));
+  }
+
+  get pendingOwner(): Bytes {
+    let value = this.get("pendingOwner");
+    return value!.toBytes();
+  }
+
+  set pendingOwner(value: Bytes) {
+    this.set("pendingOwner", Value.fromBytes(value));
   }
 
   get isValid(): boolean {

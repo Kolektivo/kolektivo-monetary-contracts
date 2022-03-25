@@ -2,10 +2,19 @@ type KTT @entity {
   # id: The KTT's contract address
   id: ID!
 
+  # Metadata when state was last changed
+  block: BigInt!
+  timestamp: BigInt!
+  transaction: Bytes!
+
   # The list of supported assets
   supportedAssets: [Asset!]! @derivedFrom(field: "supported")
   supportedAssetsForBonding: [Asset!]! @derivedFrom(field: "supportedForBonding")
   supportedAssetsForUnbonding: [Asset!]! @derivedFrom(field: "supportedForUnbonding")
+
+  # Owner data
+  owner: Bytes!
+  pendingOwner: Bytes!
 
   # User data
   balances: [AccountBalance!]!
@@ -40,6 +49,10 @@ type Oracle @entity {
   block: BigInt!
   timestamp: BigInt!
   transaction: Bytes!
+
+  # Owner data
+  owner: Bytes!
+  pendingOwner: Bytes!
 
   # Metadata about settings
   isValid: Boolean!

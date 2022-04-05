@@ -359,7 +359,14 @@ contract Oracle is Ownable, IOracle {
             if (pastReportUsable) {
                 // Both reports usable, therefore use the average.
                 // Note that >> 1 is equal to a division by 2.
-                return ((recentReportPayload + pastReportPayload) >> 1, true);
+                // Note that an average computation of (a + b) / 2 could overflow.
+                // Therefore the computation is distributed:
+                //      (a / 2) + (b / 2) + (((a % 2) + (b % 2)) / 2).
+                uint average =
+                    (recentReportPayload >> 1) + (pastReportPayload >> 1)
+                    + (((recentReportPayload % 2) + (pastReportPayload % 2)) >> 1);
+
+                return (average, true);
             } else {
                 // Only recent report usable.
                 emit ReportTimestampOutOfRange(provider);

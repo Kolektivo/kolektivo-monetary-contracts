@@ -55,11 +55,23 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    error StalePriceDeliveredByOracle(address asset,
-                                      address oracle);
+    error StalePriceDeliveredByOracle(address asset, address oracle);
 
     //--------------------------------------------------------------------------
     // Events
+
+    //----------------------------------
+    // Price Events
+
+    /// @notice Event emitted when an asset's cached price is updated.
+    /// @param asset The address of the asset.
+    /// @param oracle The address of the oracle.
+    /// @param oldPrice The cached price before the update.
+    /// @param newPrice The cached price after the update.
+    event AssetPriceUpdated(address indexed asset,
+                            address indexed oracle,
+                            uint oldPrice,
+                            uint newPrice);
 
     //----------------------------------
     // onlyOwner Events
@@ -602,7 +614,13 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
             return (0, false);
         }
 
-        // Cache current price.
+        // Cache new price and emit event.
+        emit AssetPriceUpdated(
+            asset,
+            oracle,
+            lastPricePerAsset[asset],
+            priceWad
+        );
         lastPricePerAsset[asset] = priceWad;
 
         return (priceWad, true);

@@ -235,9 +235,7 @@ contract ReserveTest is DSTest {
     // User Tests
 
     function testDeposit(address user) public {
-        if (user == address(0)) {
-            return;
-        }
+        vm.assume(user != address(0) && user != address(reserve));
 
         reserve.addToWhitelist(user);
 
@@ -272,9 +270,7 @@ contract ReserveTest is DSTest {
     }
 
     function testWithdraw(address user) public {
-        if (user == address(0)) {
-            return;
-        }
+        vm.assume(user != address(0) && user != address(reserve));
 
         reserve.addToWhitelist(user);
         ktt.mint(user, 10e9);

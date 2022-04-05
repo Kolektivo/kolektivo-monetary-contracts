@@ -31,14 +31,6 @@ contract Reserve is Ownable, Whitelisted {
     /// @param oracle The address of the asset's oracle.
     error StalePriceDeliveredByOracle(address asset, address oracle);
 
-    /// @notice Event emitted when an asset's oracle is updated.
-    /// @param asset The address of the asset.
-    /// @param oldOracle The address of the asset's old oracle.
-    /// @param newOracle The address of the asset's new oracle.
-    event AssetOracleUpdated(address indexed asset,
-                             address indexed oldOracle,
-                             address indexed newOracle);
-
     //--------------------------------------------------------------------------
     // Events
 
@@ -46,6 +38,14 @@ contract Reserve is Ownable, Whitelisted {
 
     //----------------------------------
     // Owner Events
+
+    /// @notice Event emitted when an asset's oracle is updated.
+    /// @param asset The address of the asset.
+    /// @param oldOracle The address of the asset's old oracle.
+    /// @param newOracle The address of the asset's new oracle.
+    event AssetOracleUpdated(address indexed asset,
+                             address indexed oldOracle,
+                             address indexed newOracle);
 
     event PriceFloorChanged(uint oldPriceFloor, uint newPriceFloor);
 
@@ -77,10 +77,6 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev The min amount in bps of reserve to supply.
     uint private constant MIN_BACKING_IN_BPS = 5_000; // 50%
 
-    /// @dev Note that KTT and KOL use the same decimal precision.
-    uint private constant KTT_DECIMALS = 18;
-    uint private constant KOL_DECIMALS = 18;
-
     //--------------------------------------------------------------------------
     // Storage
 
@@ -91,7 +87,7 @@ contract Reserve is Ownable, Whitelisted {
     ERC20 private immutable _ktt;
 
     /// @dev The cUSD token implementation.
-    ERC20 private immutable _cUSD;
+    ERC20 private immutable _cusd;
 
     /// @dev The bps of supply backed by the reserve.
     uint private _backingInBPS;
@@ -110,17 +106,17 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Changeable by owner.
     uint public priceFloor;
 
-    /// @notice The cUSD price oracle.
-    /// @dev Denominated in USD with 18 decimal precision.
-    /// @dev Of type IOracle.
-    /// @dev Changeable by owner.
-    address public oracleCUSD;
-
     /// @notice The KOL price oracle.
     /// @dev Denominated in USD with 18 decimal precision.
     /// @dev Of type IOracle.
     /// @dev Changeable by owner.
-    address public oracleKOL;
+    address public kolPriceOracle;
+
+    /// @notice The cUSD price oracle.
+    /// @dev Denominated in USD with 18 decimal precision.
+    /// @dev Of type IOracle.
+    /// @dev Changeable by owner.
+    address public cusdPriceOracle;
 
     //--------------------------------------------------------------------------
     // Constructor
@@ -128,30 +124,30 @@ contract Reserve is Ownable, Whitelisted {
     constructor(
         address kol_,
         address ktt_,
-        address cUSD_,
+        address cusd_,
         uint minBackingInBPS_,
-        address oracleKOL_,
-        address oracleCUSD_
+        address kolPriceOracle_,
+        address cusdPriceOracle_
     ) {
         require(kol_ != address(0));
         require(ktt_ != address(0));
-        require(cUSD_ != address(0));
+        require(cusd_ != address(0));
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
 
         // Fail if oracles do not deliver valid data.
         bool valid;
-        (/*price*/, valid) = _queryOracle(oracleKOL_);
+        (/*price*/, valid) = _queryOracle(kolPriceOracle_);
         require(valid);
-        (/*price*/, valid) = _queryOracle(oracleCUSD_);
+        (/*price*/, valid) = _queryOracle(cusdPriceOracle_);
         require(valid);
 
         // Set storage.
         _kol = KOL(kol_);
         _ktt = ERC20(ktt_);
-        _cUSD = ERC20(cUSD_);
+        _cusd = ERC20(cusd_);
         minBackingInBPS = minBackingInBPS_;
-        oracleKOL = oracleKOL_;
-        oracleCUSD = oracleCUSD_;
+        kolPriceOracle = kolPriceOracle_;
+        cusdPriceOracle = cusdPriceOracle_;
 
         // Set current backing to 100%.
         _backingInBPS = BPS;
@@ -242,7 +238,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Only callable by owner.
     function setCUSDPriceOracle(address oracle) external onlyOwner {
         // Return early if state does not change.
-        if (oracleCUSD == oracle) {
+        if (cusdPriceOracle == oracle) {
             return;
         }
 
@@ -250,19 +246,19 @@ contract Reserve is Ownable, Whitelisted {
         bool valid;
         (/*price*/, valid) = _queryOracle(oracle);
         if (!valid) {
-            revert StalePriceDeliveredByOracle(address(_cUSD), oracle);
+            revert StalePriceDeliveredByOracle(address(_cusd), oracle);
         }
 
         // Update oracle and emit event.
-        emit AssetOracleUpdated(address(_cUSD), oracleCUSD, oracle);
-        oracleCUSD = oracle;
+        emit AssetOracleUpdated(address(_cusd), cusdPriceOracle, oracle);
+        cusdPriceOracle = oracle;
     }
 
     /// @notice Sets the KOL price oracle address.
     /// @dev Only callable by owner.
     function setKOLPriceOracle(address oracle) external onlyOwner {
         // Return early if state does not change.
-        if (oracleKOL == oracle) {
+        if (kolPriceOracle == oracle) {
             return;
         }
 
@@ -274,14 +270,14 @@ contract Reserve is Ownable, Whitelisted {
         }
 
         // Update oracle and emit event.
-        emit AssetOracleUpdated(address(_kol), oracleKOL, oracle);
-        oracleKOL = oracle;
+        emit AssetOracleUpdated(address(_kol), kolPriceOracle, oracle);
+        kolPriceOracle = oracle;
     }
 
     //----------------------------------
     // Price Floor/Ceiling Management
 
-    /// @notice Sets the KOL's anticipated price floor.
+    /// @notice Sets the KOL tokens anticipated price floor.
     /// @dev Only callable by owner.
     function setPriceFloor(uint priceFloor_) external onlyOwner {
         require(priceFloor_ <= priceCeiling && priceFloor_ != 0);
@@ -295,7 +291,7 @@ contract Reserve is Ownable, Whitelisted {
         priceFloor = priceFloor_;
     }
 
-    /// @notice Sets the KOL's anticipated price ceiling.
+    /// @notice Sets the KOL tokens anticipated price ceiling.
     /// @dev Only callable by owner.
     function setPriceCeiling(uint priceCeiling_) external onlyOwner {
         require(priceCeiling_ >= priceFloor && priceCeiling_ != 0);
@@ -393,6 +389,11 @@ contract Reserve is Ownable, Whitelisted {
     ///         composed off.
     function ktt() external view returns (address) {
         return address(_ktt);
+    }
+
+    /// @notice Returns the cUSD token address.
+    function cusd() external view returns (address) {
+        return address(_cusd);
     }
 
     /// @notice Returns the current reserve status.

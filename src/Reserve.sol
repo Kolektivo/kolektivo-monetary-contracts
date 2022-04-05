@@ -61,9 +61,9 @@ contract Reserve is Ownable, Whitelisted {
     //----------------------------------
     // User Events
 
-    event Deposit(address indexed who, uint ktts);
+    event KolMinted(address indexed to, uint ktts);
 
-    event Withdrawal(address indexed who, uint ktts);
+    event KolBurned(address indexed from, uint ktts);
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -160,45 +160,76 @@ contract Reserve is Ownable, Whitelisted {
     //--------------------------------------------------------------------------
     // User Mutating Functions
 
-    // @todo depositAll, depositAllFor etc. (ButtonWrapper).
-
     /// @notice Deposits KTT tokens from msg.sender and mints corresponding KOL
     ///         tokens to msg.sender.
     /// @param ktts The amount of KTT tokens to deposit.
     function deposit(uint ktts) external onlyWhitelisted {
-        _ktt.safeTransferFrom(msg.sender, address(this), ktts);
-
-        // Note that the conversion rate of KOL:KTT is 1:1.
-        _kol.mint(msg.sender, ktts);
-
-        // @todo Not strictly necessary. But why not use the chance?
-        //       Or better create backend task to call function regularly?
-        _updateBackingInBPS();
-
-        emit Deposit(msg.sender, ktts);
+        _deposit(msg.sender, msg.sender, ktts);
     }
 
-    /// @notice Withdraws KTT tokens to msg.sender and burns KOL tokens from
-    ///         msg.sender.
+    /// @notice Deposits KTT tokens from msg.sender and mints corresponding KOL
+    ///         tokens to some address.
+    /// @param to The address to mint KOL tokens to.
+    /// @param ktts The amount of KTT tokens to deposit.
+    function depositFor(address to, uint ktts) external onlyWhitelisted {
+        _deposit(msg.sender, to, ktts);
+    }
+
+    /// @notice Deposits all KTT tokens from msg.sender and mints corresponding
+    ///         KOL tokens to msg.sender.
+    function depositAll() external onlyWhitelisted {
+        uint ktts = _ktt.balanceOf(msg.sender);
+
+        _deposit(msg.sender, msg.sender, ktts);
+    }
+
+    /// @notice Deposits all KTT tokens from msg.sender and mints corresponding
+    ///         KOL tokens to some address.
+    /// @param to The address to mint KOL tokens to.
+    function depositAllFor(address to) external onlyWhitelisted {
+        uint ktts = _ktt.balanceOf(msg.sender);
+
+        _deposit(msg.sender, to, ktts);
+    }
+
+    /// @notice Burns some KOL tokens from msg.sender and withdraws
+    ///         corresponding KTT tokens to msg.sender.
     /// @param kols The amount of KOL tokens to burn.
     function withdraw(uint kols) external onlyWhitelisted {
-        // Note that the conversion rate of KOL:KTT is 1:1.
-        _ktt.safeTransfer(msg.sender, kols);
+        _withdraw(msg.sender, msg.sender, kols);
+    }
 
-        _kol.burn(msg.sender, kols);
+    /// @notice Burns some KOL tokens from msg.sender and withdraws
+    ///         corresponding KTT tokens to some address.
+    /// @param to The address to withdraw KTT tokens to.
+    /// @param kols The amount of KOL tokens to burn.
+    function withdrawFor(address to, uint kols) external onlyWhitelisted {
+        return _withdraw(msg.sender, to, kols);
+    }
 
-        // @todo See function deposit.
-        _updateBackingInBPS();
+    /// @notice Burns all KOL tokens from msg.sender and withdraws
+    ///         corresponding KTT tokens to msg.sender.
+    function withdrawAll() external onlyWhitelisted {
+        uint kols = _kol.balanceOf(msg.sender);
 
-        emit Withdrawal(msg.sender, kols);
+        _withdraw(msg.sender, msg.sender, kols);
+    }
+
+    /// @notice Burns all KOL tokens from msg.sender and withdraws
+    ///         corresponding KTT tokens to some address.
+    /// @param to The address to withdraw KTT tokens to.
+    function withdrawAllFor(address to) external onlyWhitelisted {
+        uint kols = _kol.balanceOf(msg.sender);
+
+        _withdraw(msg.sender, to, kols);
     }
 
     function swapExactCUSDForKOL(uint amount) external onlyWhitelisted {
-
+        revert("NOT YET IMPLEMENTED");
     }
 
     function swapExactKOLForCUSD(uint amount) external onlyWhitelisted {
-
+        revert("NOT YET IMPLEMENTED");
     }
 
     //--------------------------------------------------------------------------
@@ -207,6 +238,8 @@ contract Reserve is Ownable, Whitelisted {
     //----------------------------------
     // Oracle Management
 
+    /// @notice Sets the cUSD price oracle address.
+    /// @dev Only callable by owner.
     function setCUSDPriceOracle(address oracle) external onlyOwner {
         // Return early if state does not change.
         if (oracleCUSD == oracle) {
@@ -225,6 +258,8 @@ contract Reserve is Ownable, Whitelisted {
         oracleCUSD = oracle;
     }
 
+    /// @notice Sets the KOL price oracle address.
+    /// @dev Only callable by owner.
     function setKOLPriceOracle(address oracle) external onlyOwner {
         // Return early if state does not change.
         if (oracleKOL == oracle) {
@@ -246,6 +281,8 @@ contract Reserve is Ownable, Whitelisted {
     //----------------------------------
     // Price Floor/Ceiling Management
 
+    /// @notice Sets the KOL's anticipated price floor.
+    /// @dev Only callable by owner.
     function setPriceFloor(uint priceFloor_) external onlyOwner {
         require(priceFloor_ <= priceCeiling && priceFloor_ != 0);
 
@@ -258,6 +295,8 @@ contract Reserve is Ownable, Whitelisted {
         priceFloor = priceFloor_;
     }
 
+    /// @notice Sets the KOL's anticipated price ceiling.
+    /// @dev Only callable by owner.
     function setPriceCeiling(uint priceCeiling_) external onlyOwner {
         require(priceCeiling_ >= priceFloor && priceCeiling_ != 0);
 
@@ -273,6 +312,9 @@ contract Reserve is Ownable, Whitelisted {
     //----------------------------------
     // Debt Management
 
+    /// @notice Sets the minimum backing requirement for the reserve.
+    /// @dev Denomination is in bps.
+    /// @dev Only callable by owner.
     function setMinBackingInBPS(uint minBackingInBPS_) external onlyOwner {
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
 
@@ -285,10 +327,10 @@ contract Reserve is Ownable, Whitelisted {
         minBackingInBPS = minBackingInBPS_;
     }
 
-    function incurDebt(uint ktts)
-        external
-        onlyOwner
-    {
+    /// @notice Incurs an amount of debt by minting KOL tokens to msg.sender.
+    /// @dev Denomination is in KTT tokens.
+    /// @dev Only callable by owner.
+    function incurDebt(uint ktts) external onlyOwner {
         // Note to not create debt without any reserve backing.
         require(_reserveAdjusted() != 0);
 
@@ -305,10 +347,10 @@ contract Reserve is Ownable, Whitelisted {
         }
     }
 
-    function payDebt(uint kols)
-        external
-        onlyOwner
-    {
+    /// @notice Pays an amount of debt by burning KOL tokens from msg.sender.
+    /// @dev Denomination is in KOL tokens.
+    /// @dev Only callable by owner.
+    function payDebt(uint kols) external onlyOwner {
         _kol.burn(msg.sender, kols);
 
         // @todo Emit event, adjust tests.
@@ -364,7 +406,35 @@ contract Reserve is Ownable, Whitelisted {
     //--------------------------------------------------------------------------
     // Private Functions
 
-    /// @dev Updates the bps of supply that is backed by the reserve.
+    /// @dev Private function to handle user deposits.
+    function _deposit(address from, address to, uint ktts) private {
+        _ktt.safeTransferFrom(from, address(this), ktts);
+
+        // Note that the conversion rate of KOL:KTT is 1:1.
+        _kol.mint(to, ktts);
+
+        // @todo Not strictly necessary. But why not use the chance?
+        //       Or better create backend task to call function regularly?
+        _updateBackingInBPS();
+
+        emit KolMinted(to, ktts);
+    }
+
+    /// @dev Private function to handle user withdrawals.
+    function _withdraw(address from, address to, uint kols) private {
+        // Note that the conversion rate of KOL:KTT is 1:1.
+        _ktt.safeTransfer(to, kols);
+
+        _kol.burn(from, kols);
+
+        // @todo See function _deposit.
+        _updateBackingInBPS();
+
+        emit KolBurned(from, kols);
+    }
+
+    /// @dev Private function to update the bps of supply that is backed by the
+    ///      reserve.
     function _updateBackingInBPS() private {
         uint reserveAdjusted = _reserveAdjusted();
         uint supply = _supply();
@@ -378,20 +448,21 @@ contract Reserve is Ownable, Whitelisted {
         _backingInBPS = newBackingInBPS;
     }
 
-    /// @dev Returns the current reserve in USD denomination with 18 decimal
-    ///      precision.
+    /// @dev Private function returning the current reserve in USD denomination
+    ///      with 18 decimal precision.
     function _reserveAdjusted() private view returns (uint) {
         // Note that KTT is in 18 decimal precision and is assumed to always
         // have an intrinsic value of 1 USD.
         return _ktt.balanceOf(address(this));
     }
 
-    /// @dev Returns the current supply in USD denomination with 18 decimal
-    ///      precision.
+    /// @dev Private function returning the current supply in USD denomination
+    ///      with 18 decimal precision.
     function _supply() private view returns (uint) {
         return _kol.totalSupply();
     }
 
+    /// @dev Private function to query an address of type IOracle.
     function _queryOracle(address oracle) private returns (uint, bool) {
         uint data;
         bool valid;

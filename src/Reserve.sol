@@ -8,14 +8,13 @@ import {Ownable} from "solrocket/Ownable.sol";
 import {Whitelisted} from "solrocket/Whitelisted.sol";
 
 import {Treasury} from "./Treasury.sol";
-import {KOL} from "./KOL.sol";
 
 interface IOracle {
     // Note that the price is returned with 18 decimal precision.
     function getData() external returns (uint, bool);
 }
 
-contract Reserve is Ownable, Whitelisted {
+contract Reserve is ERC20, Ownable, Whitelisted {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
@@ -80,9 +79,6 @@ contract Reserve is Ownable, Whitelisted {
     //--------------------------------------------------------------------------
     // Storage
 
-    /// @dev The KOL token implementation.
-    KOL private immutable _kol;
-
     /// @dev The KTT token implementation.
     ERC20 private immutable _ktt;
 
@@ -122,14 +118,14 @@ contract Reserve is Ownable, Whitelisted {
     // Constructor
 
     constructor(
-        address kol_,
         address ktt_,
         address cusd_,
         uint minBackingInBPS_,
         address kolPriceOracle_,
         address cusdPriceOracle_
-    ) {
-        require(kol_ != address(0));
+    )
+        ERC20("Kolektivo Reserve Token", "KOL", uint8(18))
+    {
         require(ktt_ != address(0));
         require(cusd_ != address(0));
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
@@ -142,7 +138,6 @@ contract Reserve is Ownable, Whitelisted {
         require(valid);
 
         // Set storage.
-        _kol = KOL(kol_);
         _ktt = ERC20(ktt_);
         _cusd = ERC20(cusd_);
         minBackingInBPS = minBackingInBPS_;
@@ -206,7 +201,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @notice Burns all KOL tokens from msg.sender and withdraws
     ///         corresponding KTT tokens to msg.sender.
     function withdrawAll() external onlyWhitelisted {
-        uint kols = _kol.balanceOf(msg.sender);
+        uint kols = balanceOf[msg.sender];
 
         _withdraw(msg.sender, msg.sender, kols);
     }
@@ -215,7 +210,7 @@ contract Reserve is Ownable, Whitelisted {
     ///         corresponding KTT tokens to some address.
     /// @param to The address to withdraw KTT tokens to.
     function withdrawAllFor(address to) external onlyWhitelisted {
-        uint kols = _kol.balanceOf(msg.sender);
+        uint kols = balanceOf[msg.sender];
 
         _withdraw(msg.sender, to, kols);
     }
@@ -266,11 +261,11 @@ contract Reserve is Ownable, Whitelisted {
         bool valid;
         (/*price*/, valid) = _queryOracle(oracle);
         if (!valid) {
-            revert StalePriceDeliveredByOracle(address(_kol), oracle);
+            revert StalePriceDeliveredByOracle(address(this), oracle);
         }
 
         // Update oracle and emit event.
-        emit AssetOracleUpdated(address(_kol), kolPriceOracle, oracle);
+        emit AssetOracleUpdated(address(this), kolPriceOracle, oracle);
         kolPriceOracle = oracle;
     }
 
@@ -333,7 +328,7 @@ contract Reserve is Ownable, Whitelisted {
         // @todo Emit event, adjust tests.
 
         // Note that the conversion rate of KOL:KTT is 1:1.
-        _kol.mint(msg.sender, ktts);
+        super._mint(msg.sender, ktts);
 
         _updateBackingInBPS();
 
@@ -347,7 +342,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Denomination is in KOL tokens.
     /// @dev Only callable by owner.
     function payDebt(uint kols) external onlyOwner {
-        _kol.burn(msg.sender, kols);
+        super._burn(msg.sender, kols);
 
         // @todo Emit event, adjust tests.
 
@@ -379,12 +374,6 @@ contract Reserve is Ownable, Whitelisted {
     //--------------------------------------------------------------------------
     // Public View Functions
 
-    /// @notice Returns the KOL token address, i.e. the token created by this
-    ///         reserve.
-    function kol() external view returns (address) {
-        return address(_kol);
-    }
-
     /// @notice Returns the KTT token address, i.e. the token the reserve is
     ///         composed off.
     function ktt() external view returns (address) {
@@ -401,18 +390,18 @@ contract Reserve is Ownable, Whitelisted {
     ///         uint: Supply denominated in USD with 18 decimal precision.
     ///         uint: Bps of supply backed by reserve.
     function reserveStatus() external view returns (uint, uint, uint) {
-        return (_reserveAdjusted(), _supply(), _backingInBPS);
+        return (_reserveAdjusted(), totalSupply, _backingInBPS);
     }
 
     //--------------------------------------------------------------------------
     // Private Functions
 
-    /// @dev Private function to handle user deposits.
+    /// @dev Handles user deposits.
     function _deposit(address from, address to, uint ktts) private {
         _ktt.safeTransferFrom(from, address(this), ktts);
 
         // Note that the conversion rate of KOL:KTT is 1:1.
-        _kol.mint(to, ktts);
+        super._mint(to, ktts);
 
         // @todo Not strictly necessary. But why not use the chance?
         //       Or better create backend task to call function regularly?
@@ -421,12 +410,12 @@ contract Reserve is Ownable, Whitelisted {
         emit KolMinted(to, ktts);
     }
 
-    /// @dev Private function to handle user withdrawals.
+    /// @dev Handles user withdrawals.
     function _withdraw(address from, address to, uint kols) private {
         // Note that the conversion rate of KOL:KTT is 1:1.
         _ktt.safeTransfer(to, kols);
 
-        _kol.burn(from, kols);
+        super._burn(from, kols);
 
         // @todo See function _deposit.
         _updateBackingInBPS();
@@ -434,11 +423,10 @@ contract Reserve is Ownable, Whitelisted {
         emit KolBurned(from, kols);
     }
 
-    /// @dev Private function to update the bps of supply that is backed by the
-    ///      reserve.
+    /// @dev Updates the bps of supply that is backed by the reserve.
     function _updateBackingInBPS() private {
         uint reserveAdjusted = _reserveAdjusted();
-        uint supply = _supply();
+        uint supply = totalSupply;
 
         uint newBackingInBPS =
             reserveAdjusted >= supply
@@ -449,21 +437,15 @@ contract Reserve is Ownable, Whitelisted {
         _backingInBPS = newBackingInBPS;
     }
 
-    /// @dev Private function returning the current reserve in USD denomination
-    ///      with 18 decimal precision.
+    /// @dev Returns the current reserve in USD denomination with 18 decimal
+    ///      precision.
     function _reserveAdjusted() private view returns (uint) {
         // Note that KTT is in 18 decimal precision and is assumed to always
         // have an intrinsic value of 1 USD.
         return _ktt.balanceOf(address(this));
     }
 
-    /// @dev Private function returning the current supply in USD denomination
-    ///      with 18 decimal precision.
-    function _supply() private view returns (uint) {
-        return _kol.totalSupply();
-    }
-
-    /// @dev Private function to query an address of type IOracle.
+    /// @dev Querys an address of type IOracle.
     function _queryOracle(address oracle) private returns (uint, bool) {
         uint data;
         bool valid;

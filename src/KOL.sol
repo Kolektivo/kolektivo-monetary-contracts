@@ -71,6 +71,25 @@ contract KOL is ERC20, Ownable, Whitelisted {
     }
 
     //--------------------------------------------------------------------------
+    // onlyOwner Mutating Functions
+
+    /// @notice Adds an address to the whitelist for being eligible for
+    ///         mint/burn operations.
+    /// @dev Only callable by owner.
+    /// @param who The address to add to the whitelist.
+    function addToWhitelist(address who) external onlyOwner {
+        super._addToWhitelist(who);
+    }
+
+    /// @notice Removes an address from the whitelist from being eligible for
+    ///         mint/burn operations.
+    /// @dev Only callable by owner.
+    /// @param who The address to remove from the whitelist.
+    function removeFromWhitelist(address who) external onlyOwner {
+        super._removeFromWhitelist(who);
+    }
+
+    //--------------------------------------------------------------------------
     // Overriden ERC20 Mutating Functions
     //
     // Note that the functions are overidden in order to enforce the validAmount

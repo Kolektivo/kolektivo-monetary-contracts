@@ -34,12 +34,16 @@ contract Reserve is Ownable, Whitelisted {
     //--------------------------------------------------------------------------
     // Events
 
+    /// @notice Event emitted after backing ratio got recalculated.
+    /// @param oldBackingInBPS The ratio backing before.
+    /// @param newBackingInBPS The ratio backing after.
     event BackingInBPSChanged(uint oldBackingInBPS, uint newBackingInBPS);
 
     //----------------------------------
     // Owner Events
 
     /// @notice Event emitted when an asset's oracle is updated.
+    /// @dev Denominated in bps.
     /// @param asset The address of the asset.
     /// @param oldOracle The address of the asset's old oracle.
     /// @param newOracle The address of the asset's new oracle.
@@ -47,15 +51,31 @@ contract Reserve is Ownable, Whitelisted {
                              address indexed oldOracle,
                              address indexed newOracle);
 
+    /// @notice Event emitted when the anticipated price floor changed.
+    /// @param oldPriceFloor The old anticipated price floor.
+    /// @param newPriceFloor The new anticipated price floor.
     event PriceFloorChanged(uint oldPriceFloor, uint newPriceFloor);
 
+    /// @notice Event emitted when the anticipated price ceiling changed.
+    /// @param oldPriceCeiling The old anticipated price ceiling.
+    /// @param newPriceCeiling The new anticipated price ceiling.
     event PriceCeilingChanged(uint oldPriceCeiling, uint newPriceCeiling);
 
+    /// @notice Event emitted when the min backing requirement changed.
+    /// @dev Denominated in bps.
+    /// @param oldMinBackingInBPS The old min backing requirement.
+    /// @param newMinBackingInBPS The new min backing requirement.
     event MinBackingInBPSChanged(uint oldMinBackingInBPS,
                                  uint newMinBackingInBPS);
 
+    /// @notice Event emitted when new debt incurred.
+    /// @param who The address who incurred the debt.
+    /// @param ktts The debt amount of KTT tokens incurred.
     event IncurredDebt(address indexed who, uint ktts);
 
+    /// @notice Event emitted when debt got repayed.
+    /// @param who The address who repayed debt.
+    /// @param ktts The debt amount of KTT tokens payed.
     event PayedDebt(address indexed who, uint ktts);
 
     //--------------------------------------------------------------------------
@@ -139,16 +159,16 @@ contract Reserve is Ownable, Whitelisted {
     // Constructor
 
     constructor(
-        address kol_,
-        address ktt_,
-        address cusd_,
+        address kol,
+        address ktt,
+        address cusd,
         uint minBackingInBPS_,
         address kolPriceOracle_,
         address cusdPriceOracle_
     ) {
-        require(kol_ != address(0));
-        require(ktt_ != address(0));
-        require(cusd_ != address(0));
+        require(kol != address(0));
+        require(ktt != address(0));
+        require(cusd != address(0));
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
 
         // Fail if oracles do not deliver valid data.
@@ -159,9 +179,9 @@ contract Reserve is Ownable, Whitelisted {
         require(valid);
 
         // Set storage.
-        _kol = KOL(kol_);
-        _ktt = ERC20(ktt_);
-        _cusd = ERC20(cusd_);
+        _kol = KOL(kol);
+        _ktt = ERC20(ktt);
+        _cusd = ERC20(cusd);
         minBackingInBPS = minBackingInBPS_;
         kolPriceOracle = kolPriceOracle_;
         cusdPriceOracle = cusdPriceOracle_;

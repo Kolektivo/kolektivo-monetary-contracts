@@ -15,7 +15,7 @@ interface IReserve {
 /**
  * @title Natural Capital Assets to KOL token Zapper
  *
- * @dev Stateless Zapper contract enabling depositing Natural Capital Asset
+ * @dev Stateless Zapper contract enabling depositing Natural Capital Assets
  *      in the Treasury and receiving KOL tokens from the Reserve.
  *
  *      The token flow is a follows:
@@ -29,8 +29,8 @@ interface IReserve {
  *                 ↓
  *             KOL tokens   (send to user account)
  *
- *      Note that the natural capital asset needs to be supported by the
- *      treasury, otherwise the zap() call will fail.
+ *      Note that the Natural Capital Asset needs to be supported by the
+ *      Treasury. Otherwise the zap() call will fail.
  *
  * @author byterocket
  */
@@ -48,9 +48,15 @@ contract NCAssetToKol {
         _reserve = IReserve(reserve);
 
         // Give inifinite approval of KTT tokens to the reserve.
+        // Note that the KTT token interprets type(uint).max as infinite.
         ERC20(ktt).approve(reserve, type(uint).max);
     }
 
+    /// @notice Zap function to deposit Natural Capital Assets and receive
+    ///         KOL tokens.
+    /// @param ncAsset The Natural Capital Asset's address.
+    /// @param amount The amount of Natural Capital Assets to deposit.
+    /// @return True if successful.
     function zap(address ncAsset, uint amount) external returns (bool) {
         // Fetch assets from msg.sender.
         ERC20(ncAsset).safeTransferFrom(msg.sender, address(this), amount);
@@ -62,6 +68,8 @@ contract NCAssetToKol {
         // Note that any KTT tokens send accidently to this contract are
         // therefore attributed to the next user calling this function.
         _reserve.depositAllFor(msg.sender);
+
+        return true;
     }
 
     /// @notice Returns the treasury address.

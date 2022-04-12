@@ -31,7 +31,10 @@ contract TreasuryBonding is TreasuryTest {
     }
 
     modifier validUser(address user, bool fail) {
-        if (user != address(0) && user != address(this)) {
+        if (user != address(0) &&
+            user != address(this) &&
+            user != address(treasury))
+        {
             _;
         } else {
             if (fail) {

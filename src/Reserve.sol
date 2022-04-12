@@ -91,6 +91,13 @@ contract Reserve is Ownable, Whitelisted {
         }
     }
 
+    modifier onlyDiscountZapper() {
+        if (msg.sender != discountZapper) {
+            revert("NOT ZAPPER"); // @todo Custom error.
+        }
+        _;
+    }
+
     //--------------------------------------------------------------------------
     // Constants
 
@@ -125,6 +132,11 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Denominated in USD with 18 decimal precision.
     /// @dev Changeable by owner.
     uint public priceFloor;
+
+    /// @notice The Zapper contract being eligible to deposit KTT tokens with
+    ///         a discount.
+    /// @dev Changeable by owner. @todo Implement.
+    address public discountZapper;
 
     //--------------------------------------------------------------------------
     // Constructor
@@ -212,6 +224,27 @@ contract Reserve is Ownable, Whitelisted {
         uint kols = _kol.balanceOf(msg.sender);
 
         _withdraw(msg.sender, to, kols);
+    }
+
+    //--------------------------------------------------------------------------
+    // Discount-Zapper Mutating Functions
+
+    function depositAllWithDiscountFor(address to, uint discount)
+        external
+        postambleUpdateBackingAndRequireMinBacking
+        onlyDiscountZapper
+    {
+        // @todo Few problems:
+        //  - No check if discount is reasonable (happens in Zapper though?)
+        //  - No check that msg.sender != to -> Not possible with *current* Zapper.
+        uint ktts = _ktt.balanceOf(msg.sender);
+
+        _ktt.safeTransferFrom(msg.sender, address(this), ktts);
+
+        // Mint KOL tokens to user. The number of KOL tokens is the normal
+        // conversion rate of 1:1 plus the discount as a percentage of the
+        // deposit.
+        _kol.mint(to, ktts + ((ktts * discount) / BPS));
     }
 
     //--------------------------------------------------------------------------
@@ -345,7 +378,6 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Handles user deposits.
     function _deposit(address from, address to, uint ktts)
         private
-        // @todo Should enforce min backing if discount is applied?!
         postambleUpdateBacking
     {
         _ktt.safeTransferFrom(from, address(this), ktts);

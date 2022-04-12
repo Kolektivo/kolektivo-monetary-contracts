@@ -35,21 +35,22 @@ interface IReserve {
  * @author byterocket
  */
 contract NCAssetToKol {
+    using SafeTransferLib for ERC20;
 
     ITreasury private immutable _treasury;
 
     IReserve private immutable _reserve;
 
-    constructor(address treasury, address reserve, address ktt) {
-        require(treasury != address(0));
-        require(reserve != address(0));
+    constructor(address treasury_, address reserve_, address ktt) {
+        require(treasury_ != address(0));
+        require(reserve_ != address(0));
 
-        _treasury = ITreasury(treasury);
-        _reserve = IReserve(reserve);
+        _treasury = ITreasury(treasury_);
+        _reserve = IReserve(reserve_);
 
         // Give inifinite approval of KTT tokens to the reserve.
         // Note that the KTT token interprets type(uint).max as infinite.
-        ERC20(ktt).approve(reserve, type(uint).max);
+        ERC20(ktt).approve(reserve_, type(uint).max);
     }
 
     /// @notice Zap function to deposit Natural Capital Assets and receive

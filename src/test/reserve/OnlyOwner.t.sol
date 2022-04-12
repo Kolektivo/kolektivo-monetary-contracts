@@ -15,15 +15,6 @@ contract ReserveOnlyOwner is ReserveTest {
         vm.startPrank(caller);
 
         //----------------------------------
-        // Oracle Management
-
-        vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setCUSDPriceOracle(address(0));
-
-        vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setKOLPriceOracle(address(0));
-
-        //----------------------------------
         // Price Floor/Ceiling Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
@@ -52,77 +43,6 @@ contract ReserveOnlyOwner is ReserveTest {
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.removeFromWhitelist(address(0));
-    }
-
-    //----------------------------------
-    // Oracle Management
-
-    function testSetCUSDPriceOracle(bool oracleIsValid) public {
-        address oldOracle = address(cusdPriceOracle);
-
-        cusdPriceOracle = new OracleMock();
-        cusdPriceOracle.setDataAndValid(ONE_USD, oracleIsValid);
-
-        if (oracleIsValid) {
-            // Expect event emission.
-            vm.expectEmit(true, true, true, true);
-            emit AssetOracleUpdated(
-                address(cusd),
-                oldOracle,
-                address(cusdPriceOracle)
-            );
-        } else {
-            // Expect error.
-            vm.expectRevert(
-                Errors.StalePriceDeliveredByOracle(
-                    address(cusd), address(cusdPriceOracle)
-                )
-            );
-        }
-
-        reserve.setCUSDPriceOracle(address(cusdPriceOracle));
-
-        if (oracleIsValid) {
-            // Expect oracle to be updated.
-            assertEq(reserve.cusdPriceOracle(), address(cusdPriceOracle));
-        } else {
-            // Expect oracle to not being updated.
-            assertEq(reserve.cusdPriceOracle(), oldOracle);
-        }
-    }
-
-    function testSetKOLPriceOracle(bool oracleIsValid) public {
-        address oldOracle = address(kolPriceOracle);
-
-        kolPriceOracle = new OracleMock();
-        kolPriceOracle.setDataAndValid(ONE_USD, oracleIsValid);
-
-        if (oracleIsValid) {
-            // Expect event emission.
-            vm.expectEmit(true, true, true, true);
-            emit AssetOracleUpdated(
-                address(reserve),
-                oldOracle,
-                address(kolPriceOracle)
-            );
-        } else {
-            // Expect error.
-            vm.expectRevert(
-                Errors.StalePriceDeliveredByOracle(
-                    address(reserve), address(kolPriceOracle)
-                )
-            );
-        }
-
-        reserve.setKOLPriceOracle(address(kolPriceOracle));
-
-        if (oracleIsValid) {
-            // Expect oracle to be updated.
-            assertEq(reserve.kolPriceOracle(), address(kolPriceOracle));
-        } else {
-            // Expect oracle to not being updated.
-            assertEq(reserve.kolPriceOracle(), oldOracle);
-        }
     }
 
     //----------------------------------

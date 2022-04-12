@@ -31,18 +31,6 @@ library Errors {
             minBackingInBPS
         );
     }
-
-    function StalePriceDeliveredByOracle(address asset, address oracle)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodeWithSignature(
-            "StalePriceDeliveredByOracle(address,address)",
-            asset,
-            oracle
-        );
-    }
 }
 
 /**
@@ -60,23 +48,23 @@ contract ReserveTest is DSTest {
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
     event BackingInBPSChanged(uint oldBackingInBPS, uint newBackingInBPS);
-    event AssetOracleUpdated(address indexed asset,
-                             address indexed oldOracle,
-                             address indexed newOracle);
     event PriceFloorChanged(uint oldPriceFloor, uint newPriceFloor);
     event PriceCeilingChanged(uint oldPriceCeiling, uint newPriceCeiling);
     event MinBackingInBPSChanged(uint oldMinBackingInBPS,
                                  uint newMinBackingInBPS);
     event IncurredDebt(address indexed who, uint ktts);
     event PayedDebt(address indexed who, uint ktts);
-    event KolMinted(address indexed to, uint ktts);
-    event KolBurned(address indexed from, uint ktts);
+
+    // Events copied from KOL tokens.
+    // Note that the Event declarations are needed to test for emission.
+    // Note that a transfer event from/to the zero address indicates a
+    // mint/burn.
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+
 
     // Mocks.
+    ERC20Mock kol;
     ERC20Mock ktt;
-    ERC20Mock cusd;
-    OracleMock kolPriceOracle;
-    OracleMock cusdPriceOracle;
 
     // Test constants.
     uint constant DEFAULT_MIN_BACKING = 7_500; // 75%
@@ -90,27 +78,18 @@ contract ReserveTest is DSTest {
 
     uint8 constant KOL_DECIMALS = 18;
     uint8 constant KTT_DECIMALS = 18;
-    uint8 constant CUSD_DECIMALS = 18;
 
     uint constant ONE_USD = 1e18;
 
     function setUp() public {
         // Set up tokens.
+        kol = new ERC20Mock("KOL", "KOL Token", uint8(KOL_DECIMALS));
         ktt = new ERC20Mock("KTT", "KTT Token", uint8(KTT_DECIMALS));
-        cusd = new ERC20Mock("cUSD", "cUSD Token", uint8(CUSD_DECIMALS));
-
-        // Set up oracles.
-        kolPriceOracle = new OracleMock();
-        kolPriceOracle.setDataAndValid(ONE_USD, true);
-        cusdPriceOracle = new OracleMock();
-        cusdPriceOracle.setDataAndValid(ONE_USD, true);
 
         reserve = new Reserve(
+            address(kol),
             address(ktt),
-            address(cusd),
-            DEFAULT_MIN_BACKING,
-            address(kolPriceOracle),
-            address(cusdPriceOracle)
+            DEFAULT_MIN_BACKING
         );
     }
 

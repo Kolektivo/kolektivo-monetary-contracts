@@ -26,11 +26,6 @@ contract Reserve is Ownable, Whitelisted {
     /// @param minBackingInBPS The min amount of backing allowed, in bps.
     error SupplyExceedsReserveLimit(uint backingInBPS, uint minBackingInBPS);
 
-    /// @notice Functionality is limited due to stale price delivered by oracle.
-    /// @param asset The address of the asset.
-    /// @param oracle The address of the asset's oracle.
-    error StalePriceDeliveredByOracle(address asset, address oracle);
-
     //--------------------------------------------------------------------------
     // Events
 
@@ -41,15 +36,6 @@ contract Reserve is Ownable, Whitelisted {
 
     //----------------------------------
     // Owner Events
-
-    /// @notice Event emitted when an asset's oracle is updated.
-    /// @dev Denominated in bps.
-    /// @param asset The address of the asset.
-    /// @param oldOracle The address of the asset's old oracle.
-    /// @param newOracle The address of the asset's new oracle.
-    event AssetOracleUpdated(address indexed asset,
-                             address indexed oldOracle,
-                             address indexed newOracle);
 
     /// @notice Event emitted when the anticipated price floor changed.
     /// @param oldPriceFloor The old anticipated price floor.
@@ -123,9 +109,6 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev The KTT token implementation.
     ERC20 private immutable _ktt;
 
-    /// @dev The cUSD token implementation.
-    ERC20 private immutable _cusd;
-
     /// @dev The bps of supply backed by the reserve.
     uint private _backingInBPS;
 
@@ -143,48 +126,22 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Changeable by owner.
     uint public priceFloor;
 
-    /// @notice The KOL price oracle.
-    /// @dev Denominated in USD with 18 decimal precision.
-    /// @dev Of type IOracle.
-    /// @dev Changeable by owner.
-    address public kolPriceOracle;
-
-    /// @notice The cUSD price oracle.
-    /// @dev Denominated in USD with 18 decimal precision.
-    /// @dev Of type IOracle.
-    /// @dev Changeable by owner.
-    address public cusdPriceOracle;
-
     //--------------------------------------------------------------------------
     // Constructor
 
     constructor(
-        address kol,
-        address ktt,
-        address cusd,
-        uint minBackingInBPS_,
-        address kolPriceOracle_,
-        address cusdPriceOracle_
+        address kol_,
+        address ktt_,
+        uint minBackingInBPS_
     ) {
-        require(kol != address(0));
-        require(ktt != address(0));
-        require(cusd != address(0));
+        require(kol_ != address(0));
+        require(ktt_ != address(0));
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
 
-        // Fail if oracles do not deliver valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(kolPriceOracle_);
-        require(valid);
-        (/*price*/, valid) = _queryOracle(cusdPriceOracle_);
-        require(valid);
-
         // Set storage.
-        _kol = KOL(kol);
-        _ktt = ERC20(ktt);
-        _cusd = ERC20(cusd);
+        _kol = KOL(kol_);
+        _ktt = ERC20(ktt_);
         minBackingInBPS = minBackingInBPS_;
-        kolPriceOracle = kolPriceOracle_;
-        cusdPriceOracle = cusdPriceOracle_;
 
         // Set current backing to 100%.
         _backingInBPS = BPS;
@@ -257,59 +214,8 @@ contract Reserve is Ownable, Whitelisted {
         _withdraw(msg.sender, to, kols);
     }
 
-    function swapExactCUSDForKOL(uint amount) external onlyWhitelisted {
-        revert("NOT YET IMPLEMENTED");
-    }
-
-    function swapExactKOLForCUSD(uint amount) external onlyWhitelisted {
-        revert("NOT YET IMPLEMENTED");
-    }
-
     //--------------------------------------------------------------------------
     // onlyOwner Functions
-
-    //----------------------------------
-    // Oracle Management
-
-    /// @notice Sets the cUSD price oracle address.
-    /// @dev Only callable by owner.
-    function setCUSDPriceOracle(address oracle) external onlyOwner {
-        // Return early if state does not change.
-        if (cusdPriceOracle == oracle) {
-            return;
-        }
-
-        // Fail if oracle does not deliver valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(oracle);
-        if (!valid) {
-            revert StalePriceDeliveredByOracle(address(_cusd), oracle);
-        }
-
-        // Update oracle and emit event.
-        emit AssetOracleUpdated(address(_cusd), cusdPriceOracle, oracle);
-        cusdPriceOracle = oracle;
-    }
-
-    /// @notice Sets the KOL price oracle address.
-    /// @dev Only callable by owner.
-    function setKOLPriceOracle(address oracle) external onlyOwner {
-        // Return early if state does not change.
-        if (kolPriceOracle == oracle) {
-            return;
-        }
-
-        // Fail if oracle does not deliver valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(oracle);
-        if (!valid) {
-            revert StalePriceDeliveredByOracle(address(this), oracle);
-        }
-
-        // Update oracle and emit event.
-        emit AssetOracleUpdated(address(this), kolPriceOracle, oracle);
-        kolPriceOracle = oracle;
-    }
 
     //----------------------------------
     // Price Floor/Ceiling Management
@@ -425,11 +331,6 @@ contract Reserve is Ownable, Whitelisted {
         return address(_ktt);
     }
 
-    /// @notice Returns the cUSD token address.
-    function cusd() external view returns (address) {
-        return address(_cusd);
-    }
-
     /// @notice Returns the current reserve status.
     /// @return uint: Reserve denominated in USD with 18 decimal precision.
     ///         uint: Supply denominated in USD with 18 decimal precision.
@@ -444,6 +345,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Handles user deposits.
     function _deposit(address from, address to, uint ktts)
         private
+        // @todo Should enforce min backing if discount is applied?!
         postambleUpdateBacking
     {
         _ktt.safeTransferFrom(from, address(this), ktts);
@@ -491,15 +393,6 @@ contract Reserve is Ownable, Whitelisted {
     ///      precision.
     function _supply() private view returns (uint) {
         return _kol.totalSupply();
-    }
-
-    /// @dev Querys an address of type IOracle.
-    function _queryOracle(address oracle) private returns (uint, bool) {
-        uint data;
-        bool valid;
-        (data, valid) = IOracle(oracle).getData();
-
-        return (data, valid);
     }
 
 }

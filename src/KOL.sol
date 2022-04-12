@@ -21,6 +21,8 @@ import {Whitelisted} from "solrocket/Whitelisted.sol";
  */
 contract KOL is ERC20, Ownable, Whitelisted {
 
+    // @todo Issue #15
+
     //--------------------------------------------------------------------------
     // Errors
 

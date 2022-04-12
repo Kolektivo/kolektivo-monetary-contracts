@@ -24,7 +24,8 @@ contract ReserveDepositWithdraw is ReserveTest {
 
             // Expect event emission.
             vm.expectEmit(true, true, true, true);
-            emit KolMinted(user, deposit);
+            //emit KolMinted(user, deposit);
+            emit Transfer(address(0), user, deposit);
 
             reserve.deposit(deposit);
         }
@@ -33,8 +34,8 @@ contract ReserveDepositWithdraw is ReserveTest {
         assertEq(ktt.balanceOf(user), 0);
         assertEq(ktt.balanceOf(address(reserve)), deposit);
 
-        assertEq(reserve.balanceOf(user), deposit);
-        assertEq(reserve.totalSupply(), deposit);
+        assertEq(kol.balanceOf(user), deposit);
+        assertEq(kol.totalSupply(), deposit);
 
         uint reserve_;
         uint supply;
@@ -67,8 +68,8 @@ contract ReserveDepositWithdraw is ReserveTest {
         assertEq(ktt.balanceOf(user), withdraw);
         assertEq(ktt.balanceOf(address(reserve)), deposit - withdraw);
 
-        assertEq(reserve.balanceOf(user), deposit - withdraw);
-        assertEq(reserve.totalSupply(), deposit - withdraw);
+        assertEq(kol.balanceOf(user), deposit - withdraw);
+        assertEq(kol.totalSupply(), deposit - withdraw);
 
         uint reserve_;
         uint supply;

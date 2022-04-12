@@ -25,12 +25,9 @@ contract ReserveDeployment is ReserveTest {
 
     function testConstructor() public {
         // Constructor arguments.
+        assertEq(reserve.kol(), address(kol));
         assertEq(reserve.ktt(), address(ktt));
-        assertEq(reserve.cusd(), address(cusd));
         assertEq(reserve.minBackingInBPS(), DEFAULT_MIN_BACKING);
-        assertEq(reserve.kolPriceOracle(), address(kolPriceOracle));
-        assertEq(reserve.cusdPriceOracle(), address(cusdPriceOracle));
     }
-
 
 }

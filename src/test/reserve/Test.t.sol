@@ -52,6 +52,7 @@ contract ReserveTest is DSTest {
     event PriceCeilingChanged(uint oldPriceCeiling, uint newPriceCeiling);
     event MinBackingInBPSChanged(uint oldMinBackingInBPS,
                                  uint newMinBackingInBPS);
+    event DiscountZapperChanged(address indexed from, address indexed to);
     event IncurredDebt(address indexed who, uint ktts);
     event PayedDebt(address indexed who, uint ktts);
 

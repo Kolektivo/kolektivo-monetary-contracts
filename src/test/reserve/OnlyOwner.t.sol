@@ -43,6 +43,12 @@ contract ReserveOnlyOwner is ReserveTest {
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.removeFromWhitelist(address(0));
+
+        //----------------------------------
+        // Discount Zapper Management
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.setDiscountZapper(address(0));
     }
 
     //----------------------------------
@@ -172,6 +178,21 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.removeFromWhitelist(who);
 
         assertTrue(!reserve.whitelist(who));
+    }
+
+    //----------------------------------
+    // Discount Zapper Management
+
+    function testSetDiscountZapper(address to) public {
+        // Expect event if discount Zapper changes.
+        if (to != reserve.discountZapper()) {
+            vm.expectEmit(true, true, true, true);
+            emit DiscountZapperChanged(reserve.discountZapper(), to);
+        }
+
+        reserve.setDiscountZapper(to);
+
+        assertEq(reserve.discountZapper(), to);
     }
 
 }

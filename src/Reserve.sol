@@ -54,6 +54,11 @@ contract Reserve is Ownable, Whitelisted {
     event MinBackingInBPSChanged(uint oldMinBackingInBPS,
                                  uint newMinBackingInBPS);
 
+    /// @notice Event emitted when the discount Zapper's address changed.
+    /// @param from The old discount Zapper's address.
+    /// @param to The new discount Zapper's address.
+    event DiscountZapperChanged(address indexed from, address indexed to);
+
     /// @notice Event emitted when new debt incurred.
     /// @param who The address who incurred the debt.
     /// @param ktts The debt amount of KTT tokens incurred.
@@ -348,6 +353,24 @@ contract Reserve is Ownable, Whitelisted {
     /// @param who The address to remove from the whitelist.
     function removeFromWhitelist(address who) external onlyOwner {
         super._removeFromWhitelist(who);
+    }
+
+    //----------------------------------
+    // Discount Zapper Management
+
+    /// @notice Sets the discount Zapper's address.
+    /// @dev Only callable by owner.
+    function setDiscountZapper(address who) external onlyOwner {
+        // Note to not require an address unequal to zero to be able to disable
+        // the discount functionality.
+
+        // Return early if state does not change.
+        if (who == discountZapper) {
+            return;
+        }
+
+        emit DiscountZapperChanged(discountZapper, who);
+        discountZapper = who;
     }
 
     //--------------------------------------------------------------------------

@@ -33,12 +33,23 @@ contract DiscountZapper is Ownable {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
+    // Events
+
+    /// @notice Event emitted when an asset's discount changed.
+    /// @param asset The asset's address.
+    /// @param oldDiscount The asset's old discount in bps.
+    /// @param newDiscount The asset's new discount in bps.
+    event DiscountUpdated(address indexed asset,
+                          uint oldDiscount,
+                          uint newDiscount);
+
+    //--------------------------------------------------------------------------
     // Constants
 
     /// @dev 10,000 bps are 100%.
     uint private constant BPS = 10_000;
 
-    // @todo Make Issue, what should this value be?
+    // @todo Issue #18.
     /// @dev The max discount allowed is 30%.
     uint private constant MAX_DISCOUNT = 3_000;
 
@@ -63,7 +74,7 @@ contract DiscountZapper is Ownable {
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(address treasury_, address reserve_, address ktt) {
+    constructor(address treasury_, address reserve_) {
         require(treasury_ != address(0));
         require(reserve_ != address(0));
 
@@ -72,7 +83,8 @@ contract DiscountZapper is Ownable {
 
         // Give inifinite approval of KTT tokens to the reserve.
         // Note that the KTT token interprets type(uint).max as infinite.
-        ERC20(ktt).approve(reserve_, type(uint).max);
+        // Note that the treasury contract is the KTT token contract.
+        ERC20(treasury_).approve(reserve_, type(uint).max);
     }
 
     //--------------------------------------------------------------------------
@@ -112,7 +124,7 @@ contract DiscountZapper is Ownable {
         require(discount <= MAX_DISCOUNT);
 
         // Update discount for asset and emit event.
-        // emit DiscountUpdated(asset, discountPerAsset[asset], discount);
+        emit DiscountUpdated(asset, discountPerAsset[asset], discount);
         discountPerAsset[asset] = discount;
     }
 

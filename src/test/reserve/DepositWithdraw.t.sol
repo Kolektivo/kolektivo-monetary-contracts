@@ -276,12 +276,78 @@ contract ReserveDepositWithdraw is ReserveTest {
     // Discount Zapper Deposits/Withdraws
 
     function testDepositAllWithDiscountFor(
+        address zapper,
         address receiver,
         uint deposit,
         uint discount
     ) public {
-        // @todo Implement test.
-        emit log_string("Not yet implemented");
+        _assumeValidAddress(zapper);
+        _assumeValidAddress(receiver);
+        _assumeValidDeposit(deposit);
+
+        // Set zapper instance.
+        reserve.setDiscountZapper(zapper);
+
+        // Expect revert if zapper equal receiver address.
+        if (zapper == receiver) {
+            vm.prank(zapper);
+
+            vm.expectRevert(bytes("")); // Empty require statement.
+            reserve.depositAllWithDiscountFor(receiver, discount);
+
+            return;
+        }
+
+        // Expect revert if discount is higher than MAX_DISCOUNT.
+        if (discount > MAX_DISCOUNT) {
+            vm.prank(zapper);
+
+            vm.expectRevert(bytes("")); // Empty require statement.
+            reserve.depositAllWithDiscountFor(receiver, discount);
+
+            return;
+        }
+
+        // Prepare deposit.
+        ktt.mint(zapper, deposit);
+        vm.prank(zapper);
+        ktt.approve(address(reserve), deposit);
+
+        // Expect revert if discount would decrease the backing below
+        // DEFAULT_MIN_BACKING.
+        if (discount > BPS - DEFAULT_MIN_BACKING) {
+            vm.prank(zapper);
+
+            vm.expectRevert(Errors.SupplyExceedsReserveLimit(
+                BPS - discount,
+                DEFAULT_MIN_BACKING
+            ));
+            reserve.depositAllWithDiscountFor(receiver, discount);
+
+            return;
+        }
+
+        uint discountedTokens = (deposit * discount) / BPS;
+        /*
+        uint backing =
+            discountedTokens == 0
+                ? BPS
+                : BPS - discount;
+        */
+
+        // Make deposit.
+        vm.prank(zapper);
+        reserve.depositAllWithDiscountFor(receiver, discount);
+
+        assertEq(ktt.balanceOf(zapper), 0);
+        assertEq(ktt.balanceOf(address(reserve)), deposit);
+
+        assertEq(kol.balanceOf(zapper), 0);
+        assertEq(kol.balanceOf(receiver), deposit + discountedTokens);
+        assertEq(kol.totalSupply(), deposit + discountedTokens);
+
+        // @todo Compute expected backing and check.
+        //_checkBacking(deposit, deposit + discountedTokens, backing);
     }
 
 

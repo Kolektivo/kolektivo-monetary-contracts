@@ -115,6 +115,10 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev The min amount in bps of reserve to supply.
     uint private constant MIN_BACKING_IN_BPS = 5_000; // 50%
 
+    // @todo Issue #18.
+    /// @dev The max discount allowed for the discountZapper implementation.
+    uint private constant MAX_DISCOUNT = 3_000; // 30%
+
     //--------------------------------------------------------------------------
     // Storage
 
@@ -242,9 +246,11 @@ contract Reserve is Ownable, Whitelisted {
         postambleUpdateBackingAndRequireMinBacking
         onlyDiscountZapper
     {
-        // @todo Few problems:
-        //  - No check if discount is reasonable (happens in Zapper though?)
-        //  - No check that msg.sender != to -> Not possible with *current* Zapper.
+        // Note that the zapper is not allowed to deposit for itself but only
+        // for users.
+        require(msg.sender != to);
+        require(discount <= MAX_DISCOUNT);
+
         uint ktts = _ktt.balanceOf(msg.sender);
 
         _ktt.safeTransferFrom(msg.sender, address(this), ktts);
@@ -425,7 +431,7 @@ contract Reserve is Ownable, Whitelisted {
     }
 
     /// @dev Updates the bps of supply that is backed by the reserve.
-    /// @dev Not NOT be called directly but rather used through the
+    /// @dev Should NOT be called directly but rather used through the
     ///      postambleUpdateBacking* modifiers.
     function _updateBackingInBPS() private {
         uint reserveAdjusted = _reserveAdjusted();

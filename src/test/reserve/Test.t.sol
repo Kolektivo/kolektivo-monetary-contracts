@@ -76,6 +76,7 @@ contract ReserveTest is DSTest {
     // Constants copied from SuT.
     uint constant BPS = 10_000;
     uint constant MIN_BACKING_IN_BPS = 5_000; // 50%
+    uint constant MAX_DISCOUNT = 3_000; // 30%
 
     // Other constants.
     uint constant KTT_MAX_SUPPLY = 1_000_000_000e18;

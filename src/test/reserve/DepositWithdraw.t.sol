@@ -403,17 +403,31 @@ contract ReserveDepositWithdraw is ReserveTest {
         // max debt amount is 25e16 because 75% is debt limit and 75e16 is
         // in the reserve.
         uint expectedBacking = 7_500 - 1; // 0.75% - 1 bps.
-        vm.expectRevert(
-            Errors.SupplyExceedsReserveLimit(
+        vm.expectRevert(Errors.SupplyExceedsReserveLimit(
                 expectedBacking,
                 MIN_BACKING_IN_BPS
-            )
-        );
+        ));
         reserve.incurDebt(25e16 + 1);
     }
 
     function testPayDebt() public {
-        emit log_string("Not Implemented");
+        // Deposit some KTTs so that reserve is unequal to zero.
+        reserve.addToWhitelist(address(1));
+        ktt.mint(address(1), 750e18);
+        vm.startPrank(address(1));
+        {
+            ktt.approve(address(reserve), 750e18);
+            reserve.deposit(750e18);
+        }
+        vm.stopPrank();
+
+        // Incur some debt.
+        reserve.incurDebt(250e18); // backing is 75%.
+        _checkBacking(750e18, 1_000e18, 7_500);
+
+        // Pay debt back.
+        reserve.payDebt(250e18);
+        _checkBacking(750e18, 750e18, BPS);
     }
 
     //--------------------------------------------------------------------------

@@ -19,10 +19,4 @@ contract ReserveOnlyDiscountZapper is ReserveTest {
         reserve.depositAllWithDiscountFor(address(1), 10);
     }
 
-    // @todo Rename test
-    function testDepositDiscountZapper() public {
-        // @todo Implement test.
-        emit log_string("Not yet implemented");
-    }
-
 }

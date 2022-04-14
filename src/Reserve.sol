@@ -235,7 +235,7 @@ contract Reserve is Ownable, Whitelisted {
     }
 
     //--------------------------------------------------------------------------
-    // Discount-Zapper Mutating Functions
+    // onlyDiscountZapper Mutating Functions
 
     function depositAllWithDiscountFor(address to, uint discount)
         external

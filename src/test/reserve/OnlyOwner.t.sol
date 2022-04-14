@@ -96,69 +96,6 @@ contract ReserveOnlyOwner is ReserveTest {
         }
     }
 
-    // @todo Move to own test file, DebtManagemet.
-    function testIncurDebt() public {
-        // Note that 75e16 = 0.75e18 = 0.75$.
-
-        // Deposit some KTTs so that reserve is unequal to zero.
-        reserve.addToWhitelist(address(1));
-        ktt.mint(address(1), 75e16);
-        vm.startPrank(address(1));
-        {
-            ktt.approve(address(reserve), 75e16);
-            reserve.deposit(75e16);
-        }
-        vm.stopPrank();
-
-        // max debt amount is 25e16 because 75% is debt limit and 75e16 is
-        // in the reserve.
-        reserve.incurDebt(25e16);
-
-        uint reserve_;
-        uint supply;
-        uint backingInBPS;
-        (reserve_, supply, backingInBPS) = reserve.reserveStatus();
-
-        assertEq(reserve_, 75e16);
-        assertEq(supply, 1e18);
-        assertEq(backingInBPS, DEFAULT_MIN_BACKING);
-    }
-
-    function testFailIncureDebtWithNoReserve() public {
-        // Fails due to reserve being zero.
-        reserve.incurDebt(1);
-    }
-
-    // @todo Test is on fail because expectRevert is not working.
-    function testFailIncurDebtMoreThanAllowed() public {
-        // Note that 75e16 = 0.75e18 = 0.75$.
-
-        // Deposit some KTTs so that reserve is unequal to zero.
-        reserve.addToWhitelist(address(1));
-        ktt.mint(address(1), 75e16);
-        vm.startPrank(address(1));
-        {
-            ktt.approve(address(reserve), 75e16);
-            reserve.deposit(75e16);
-        }
-        vm.stopPrank();
-
-        // max debt amount is 25e16 because 75% is debt limit and 75e16 is
-        // in the reserve.
-        uint expectedBacking = 7_500 - 1; // 0.75% - 1 bps.
-        vm.expectRevert(
-            Errors.SupplyExceedsReserveLimit(
-                expectedBacking,
-                MIN_BACKING_IN_BPS
-            )
-        );
-        reserve.incurDebt(25e16 + 1);
-    }
-
-    function testPayDebt() public {
-        emit log_string("Not Implemented");
-    }
-
     //----------------------------------
     // Whitelist Management
 

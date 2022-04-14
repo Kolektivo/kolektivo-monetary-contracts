@@ -31,6 +31,9 @@ library Errors {
             minBackingInBPS
         );
     }
+
+    bytes internal constant OnlyCallableByDiscountZapper
+        = abi.encodeWithSignature("OnlyCallableByDiscountZapper()");
 }
 
 /**

@@ -8,11 +8,9 @@ import "./Test.t.sol";
  */
 contract ReserveDepositWithdraw is ReserveTest {
 
-    // @todo Add tests for depositFor, depositAll etc.
-
     function testDeposit(address user, uint deposit) public {
-        vm.assume(user != address(0) && user != address(reserve));
-        vm.assume(deposit < KTT_MAX_SUPPLY);
+        _assumeValidAddress(user);
+        _assumeValidDeposit(deposit);
 
         reserve.addToWhitelist(user);
 
@@ -24,7 +22,6 @@ contract ReserveDepositWithdraw is ReserveTest {
 
             // Expect event emission.
             vm.expectEmit(true, true, true, true);
-            //emit KolMinted(user, deposit);
             emit Transfer(address(0), user, deposit);
 
             reserve.deposit(deposit);
@@ -37,20 +34,107 @@ contract ReserveDepositWithdraw is ReserveTest {
         assertEq(kol.balanceOf(user), deposit);
         assertEq(kol.totalSupply(), deposit);
 
-        uint reserve_;
-        uint supply;
-        uint backingInBPS;
-        (reserve_, supply, backingInBPS) = reserve.reserveStatus();
+        _checkBacking(deposit, deposit, BPS);
+    }
 
-        assertEq(reserve_, deposit);
-        assertEq(supply, deposit);
-        assertEq(backingInBPS, BPS);
+    function testDepositFor(address user, address receiver, uint deposit)
+        public
+    {
+        _assumeValidAddress(user);
+        _assumeValidAddress(receiver);
+        _assumeValidDeposit(deposit);
+
+        reserve.addToWhitelist(user);
+
+        ktt.mint(user, deposit);
+
+        vm.startPrank(user);
+        {
+            ktt.approve(address(reserve), deposit);
+
+            // Expect event emission.
+            vm.expectEmit(true, true, true, true);
+            emit Transfer(address(0), receiver, deposit);
+
+            reserve.depositFor(receiver, deposit);
+        }
+        vm.stopPrank();
+
+        assertEq(ktt.balanceOf(user), 0);
+        assertEq(ktt.balanceOf(address(reserve)), deposit);
+
+        assertEq(kol.balanceOf(receiver), deposit);
+        assertEq(kol.totalSupply(), deposit);
+
+        _checkBacking(deposit, deposit, BPS);
+    }
+
+    function testDepositAll(address user, uint deposit) public {
+        _assumeValidAddress(user);
+        _assumeValidDeposit(deposit);
+
+        reserve.addToWhitelist(user);
+
+        ktt.mint(user, deposit);
+
+        vm.startPrank(user);
+        {
+            ktt.approve(address(reserve), deposit);
+
+            // Expect event emission.
+            vm.expectEmit(true, true, true, true);
+            emit Transfer(address(0), user, deposit);
+
+            reserve.depositAll();
+        }
+        vm.stopPrank();
+
+        assertEq(ktt.balanceOf(user), 0);
+        assertEq(ktt.balanceOf(address(reserve)), deposit);
+
+        assertEq(kol.balanceOf(user), deposit);
+        assertEq(kol.totalSupply(), deposit);
+
+        _checkBacking(deposit, deposit, BPS);
+    }
+
+    function testDepositAllFor(address user, address receiver, uint deposit)
+        public
+    {
+        _assumeValidAddress(user);
+        _assumeValidAddress(receiver);
+        _assumeValidDeposit(deposit);
+
+        reserve.addToWhitelist(user);
+
+        ktt.mint(user, deposit);
+
+        vm.startPrank(user);
+        {
+            ktt.approve(address(reserve), deposit);
+
+            // Expect event emission.
+            vm.expectEmit(true, true, true, true);
+            emit Transfer(address(0), receiver, deposit);
+
+            reserve.depositAllFor(receiver);
+        }
+        vm.stopPrank();
+
+        assertEq(ktt.balanceOf(user), 0);
+        assertEq(ktt.balanceOf(address(reserve)), deposit);
+
+        assertEq(kol.balanceOf(receiver), deposit);
+        assertEq(kol.totalSupply(), deposit);
+
+        _checkBacking(deposit, deposit, BPS);
     }
 
     function testWithdraw(address user, uint deposit, uint withdraw) public {
-        vm.assume(user != address(0) && user != address(reserve));
-        vm.assume(deposit  < KTT_MAX_SUPPLY);
-        vm.assume(withdraw < deposit);
+        _assumeValidAddress(user);
+        _assumeValidDepositAndWithdraw(deposit, withdraw);
+
+        uint diff = deposit - withdraw;
 
         reserve.addToWhitelist(user);
         ktt.mint(user, deposit);
@@ -61,24 +145,165 @@ contract ReserveDepositWithdraw is ReserveTest {
             reserve.deposit(deposit);
 
             // Note that no approval is necessary.
-            reserve.withdraw(withdraw); // Withdraw KOL tokens.
+            reserve.withdraw(withdraw);
         }
         vm.stopPrank();
 
         assertEq(ktt.balanceOf(user), withdraw);
-        assertEq(ktt.balanceOf(address(reserve)), deposit - withdraw);
+        assertEq(ktt.balanceOf(address(reserve)), diff);
 
-        assertEq(kol.balanceOf(user), deposit - withdraw);
-        assertEq(kol.totalSupply(), deposit - withdraw);
+        assertEq(kol.balanceOf(user), diff);
+        assertEq(kol.totalSupply(), diff);
 
+        _checkBacking(diff, diff, BPS);
+    }
+
+    function testWithdrawFor(
+        address user,
+        address receiver,
+        uint deposit,
+        uint withdraw
+    ) public {
+        _assumeValidAddress(user);
+        _assumeValidAddress(receiver);
+        _assumeValidDepositAndWithdraw(deposit, withdraw);
+
+        uint diff = deposit - withdraw;
+
+        reserve.addToWhitelist(user);
+        ktt.mint(user, deposit);
+
+        vm.startPrank(user);
+        {
+            ktt.approve(address(reserve), deposit);
+            reserve.deposit(deposit);
+
+            // Note that no approval is necessary.
+            reserve.withdrawFor(receiver, withdraw);
+        }
+        vm.stopPrank();
+
+        assertEq(ktt.balanceOf(receiver), withdraw);
+        assertEq(ktt.balanceOf(address(reserve)), diff);
+
+        assertEq(kol.balanceOf(user), diff);
+        assertEq(kol.totalSupply(), diff);
+
+        _checkBacking(diff, diff, BPS);
+    }
+
+    function testWithdrawAll(
+        address user,
+        uint deposit,
+        uint withdraw
+    ) public {
+        _assumeValidAddress(user);
+        _assumeValidDepositAndWithdraw(deposit, withdraw);
+
+        uint diff = deposit - withdraw;
+
+        reserve.addToWhitelist(user);
+        ktt.mint(user, deposit);
+
+        vm.startPrank(user);
+        {
+            ktt.approve(address(reserve), deposit);
+            reserve.deposit(deposit);
+
+            // Send the difference of tokens that should not be withdrawn
+            // to some address. Otherwise the withdrawAll call would withdraw
+            // all tokens.
+            kol.transfer(address(this), diff);
+
+            // Note that no approval is necessary.
+            reserve.withdrawAll();
+        }
+        vm.stopPrank();
+
+        assertEq(ktt.balanceOf(user), withdraw);
+        assertEq(ktt.balanceOf(address(reserve)), diff);
+
+        assertEq(kol.balanceOf(user), 0);
+        assertEq(kol.totalSupply(), diff);
+
+        _checkBacking(diff, diff, BPS);
+    }
+
+    function testWithdrawAllFor(
+        address user,
+        address receiver,
+        uint deposit,
+        uint withdraw
+    ) public {
+        _assumeValidAddress(user);
+        _assumeValidAddress(receiver);
+        _assumeValidDepositAndWithdraw(deposit, withdraw);
+
+        uint diff = deposit - withdraw;
+
+        reserve.addToWhitelist(user);
+        ktt.mint(user, deposit);
+
+        vm.startPrank(user);
+        {
+            ktt.approve(address(reserve), deposit);
+            reserve.deposit(deposit);
+
+            // Send the difference of tokens that should not be withdrawn
+            // to some address. Otherwise the withdrawAllTo call would withdraw
+            // all tokens.
+            kol.transfer(address(this), diff);
+
+            // Note that no approval is necessary.
+            reserve.withdrawAllFor(receiver);
+        }
+        vm.stopPrank();
+
+        assertEq(ktt.balanceOf(receiver), withdraw);
+        assertEq(ktt.balanceOf(address(reserve)), diff);
+
+        assertEq(kol.balanceOf(user), 0);
+        assertEq(kol.balanceOf(receiver), 0);
+        assertEq(kol.totalSupply(), diff);
+
+        _checkBacking(diff, diff, BPS);
+    }
+
+    //--------------------------------------------------------------------------
+    // Internal Functions
+
+    function _checkBacking(
+        uint wantReserve,
+        uint wantSupply,
+        uint wantBacking
+    ) internal {
         uint reserve_;
         uint supply;
         uint backingInBPS;
         (reserve_, supply, backingInBPS) = reserve.reserveStatus();
 
-        assertEq(reserve_, deposit - withdraw);
-        assertEq(supply, deposit - withdraw);
-        assertEq(backingInBPS, BPS);
+        assertEq(reserve_, wantReserve);
+        assertEq(supply, wantSupply);
+        assertEq(backingInBPS, wantBacking);
+    }
+
+    function _assumeValidAddress(address who) internal {
+        vm.assume(who != address(0));
+        vm.assume(who != address(this));
+        vm.assume(who != address(kol));
+        vm.assume(who != address(reserve));
+    }
+
+    function _assumeValidDeposit(uint deposit) internal {
+        vm.assume(deposit < KTT_MAX_SUPPLY);
+    }
+
+    function _assumeValidDepositAndWithdraw(uint deposit, uint withdraw)
+        internal
+    {
+        _assumeValidDeposit(deposit);
+
+        vm.assume(withdraw < deposit);
     }
 
 }

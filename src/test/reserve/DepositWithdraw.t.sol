@@ -158,7 +158,7 @@ contract ReserveDepositWithdraw is ReserveTest {
         _checkBacking(diff, diff, BPS);
     }
 
-    function testWithdrawFor(
+    function testWithdrawTo(
         address user,
         address receiver,
         uint deposit,
@@ -179,7 +179,7 @@ contract ReserveDepositWithdraw is ReserveTest {
             reserve.deposit(deposit);
 
             // Note that no approval is necessary.
-            reserve.withdrawFor(receiver, withdraw);
+            reserve.withdrawTo(receiver, withdraw);
         }
         vm.stopPrank();
 
@@ -229,7 +229,7 @@ contract ReserveDepositWithdraw is ReserveTest {
         _checkBacking(diff, diff, BPS);
     }
 
-    function testWithdrawAllFor(
+    function testWithdrawAllTo(
         address user,
         address receiver,
         uint deposit,
@@ -255,7 +255,7 @@ contract ReserveDepositWithdraw is ReserveTest {
             kol.transfer(address(this), diff);
 
             // Note that no approval is necessary.
-            reserve.withdrawAllFor(receiver);
+            reserve.withdrawAllTo(receiver);
         }
         vm.stopPrank();
 

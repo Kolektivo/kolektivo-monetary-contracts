@@ -26,6 +26,9 @@ contract Reserve is Ownable, Whitelisted {
     /// @param minBackingInBPS The min amount of backing allowed, in bps.
     error SupplyExceedsReserveLimit(uint backingInBPS, uint minBackingInBPS);
 
+    /// @notice Function is only callable by contract's discount Zapper.
+    error OnlyCallableByDiscountZapper();
+
     //--------------------------------------------------------------------------
     // Events
 
@@ -98,7 +101,7 @@ contract Reserve is Ownable, Whitelisted {
 
     modifier onlyDiscountZapper() {
         if (msg.sender != discountZapper) {
-            revert("NOT ZAPPER"); // @todo Custom error.
+            revert OnlyCallableByDiscountZapper();
         }
         _;
     }
@@ -140,7 +143,7 @@ contract Reserve is Ownable, Whitelisted {
 
     /// @notice The Zapper contract being eligible to deposit KTT tokens with
     ///         a discount.
-    /// @dev Changeable by owner. @todo Implement.
+    /// @dev Changeable by owner.
     address public discountZapper;
 
     //--------------------------------------------------------------------------
@@ -210,7 +213,7 @@ contract Reserve is Ownable, Whitelisted {
     ///         corresponding KTT tokens to some address.
     /// @param to The address to withdraw KTT tokens to.
     /// @param kols The amount of KOL tokens to burn.
-    function withdrawFor(address to, uint kols) external onlyWhitelisted {
+    function withdrawTo(address to, uint kols) external onlyWhitelisted {
         return _withdraw(msg.sender, to, kols);
     }
 
@@ -225,7 +228,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @notice Burns all KOL tokens from msg.sender and withdraws
     ///         corresponding KTT tokens to some address.
     /// @param to The address to withdraw KTT tokens to.
-    function withdrawAllFor(address to) external onlyWhitelisted {
+    function withdrawAllTo(address to) external onlyWhitelisted {
         uint kols = _kol.balanceOf(msg.sender);
 
         _withdraw(msg.sender, to, kols);
@@ -360,6 +363,7 @@ contract Reserve is Ownable, Whitelisted {
 
     /// @notice Sets the discount Zapper's address.
     /// @dev Only callable by owner.
+    /// @param who The new discount Zapper's address.
     function setDiscountZapper(address who) external onlyOwner {
         // Note to not require an address unequal to zero to be able to disable
         // the discount functionality.

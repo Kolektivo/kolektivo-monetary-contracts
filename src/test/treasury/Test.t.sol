@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 
-import "forge-std/stdlib.sol";
+import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 
 import "../../Treasury.sol";

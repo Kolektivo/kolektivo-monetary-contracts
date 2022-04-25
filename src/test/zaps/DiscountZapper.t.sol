@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 
-import "forge-std/stdlib.sol";
+import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 
 import "../../zaps/DiscountZapper.sol";
@@ -31,7 +31,7 @@ library Errors {
  *      We do NOT mock any contract that have direct interactions with the
  *      Zapper!
  *      This is due to the Zapper contracts having a low internal complexity
- *      and the contract's interactions being the important thing here.
+ *      and the contract's interactions being the important thing to test.
  */
 contract DiscountZapperTest is DSTest {
     Vm internal constant vm = Vm(HEVM_ADDRESS);
@@ -49,7 +49,7 @@ contract DiscountZapperTest is DSTest {
 
     // Constants copied from SuT.
     uint private constant BPS = 10_000;
-    uint private constant MAX_DISCOUNT = 3_000;
+    uint private constant MAX_DISCOUNT = 3_000; // 30%
 
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.

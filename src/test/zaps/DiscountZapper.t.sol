@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "ds-test/test.sol";
-
 import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 
@@ -33,9 +31,7 @@ library Errors {
  *      This is due to the Zapper contracts having a low internal complexity
  *      and the contract's interactions being the important thing to test.
  */
-contract DiscountZapperTest is DSTest {
-    Vm internal constant vm = Vm(HEVM_ADDRESS);
-
+contract DiscountZapperTest is Test {
     // SuT.
     DiscountZapper zapper;
 

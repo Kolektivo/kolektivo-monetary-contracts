@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "ds-test/test.sol";
-
 import "forge-std/Test.sol";
 import "forge-std/Vm.sol";
 
@@ -42,9 +40,7 @@ library Errors {
  *      Provides setUp functions, access to common test utils and internal
  *      variables used throughout testing.
  */
-contract ReserveTest is DSTest {
-    Vm internal constant vm = Vm(HEVM_ADDRESS);
-
+contract ReserveTest is Test {
     // SuT.
     Reserve reserve;
 

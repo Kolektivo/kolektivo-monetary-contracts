@@ -31,7 +31,13 @@ library Select {
         if (size % 2 == 1) {
             return array[size >> 1];
         } else {
-            return (array[size >> 1] + array[(size >> 1) - 1] >> 1);
+            // Note that an average computation of (a + b) / 2 could overflow.
+            // Therefore the computation is distributed:
+            //      (a / 2) + (b / 2) + (((a % 2) + (b % 2)) / 2).
+            uint a = array[size >> 1];
+            uint b = array[(size >> 1) - 1];
+
+            return (a >> 1) + (b >> 1) + (((a % 2) + (b % 2)) >> 1);
         }
     }
 

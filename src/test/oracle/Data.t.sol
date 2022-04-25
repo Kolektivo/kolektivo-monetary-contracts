@@ -60,17 +60,6 @@ contract OracleData is OracleTest {
         pushValidReport(p1, payload1);
         pushValidReport(p1, payload2);
 
-        // The payloads should not overlow. Otherwise the average can not be
-        // calculated.
-        // Note that we DO NOT check for this in the oracle contract as backend
-        // monitoring should be able to detect this and purge the provider's
-        // reports.
-        unchecked {
-            if (payload1 + payload2 < payload1) {
-                return;
-            }
-        }
-
         // There are 2 report slots per provider. 2 of the 3 providers did not
         // push 2 reports that are considered valid.
         // Therefore, expect an event about missing reports for the 2 providers.
@@ -79,11 +68,15 @@ contract OracleData is OracleTest {
         vm.expectEmit(true, true, true, true);
         emit ReportTimestampOutOfRange(p3);
 
+        // Compute average.
+        uint average = (payload1 / 2) + (payload2 / 2)
+                       + (((payload1 % 2) + (payload2 % 2)) / 2);
+
         // Expect oracle data to be the average to the two report payloads.
         uint result;
         bool valid;
         (result, valid) = oracle.getData();
-        assertEq(result, (payload1 + payload2) / 2);
+        assertEq(result, average);
         assertTrue(valid);
     }
 

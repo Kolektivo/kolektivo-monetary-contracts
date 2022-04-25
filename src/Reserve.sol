@@ -252,6 +252,9 @@ contract Reserve is Ownable, Whitelisted {
         require(discount <= MAX_DISCOUNT);
 
         uint ktts = _ktt.balanceOf(msg.sender);
+        // @todo Should require or just return?
+        // If changed, adjust DepositWithdraw.t.sol::testDepositAllWithDiscountFor.
+        require(ktts != 0);
 
         _ktt.safeTransferFrom(msg.sender, address(this), ktts);
 

@@ -313,9 +313,24 @@ contract ReserveDepositWithdraw is ReserveTest {
         vm.prank(zapper);
         ktt.approve(address(reserve), deposit);
 
+        // Expect revert if deposit amount is zero.
+        if (deposit == 0) {
+            vm.prank(zapper);
+
+            vm.expectRevert(bytes("")); // Empty require statement.
+            reserve.depositAllWithDiscountFor(receiver, discount);
+
+            return;
+        }
+
+        uint discountedTokens = (deposit * discount) / BPS;
+
         // Expect revert if discount would decrease the backing below
         // DEFAULT_MIN_BACKING.
-        if (discount > BPS - DEFAULT_MIN_BACKING) {
+        // Note that this case is NOT triggered if the deposit amount is so
+        // small that the discounted token amount is rounded down to zero, i.e.
+        // discountedToken == 0.
+        if (discount > BPS - DEFAULT_MIN_BACKING && discountedTokens != 0) {
             vm.prank(zapper);
 
             vm.expectRevert(Errors.SupplyExceedsReserveLimit(
@@ -326,8 +341,6 @@ contract ReserveDepositWithdraw is ReserveTest {
 
             return;
         }
-
-        uint discountedTokens = (deposit * discount) / BPS;
         /*
         uint backing =
             discountedTokens == 0

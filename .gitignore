@@ -3,3 +3,4 @@ out/
 keystore/
 */node_modules
 remap-imports.go
+.vscode/

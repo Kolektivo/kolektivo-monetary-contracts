@@ -34,6 +34,10 @@ testReserve: ## Run Reserve tests
 testDiscountZapper: ## Run Discount Zapper tests
 	@forge test -vvv --match-contract "DiscountZapper"
 
+.PHONY: testGeoNFT
+testGeoNFT: ## Run GeoNFT tests
+	@forge test -vvv --match-contract "GeoNFT"
+
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

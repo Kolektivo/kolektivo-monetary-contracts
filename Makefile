@@ -62,7 +62,7 @@ testGeoNFT: ## Run GeoNFT tests
 # Deployment
 
 .PHONY: deployDev
-deployDev: ## Deploy all contracts to a local anvil node
+deployDev: ## Deploy all contracts to a locally running anvil node
 	@forge script scripts/Deployment.sol    \
 		--rpc-url $(RPC_URL)                \
 		--sender $(WALLET_DEPLOYER)         \

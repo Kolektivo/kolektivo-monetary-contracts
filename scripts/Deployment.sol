@@ -24,11 +24,11 @@ contract Deployment is Script {
         _deployReserve();
 
         // Print deployment addresses.
-        console2.log("Deployment of Oracle   at address: ", address(oracle));
-        console2.log("Deployment of GeoNFT   at address: ", address(geoNFT));
-        console2.log("Deployment of Treasury at address: ", address(treasury));
-        console2.log("Deployment of KOL      at address: ", address(kol));
-        console2.log("Deployment of Reserve  at address: ", address(reserve));
+        console2.log("Deployment of Oracle   at address", address(oracle));
+        console2.log("Deployment of GeoNFT   at address", address(geoNFT));
+        console2.log("Deployment of Treasury at address", address(treasury));
+        console2.log("Deployment of KOL      at address", address(kol));
+        console2.log("Deployment of Reserve  at address", address(reserve));
     }
 
     function _deployOracle() private {

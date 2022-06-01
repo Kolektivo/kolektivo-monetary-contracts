@@ -229,8 +229,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         onlyWhitelisted
     {
         address oracle = oraclePerAsset[asset];
-        // Note that this check should NOT be possible to fail.
-        require(oracle != address(0));
+        assert(oracle != address(0));
 
         // Get the current price of the asset.
         uint priceWad;
@@ -272,8 +271,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         onlyWhitelisted
     {
         address oracle = oraclePerAsset[asset];
-        // Note that this check should NOT be possible to fail.
-        require(oracle != address(0));
+        assert(oracle != address(0));
 
         // Get the current price of the asset.
         uint priceWad;
@@ -366,9 +364,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
                 // with the asset's balance and add the asset's valuation to
                 // the total valuation.
                 priceWad = lastPricePerAsset[asset];
-
-                // Note that this check should NOT be possible to fail.
-                require(priceWad != 0);
+                assert(priceWad != 0);
 
                 assetBalanceWad = _convertToWad(asset, assetBalance);
                 totalWad += (assetBalanceWad * priceWad) / 1e18;

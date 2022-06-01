@@ -1,3 +1,17 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                       	Kolektivo Makefile
+#
+# WARNING: This file is part of the git repo. DO NOT INCLUDE SENSITIVE DATA!
+#
+# The Kolektivo smart contracts project uses this Makefile to execute common
+# tasks.
+#
+# The Makefile supports a help command, i.e. `make help`.
+#
+# Expected enviroment variables are defined in the `dev.env` file.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # -----------------------------------------------------------------------------
 # Common
 

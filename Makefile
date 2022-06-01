@@ -1,5 +1,5 @@
-## -----------------------------------------------------------------------------
-## Common
+# -----------------------------------------------------------------------------
+# Common
 
 .PHONY: clean
 clean: ## Remove build artifacts
@@ -17,8 +17,8 @@ update: ## Update dependencies
 test: ## Run whole testsuite
 	@forge test -vvv
 
-## -----------------------------------------------------------------------------
-## Individual Component Tests
+# -----------------------------------------------------------------------------
+# Individual Component Tests
 
 .PHONY: testOracle
 testOracle: ## Run Oracle tests
@@ -44,8 +44,19 @@ testDiscountZapper: ## Run Discount Zapper tests
 testGeoNFT: ## Run GeoNFT tests
 	@forge test -vvv --match-contract "GeoNFT"
 
-## -----------------------------------------------------------------------------
-## Static Analyzers
+# -----------------------------------------------------------------------------
+# Deployment
+
+.PHONY: deployDev
+deployDev: ## Deploy all contracts to a local anvil node
+	@forge script scripts/Deployment.sol    \
+		--rpc-url $(RPC_URL)                \
+		--sender $(WALLET_DEPLOYER)         \
+		--private-key $(WALLET_DEPLOYER_PK) \
+		--broadcast
+
+# -----------------------------------------------------------------------------
+# Static Analyzers
 
 .PHONY: analyze-slither
 analyze-slither: ## Run slither analyzer against project (requires solc-select)
@@ -63,8 +74,8 @@ analyze-mythril: ## Run mythril analyzer against project (requires docker)
 analyze-c4udit: ## Run c4udit analyzer against project
 	@c4udit src
 
-## -----------------------------------------------------------------------------
-## Gas Snapshots and Reports
+# -----------------------------------------------------------------------------
+# Gas Snapshots and Reports
 
 .PHONY: gas-report
 gas-report: ## Run tests with gas reports
@@ -74,8 +85,8 @@ gas-report: ## Run tests with gas reports
 gas-snapshots: ## Create test gas snapshots
 	@forge snapshot
 
-## -----------------------------------------------------------------------------
-## Help Command
+# -----------------------------------------------------------------------------
+# Help Command
 
 .PHONY: help
 help:

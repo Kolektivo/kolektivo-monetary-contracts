@@ -288,7 +288,7 @@ contract ReserveDepositWithdraw is ReserveTest {
         // Set zapper instance.
         reserve.setDiscountZapper(zapper);
 
-        // Expect revert if zapper equal receiver address.
+        // Expect revert if zapper equals receiver address.
         if (zapper == receiver) {
             vm.prank(zapper);
 

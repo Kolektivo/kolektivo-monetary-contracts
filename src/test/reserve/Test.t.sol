@@ -61,7 +61,6 @@ contract ReserveTest is Test {
     // mint/burn.
     event Transfer(address indexed from, address indexed to, uint256 amount);
 
-
     // Mocks.
     ERC20Mock kol;
     ERC20Mock ktt;

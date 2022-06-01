@@ -11,24 +11,23 @@ import "../../GeoNFT.sol";
  * Enables checking for errors with vm.expectRevert(Errors.<Error>).
  */
 library Errors {
-    // Inherited from solrocket/Ownable.sol.
-    bytes internal constant OnlyCallableByOwner
-        = abi.encodeWithSignature("OnlyCallableByOwner()");
+    bytes internal constant OnlyCallableByOwner =
+        abi.encodeWithSignature("OnlyCallableByOwner()");
 
-    bytes internal constant InvalidTokenId
-        = abi.encodeWithSignature("InvalidTokenId()");
+    bytes internal constant InvalidTokenId =
+        abi.encodeWithSignature("InvalidTokenId()");
 
-    bytes internal constant InvalidRecipient
-        = abi.encodeWithSignature("InvalidRecipient()");
+    bytes internal constant InvalidRecipient =
+        abi.encodeWithSignature("InvalidRecipient()");
 
-    bytes internal constant InvalidLatitude
-        = abi.encodeWithSignature("InvalidLatitude()");
+    bytes internal constant InvalidLatitude =
+        abi.encodeWithSignature("InvalidLatitude()");
 
-    bytes internal constant InvalidLongitude
-        = abi.encodeWithSignature("InvalidLongitude()");
+    bytes internal constant InvalidLongitude =
+        abi.encodeWithSignature("InvalidLongitude()");
 
-    bytes internal constant InvalidIdentifier
-        = abi.encodeWithSignature("InvalidIdentifier()");
+    bytes internal constant InvalidIdentifier =
+        abi.encodeWithSignature("InvalidIdentifier()");
 }
 
 /**
@@ -59,4 +58,9 @@ abstract contract GeoNFTTest is Test {
         geoNFT = new GeoNFT(name, symbol);
     }
 
+    // @todo view function untested. Shitty test layout -> make all one file.
+
+    //function _mintTokenTo(address to) internal {
+    //    geoNFT.mint(to, 0, 0, "identifier");
+    //}
 }

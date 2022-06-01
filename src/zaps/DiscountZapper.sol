@@ -39,9 +39,11 @@ contract DiscountZapper is Ownable {
     /// @param asset The asset's address.
     /// @param oldDiscount The asset's old discount in bps.
     /// @param newDiscount The asset's new discount in bps.
-    event DiscountUpdated(address indexed asset,
-                          uint oldDiscount,
-                          uint newDiscount);
+    event DiscountUpdated(
+        address indexed asset,
+        uint oldDiscount,
+        uint newDiscount
+    );
 
     //--------------------------------------------------------------------------
     // Constants

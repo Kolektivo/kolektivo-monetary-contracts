@@ -10,11 +10,14 @@ import {Whitelisted} from "solrocket/Whitelisted.sol";
 import {Treasury} from "./Treasury.sol";
 import {KOL} from "./KOL.sol";
 
-interface IOracle {
-    // Note that the price is expected to be in 18 decimal precision.
-    function getData() external returns (uint, bool);
-}
 
+/**
+ * @notice Reserve
+ *
+ * @dev @todo Docs
+ *
+ * @author byterocket
+ */
 contract Reserve is Ownable, Whitelisted {
     using SafeTransferLib for ERC20;
 
@@ -54,8 +57,10 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev Denominated in bps.
     /// @param oldMinBackingInBPS The old min backing requirement.
     /// @param newMinBackingInBPS The new min backing requirement.
-    event MinBackingInBPSChanged(uint oldMinBackingInBPS,
-                                 uint newMinBackingInBPS);
+    event MinBackingInBPSChanged(
+        uint oldMinBackingInBPS,
+        uint newMinBackingInBPS
+    );
 
     /// @notice Event emitted when the discount Zapper's address changed.
     /// @param from The old discount Zapper's address.
@@ -99,6 +104,7 @@ contract Reserve is Ownable, Whitelisted {
         }
     }
 
+    // @todo Docs
     modifier onlyDiscountZapper() {
         if (msg.sender != discountZapper) {
             revert OnlyCallableByDiscountZapper();
@@ -402,8 +408,8 @@ contract Reserve is Ownable, Whitelisted {
 
     /// @notice Returns the current reserve status.
     /// @return uint: Reserve denominated in USD with 18 decimal precision.
-    ///         uint: Supply denominated in USD with 18 decimal precision.
-    ///         uint: Bps of supply backed by reserve.
+    /// @return uint: Supply denominated in USD with 18 decimal precision.
+    /// @return uint: Bps of supply backed by reserve.
     function reserveStatus() external view returns (uint, uint, uint) {
         return (_reserveAdjusted(), _supply(), _backingInBPS);
     }

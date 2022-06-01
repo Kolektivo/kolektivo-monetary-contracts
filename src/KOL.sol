@@ -50,6 +50,7 @@ contract KOL is ERC20, Ownable, Whitelisted {
         }
         _;
     }
+
     //--------------------------------------------------------------------------
     // Constructor
 

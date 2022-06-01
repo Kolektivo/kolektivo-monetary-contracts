@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-// This library is copied from Ampleforth.
-// See https://github.com/ampleforth/market-oracle.
+/**
+ * @notice Select Library
+ *
+ * @dev Provides functionality to compute the median of a set of uints.
+ *
+ * @author Ampleforth
+ * @author byterocket
+ */
 library Select {
 
     /// @dev Computes the median of the first size elements in the array.

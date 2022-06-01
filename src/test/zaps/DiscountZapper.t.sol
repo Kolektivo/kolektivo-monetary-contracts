@@ -17,11 +17,9 @@ import {OracleMock} from "../utils/mocks/OracleMock.sol";
  * Enables checking for errors with vm.expectRevert(Errors.<Error>).
  */
 library Errors {
-    // Inherited from solrocket/Ownable.sol.
-    bytes internal constant OnlyCallableByOwner
-        = abi.encodeWithSignature("OnlyCallableByOwner()");
+    bytes internal constant OnlyCallableByOwner =
+        abi.encodeWithSignature("OnlyCallableByOwner()");
 }
-
 
 /**
  * @dev DiscountZapper Integration Tests.
@@ -49,9 +47,11 @@ contract DiscountZapperTest is Test {
 
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
-    event DiscountUpdated(address indexed asset,
-                          uint oldDiscount,
-                          uint newDiscount);
+    event DiscountUpdated(
+        address indexed asset,
+        uint oldDiscount,
+        uint newDiscount
+    );
 
     function setUp() public {
         treasury = new Treasury();

@@ -13,10 +13,7 @@ import {
 
 import {IERC20Metadata} from "./interfaces/_external/IERC20Metadata.sol";
 
-interface IOracle {
-    // Note that the price is returned with 18 decimal precision.
-    function getData() external returns (uint, bool);
-}
+import {IOracle} from "./interfaces/IOracle.sol";
 
 /**
  * @title Treasury
@@ -68,10 +65,12 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @param oracle The address of the oracle.
     /// @param oldPrice The cached price before the update.
     /// @param newPrice The cached price after the update.
-    event AssetPriceUpdated(address indexed asset,
-                            address indexed oracle,
-                            uint oldPrice,
-                            uint newPrice);
+    event AssetPriceUpdated(
+        address indexed asset,
+        address indexed oracle,
+        uint oldPrice,
+        uint newPrice
+    );
 
     //----------------------------------
     // onlyOwner Events
@@ -82,8 +81,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @notice Event emitted when an asset is marked as supported.
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    event AssetMarkedAsSupported(address indexed asset,
-                                 address indexed oracle);
+    event AssetMarkedAsSupported(address indexed asset, address indexed oracle);
 
     /// @notice Event emitted when an asset is marked as unsupported.
     /// @param asset The address of the asset.
@@ -93,9 +91,11 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @param asset The address of the asset.
     /// @param oldOracle The address of the asset's old oracle.
     /// @param newOracle The address of the asset's new oracle.
-    event AssetOracleUpdated(address indexed asset,
-                             address indexed oldOracle,
-                             address indexed newOracle);
+    event AssetOracleUpdated(
+        address indexed asset,
+        address indexed oldOracle,
+        address indexed newOracle
+    );
 
     //--------------
     // Un/Bonding Management
@@ -127,17 +127,21 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @param who The address of the user.
     /// @param asset The address of the asset.
     /// @param kttsMinted The number of KTTs minted.
-    event AssetsBonded(address indexed who,
-                       address indexed asset,
-                       uint kttsMinted);
+    event AssetsBonded(
+        address indexed who,
+        address indexed asset,
+        uint kttsMinted
+    );
 
     /// @notice Event emitted when assets are unbonded by some user.
     /// @param who The address of the user.
     /// @param asset The address of the asset.
     /// @param kttsBurned The number of KTTs burned.
-    event AssetsUnbonded(address indexed who,
-                         address indexed asset,
-                         uint kttsBurned);
+    event AssetsUnbonded(
+        address indexed who,
+        address indexed asset,
+        uint kttsBurned
+    );
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -605,6 +609,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
         private
         returns (uint, bool)
     {
+        // Note that the price is returned with 18 decimal precision.
         uint priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();

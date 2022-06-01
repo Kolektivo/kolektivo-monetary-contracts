@@ -5,9 +5,7 @@ import {Ownable} from "solrocket/Ownable.sol";
 
 import "./lib/Select.sol";
 
-interface IOracle {
-    function getData() external returns (uint, bool);
-}
+import {IOracle} from "./interfaces/IOracle.sol";
 
 /**
  * @title Median Oracle
@@ -50,15 +48,19 @@ contract Oracle is Ownable, IOracle {
     /// @param provider The address of the provider who pushed the report.
     /// @param payload The payload of the report.
     /// @param timestamp The timestamp of the report.
-    event ProviderReportPushed(address indexed provider,
-                               uint payload,
-                               uint timestamp);
+    event ProviderReportPushed(
+        address indexed provider,
+        uint payload,
+        uint timestamp
+    );
 
     /// @notice Emitted when reports from a provider are purged.
     /// @param purger The address who purged the reports.
     /// @param provider The address of the provider whos reports were purged.
-    event ProviderReportsPurged(address indexed purger,
-                                address indexed provider);
+    event ProviderReportsPurged(
+        address indexed purger,
+        address indexed provider
+    );
 
     /// @notice Emitted when a report's timestamp is out of range.
     /// @param provider The addresss of the provider whos report was invalid.
@@ -75,8 +77,10 @@ contract Oracle is Ownable, IOracle {
     /// @notice Emitted when the minimum providers needed is changed.
     /// @param oldMinimumProviders The old number of minimum providers.
     /// @param newMinimumProviders The new number of minimum providers.
-    event MinimumProvidersChanged(uint oldMinimumProviders,
-                                  uint newMinimumProviders);
+    event MinimumProvidersChanged(
+        uint oldMinimumProviders,
+        uint newMinimumProviders
+    );
 
     /// @notice Emitted when the oracle is marked as invalid.
     event OracleMarkedAsInvalid();
@@ -223,6 +227,8 @@ contract Oracle is Ownable, IOracle {
     //--------------------------------------------------------------------------
     // Public View Functions
 
+    /// @notice Returns the number of providers eligible to push reports.
+    /// @return uint The number of providers.
     function providersSize() external view returns (uint) {
         return providers.length;
     }

@@ -127,6 +127,7 @@ contract GeoNFT is ERC721, Ownable {
     // Public View Functions
 
     /// @notice Returns the token's data.
+    /// @dev Reverts if token id is invalid.
     /// @param id The token's id.
     /// @return uint The timestamp the token was last modified.
     /// @return int32 The token's latitude coordinate.
@@ -134,12 +135,11 @@ contract GeoNFT is ERC721, Ownable {
     /// @return string The token's string identifier.
     function tokenData(uint id)
         external
+        validTokenId(id)
         view
         returns (uint, int32, int32, string memory)
     {
         TokenData memory data = _tokenData[id];
-
-        // @audit Or should we revert if id is invalid?
 
         return (
             data.lastModified,
@@ -149,6 +149,7 @@ contract GeoNFT is ERC721, Ownable {
         );
     }
 
+    // @todo tokenURI
     function tokenURI(uint id)
         public
         view

@@ -36,10 +36,10 @@ contract Oracle is Ownable, IOracle {
 
     /// @notice Invalid provider.
     /// @param invalidProvider The address of the invalid provider.
-    error InvalidProvider(address invalidProvider);
+    error Oracle__InvalidProvider(address invalidProvider);
 
     /// @notice Report pushed to soon after past report.
-    error NewReportTooSoonAfterPastReport();
+    error Oracle__NewReportTooSoonAfterPastReport();
 
     //--------------------------------------------------------------------------
     // Events
@@ -153,7 +153,7 @@ contract Oracle is Ownable, IOracle {
 
         // Check if provider exists.
         if (timestamps[0] == 0) {
-            revert InvalidProvider(msg.sender);
+            revert Oracle__InvalidProvider(msg.sender);
         }
 
         // Should report be pushed to index 0 or index 1?
@@ -162,7 +162,7 @@ contract Oracle is Ownable, IOracle {
 
         // Check that report is not too soon after the last one.
         if (timestamps[indexRecent] + reportDelay > block.timestamp) {
-            revert NewReportTooSoonAfterPastReport();
+            revert Oracle__NewReportTooSoonAfterPastReport();
         }
 
         // Save new report.
@@ -177,7 +177,7 @@ contract Oracle is Ownable, IOracle {
     function purgeReports() external {
         // Check if provider exists.
         if (providerReports[msg.sender][0].timestamp == 0) {
-            revert InvalidProvider(msg.sender);
+            revert Oracle__InvalidProvider(msg.sender);
         }
 
         emit ProviderReportsPurged(msg.sender, msg.sender);
@@ -278,7 +278,7 @@ contract Oracle is Ownable, IOracle {
     function purgeReportsFrom(address provider) external onlyOwner {
         // Check if provider exists.
         if (providerReports[provider][0].timestamp == 0) {
-            revert InvalidProvider(provider);
+            revert Oracle__InvalidProvider(provider);
         }
 
         emit ProviderReportsPurged(msg.sender, provider);

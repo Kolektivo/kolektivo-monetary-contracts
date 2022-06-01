@@ -21,7 +21,7 @@ library Errors {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "AssetIsNotBondable(address)",
+            "Treasury__AssetIsNotBondable(address)",
             asset
         );
     }
@@ -32,7 +32,7 @@ library Errors {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "AssetIsNotUnbondable(address)",
+            "Treasury__AssetIsNotUnbondable(address)",
             asset
         );
     }
@@ -43,7 +43,7 @@ library Errors {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "AssetIsNotSupported(address)",
+            "Treasury__AssetIsNotSupported(address)",
             asset
         );
     }
@@ -54,7 +54,7 @@ library Errors {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "StalePriceDeliveredByOracle(address,address)",
+            "Treasury__StalePriceDeliveredByOracle(address,address)",
             asset,
             oracle
         );

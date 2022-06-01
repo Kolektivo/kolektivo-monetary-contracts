@@ -27,10 +27,10 @@ contract KOL is ERC20, Ownable, Whitelisted {
     // Errors
 
     /// @notice Invalid token recipient.
-    error InvalidRecipient();
+    error KOL__InvalidRecipient();
 
     /// @notice Invalid token amount.
-    error InvalidAmount();
+    error KOL__InvalidAmount();
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -38,7 +38,7 @@ contract KOL is ERC20, Ownable, Whitelisted {
     /// @dev Modifier to guarantee token recipient is valid.
     modifier validRecipient(address to) {
         if (to == address(0) || to == address(this)) {
-            revert InvalidRecipient();
+            revert KOL__InvalidRecipient();
         }
         _;
     }
@@ -46,7 +46,7 @@ contract KOL is ERC20, Ownable, Whitelisted {
     /// @dev Modifier to guarantee token amount is valid.
     modifier validAmount(uint amount) {
         if (amount == 0) {
-            revert InvalidAmount();
+            revert KOL__InvalidAmount();
         }
         _;
     }

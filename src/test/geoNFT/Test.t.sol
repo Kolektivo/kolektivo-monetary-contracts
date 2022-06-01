@@ -15,19 +15,19 @@ library Errors {
         abi.encodeWithSignature("OnlyCallableByOwner()");
 
     bytes internal constant InvalidTokenId =
-        abi.encodeWithSignature("InvalidTokenId()");
+        abi.encodeWithSignature("GeoNFT__InvalidTokenId()");
 
     bytes internal constant InvalidRecipient =
-        abi.encodeWithSignature("InvalidRecipient()");
+        abi.encodeWithSignature("GeoNFT__InvalidRecipient()");
 
     bytes internal constant InvalidLatitude =
-        abi.encodeWithSignature("InvalidLatitude()");
+        abi.encodeWithSignature("GeoNFT__InvalidLatitude()");
 
     bytes internal constant InvalidLongitude =
-        abi.encodeWithSignature("InvalidLongitude()");
+        abi.encodeWithSignature("GeoNFT__InvalidLongitude()");
 
     bytes internal constant InvalidIdentifier =
-        abi.encodeWithSignature("InvalidIdentifier()");
+        abi.encodeWithSignature("GeoNFT__InvalidIdentifier()");
 }
 
 /**

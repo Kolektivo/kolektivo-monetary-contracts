@@ -27,10 +27,13 @@ contract Reserve is Ownable, Whitelisted {
     /// @notice Supply can not be increased due to exceeding the reserve limit.
     /// @param backingInBPS The backing of supply in bps.
     /// @param minBackingInBPS The min amount of backing allowed, in bps.
-    error SupplyExceedsReserveLimit(uint backingInBPS, uint minBackingInBPS);
+    error Reserve__SupplyExceedsReserveLimit(
+        uint backingInBPS,
+        uint minBackingInBPS
+    );
 
     /// @notice Function is only callable by contract's discount Zapper.
-    error OnlyCallableByDiscountZapper();
+    error Reserve__OnlyCallableByDiscountZapper();
 
     //--------------------------------------------------------------------------
     // Events
@@ -97,7 +100,7 @@ contract Reserve is Ownable, Whitelisted {
 
         // Fail if supply exceeds reserve's backing limit.
         if (_backingInBPS < minBackingInBPS) {
-            revert SupplyExceedsReserveLimit(
+            revert Reserve__SupplyExceedsReserveLimit(
                 _backingInBPS,
                 minBackingInBPS
             );
@@ -107,7 +110,7 @@ contract Reserve is Ownable, Whitelisted {
     // @todo Docs
     modifier onlyDiscountZapper() {
         if (msg.sender != discountZapper) {
-            revert OnlyCallableByDiscountZapper();
+            revert Reserve__OnlyCallableByDiscountZapper();
         }
         _;
     }

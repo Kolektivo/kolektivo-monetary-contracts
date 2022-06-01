@@ -17,13 +17,13 @@ library Errors {
 
     function InvalidProvider(address who) internal pure returns (bytes memory) {
         return abi.encodeWithSignature(
-            "InvalidProvider(address)",
+            "Oracle__InvalidProvider(address)",
             who
         );
     }
 
     bytes internal constant NewReportTooSoonAfterPastReport
-        = abi.encodeWithSignature("NewReportTooSoonAfterPastReport()");
+        = abi.encodeWithSignature("Oracle__NewReportTooSoonAfterPastReport()");
 }
 
 /**

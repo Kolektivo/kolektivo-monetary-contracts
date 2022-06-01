@@ -24,14 +24,14 @@ library Errors {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "SupplyExceedsReserveLimit(uint,uint)",
+            "Reserve__SupplyExceedsReserveLimit(uint,uint)",
             backingInBPS,
             minBackingInBPS
         );
     }
 
     bytes internal constant OnlyCallableByDiscountZapper
-        = abi.encodeWithSignature("OnlyCallableByDiscountZapper()");
+        = abi.encodeWithSignature("Reserve__OnlyCallableByDiscountZapper()");
 }
 
 /**

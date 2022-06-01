@@ -39,20 +39,20 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
     /// @notice Function is only callable for bondable assets.
     /// @param asset The address of the asset.
-    error AssetIsNotBondable(address asset);
+    error Treasury__AssetIsNotBondable(address asset);
 
     /// @notice Function is only callable for unbondable assets.
     /// @param asset The address of the asset.
-    error AssetIsNotUnbondable(address asset);
+    error Treasury__AssetIsNotUnbondable(address asset);
 
     /// @notice Function is only callable for supported assets.
     /// @param asset The address of the asset.
-    error AssetIsNotSupported(address asset);
+    error Treasury__AssetIsNotSupported(address asset);
 
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    error StalePriceDeliveredByOracle(address asset, address oracle);
+    error Treasury__StalePriceDeliveredByOracle(address asset, address oracle);
 
     //--------------------------------------------------------------------------
     // Events
@@ -150,7 +150,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     ///         assets.
     modifier isSupported(address asset) {
         if (oraclePerAsset[asset] == address(0)) {
-            revert AssetIsNotSupported(asset);
+            revert Treasury__AssetIsNotSupported(asset);
         }
         _;
     }
@@ -159,7 +159,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     ///         assets.
     modifier isBondable(address asset) {
         if (!isSupportedForBonding[asset]) {
-            revert AssetIsNotBondable(asset);
+            revert Treasury__AssetIsNotBondable(asset);
         }
         _;
     }
@@ -168,7 +168,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     ///         assets.
     modifier isUnbondable(address asset) {
         if (!isSupportedForUnbonding[asset]) {
-            revert AssetIsNotUnbondable(asset);
+            revert Treasury__AssetIsNotUnbondable(asset);
         }
         _;
     }
@@ -238,7 +238,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
         // Do not use a cached price for bonding.
         if (!valid) {
-            revert StalePriceDeliveredByOracle(asset, oracle);
+            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
         // Convert amount to wad.
@@ -280,7 +280,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
         // Do not use a cached price for unbonding.
         if (!valid) {
-            revert StalePriceDeliveredByOracle(asset, oracle);
+            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
         // Burn KTTs from msg.sender.
@@ -444,7 +444,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
         // Do not accept invalid oracle.
         if (!valid) {
-            revert StalePriceDeliveredByOracle(asset, oracle);
+            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
         // Add asset and oracle to mappings.
@@ -512,7 +512,7 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
 
         // Do not accept invalid oracle.
         if (!valid) {
-            revert StalePriceDeliveredByOracle(asset, oracle);
+            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
         // Update asset's oracle and notify off-chain services.

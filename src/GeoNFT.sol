@@ -42,19 +42,19 @@ contract GeoNFT is ERC721, Ownable {
     // Errors
 
     /// @notice Invalid token id.
-    error InvalidTokenId();
+    error GeoNFT__InvalidTokenId();
 
     /// @notice Invalid token recipient.
-    error InvalidRecipient();
+    error GeoNFT__InvalidRecipient();
 
     /// @notice Invalid latitude coordinate.
-    error InvalidLatitude();
+    error GeoNFT__InvalidLatitude();
 
     /// @notice Invalid longitude coordinate.
-    error InvalidLongitude();
+    error GeoNFT__InvalidLongitude();
 
     /// @notice Invalid identifier.
-    error InvalidIdentifier();
+    error GeoNFT__InvalidIdentifier();
 
     //--------------------------------------------------------------------------
     // Events
@@ -68,7 +68,7 @@ contract GeoNFT is ERC721, Ownable {
     /// @dev Modifier to guarantee token id is valid.
     modifier validTokenId(uint id) {
         if (id > _tokenCounter) {
-            revert InvalidTokenId();
+            revert GeoNFT__InvalidTokenId();
         }
         _;
     }
@@ -76,7 +76,7 @@ contract GeoNFT is ERC721, Ownable {
     /// @dev Modifier to guarantee token recipient is valid.
     modifier validRecipient(address to) {
         if (to == address(0) || to == address(this)) {
-            revert InvalidRecipient();
+            revert GeoNFT__InvalidRecipient();
         }
         _;
     }
@@ -84,7 +84,7 @@ contract GeoNFT is ERC721, Ownable {
     /// @dev Modifier to guarantee latitude coordinate is valid.
     modifier validLatitude(int32 latitude) {
         if (!GeoCoordinates.isValidLatitudeCoordinate(latitude)) {
-            revert InvalidLatitude();
+            revert GeoNFT__InvalidLatitude();
         }
         _;
     }
@@ -92,7 +92,7 @@ contract GeoNFT is ERC721, Ownable {
     /// @dev Modifier to guarantee longitude coordinate is valid.
     modifier validLongitude(int32 longitude) {
         if (!GeoCoordinates.isValidLongitudeCoordinate(longitude)) {
-            revert InvalidLongitude();
+            revert GeoNFT__InvalidLongitude();
         }
         _;
     }
@@ -100,7 +100,7 @@ contract GeoNFT is ERC721, Ownable {
     /// @dev Modifier to guarantee identifier is valid.
     modifier validIdentifier(string memory got) {
         if (bytes(got).length == 0) {
-            revert InvalidIdentifier();
+            revert GeoNFT__InvalidIdentifier();
         }
         _;
     }

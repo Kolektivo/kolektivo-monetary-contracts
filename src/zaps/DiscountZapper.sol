@@ -51,7 +51,7 @@ contract DiscountZapper is Ownable {
     /// @dev 10,000 bps are 100%.
     uint private constant BPS = 10_000;
 
-    // @todo Issue #18.
+    // @todo Issue #18, needs decision.
     /// @dev The max discount allowed is 30%.
     uint private constant MAX_DISCOUNT = 3_000;
 
@@ -115,6 +115,9 @@ contract DiscountZapper is Ownable {
     //--------------------------------------------------------------------------
     // onlyOwner Functions
 
+    /// @notice Sets the discount for a given asset.
+    /// @dev Denomination is in bps.
+    /// @dev Only callable by owner.
     function setDiscountForAsset(address asset, uint discount)
         external
         onlyOwner

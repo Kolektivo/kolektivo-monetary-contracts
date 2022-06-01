@@ -14,7 +14,21 @@ import {KOL} from "./KOL.sol";
 /**
  * @notice Reserve
  *
- * @dev @todo Docs
+ * @dev The Kolektivo reserve manages the KOL supply, a fractional receipt
+ *      money based on on the KTT token.
+ *
+ *      Whitelisted addresses are eligible to deposit KTT tokens to receive
+ *      newly minted KOL tokens or burn KOL tokens to withdraw KTT tokens from
+ *      the reserve. The minting/burning has a *fixed exchange rate* of 1:1.
+ *
+ *      The reserve is owned by an address. This owner manages the whitelist
+ *      mentioned above.
+ *      Furthermore, the owner is eligible to incur debt, i.e. minting KOL
+ *      tokens without depositing KTT tokens, up until the minimum backing
+ *      requirement is reached. The owner can pay debt by burning KOL tokens.
+ *
+ *      Functionality exists to set a discount zapper address that is eligible
+ *      to mint KOL tokens with a discount.
  *
  * @author byterocket
  */
@@ -107,7 +121,7 @@ contract Reserve is Ownable, Whitelisted {
         }
     }
 
-    // @todo Docs
+    /// @dev Modifier to guarantee function is only callable by discount zapper.
     modifier onlyDiscountZapper() {
         if (msg.sender != discountZapper) {
             revert Reserve__OnlyCallableByDiscountZapper();
@@ -124,7 +138,7 @@ contract Reserve is Ownable, Whitelisted {
     /// @dev The min amount in bps of reserve to supply.
     uint private constant MIN_BACKING_IN_BPS = 5_000; // 50%
 
-    // @todo Issue #18.
+    // @todo Issue #18, needs decision.
     /// @dev The max discount allowed for the discountZapper implementation.
     uint private constant MAX_DISCOUNT = 3_000; // 30%
 
@@ -252,6 +266,11 @@ contract Reserve is Ownable, Whitelisted {
     //--------------------------------------------------------------------------
     // onlyDiscountZapper Mutating Functions
 
+    /// @notice Deposits all KTT tokens from discount zapper and mints KOL
+    ///         tokens, with given discount in bps, to given address.
+    /// @dev Only callable by discount zapper.
+    /// @param to The address to mint KOL tokens to.
+    /// @param discount The discount to apply, denominated in bps.
     function depositAllWithDiscountFor(address to, uint discount)
         external
         postambleUpdateBackingAndRequireMinBacking

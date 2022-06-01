@@ -422,6 +422,10 @@ contract Treasury is ElasticReceiptToken, Ownable, Whitelisted {
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
     function supportAsset(address asset, address oracle) external onlyOwner {
+        // Make sure that asset's code is non-empty.
+        // Note that solmate's safeTransferLib does not include this check.
+        require(asset.code.length != 0);
+
         address oldOracle = oraclePerAsset[asset];
 
         // Do nothing if asset is already supported and oracles are the same.

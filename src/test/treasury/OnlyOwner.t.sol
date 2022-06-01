@@ -4,6 +4,7 @@ pragma solidity 0.8.10;
 import "./Test.t.sol";
 
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
+import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
 
 /**
  * @dev onlyOwner Function Tests.
@@ -19,7 +20,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // AssetIsNotSupported instead of OnlyCallableByOwner.
         // Note that the asset also needs a functional oracle to be accepted
         // as supported.
-        address asset = address(1);
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
@@ -122,7 +123,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
     //----------------------------------
     // Asset and Oracle Management
 
-    function testSupportAsset(address asset) public {
+    function testSupportAsset() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
 
@@ -152,7 +155,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         }
     }
 
-    function testSupportAssetCanNotUpdateOracle(address asset) public {
+    function testSupportAssetCanNotUpdateOracle() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
 
@@ -169,7 +174,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         }
     }
 
-    function testSupportAssetDoesNotAcceptInvalidOracle(address asset) public {
+    function testSupportAssetDoesNotAcceptInvalidOracle() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
 
         // Set oracle as invalid but data as non-zero.
@@ -181,9 +188,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAsset(asset, address(oracle));
     }
 
-    function testSupportAssetDoesNotAcceptOraclePriceOfZero(address asset)
-        public
-    {
+    function testSupportAssetDoesNotAcceptOraclePriceOfZero() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
 
         // Set oracle as valid but data as zero.
@@ -195,7 +202,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAsset(asset, address(oracle));
     }
 
-    function testUnsupportAsset(address asset) public {
+    function testUnsupportAsset() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
@@ -223,7 +232,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         }
     }
 
-    function testUpdateAssetOracle(address asset) public {
+    function testUpdateAssetOracle() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle1));
@@ -247,9 +258,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertEq(treasury.lastPricePerAsset(asset), 2);
     }
 
-    function testUpdateAssetOracleDoesNotAcceptInvalidOracle(address asset)
-        public
-    {
+    function testUpdateAssetOracleDoesNotAcceptInvalidOracle() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
@@ -266,9 +277,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.updateAssetOracle(asset, address(oracle2));
     }
 
-    function testUpdateAssetOracleDoesNotAcceptOraclePriceOfZero(address asset)
-        public
-    {
+    function testUpdateAssetOracleDoesNotAcceptOraclePriceOfZero() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
@@ -289,7 +300,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
     //----------------------------------
     // Un/Bonding Management
 
-    function testSupportAssetForBonding(address asset) public {
+    function testSupportAssetForBonding() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
@@ -310,7 +323,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(treasury.isSupportedForBonding(asset));
     }
 
-    function testUnsupportAssetForBonding(address asset) public {
+    function testUnsupportAssetForBonding() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
@@ -329,9 +344,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(!treasury.isSupportedForBonding(asset));
     }
 
-    function testFailSupportAssetForBondingWhileAssetNotSupported(address asset)
-        public
-    {
+    function testFailSupportAssetForBondingWhileAssetNotSupported() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
 
@@ -339,7 +354,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.supportAssetForBonding(asset);
     }
 
-    function testSupportAssetForUnbonding(address asset) public {
+    function testSupportAssetForUnbonding() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
@@ -360,7 +377,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(treasury.isSupportedForUnbonding(asset));
     }
 
-    function testUnsupportAssetForUnbonding(address asset) public {
+    function testUnsupportAssetForUnbonding() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.supportAsset(asset, address(oracle));
@@ -379,11 +398,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertTrue(!treasury.isSupportedForUnbonding(asset));
     }
 
-    function testFailSupportAssetForUnbondingWhileAssetNotSupported(
-        address asset
-    )
-        public
-    {
+    function testFailSupportAssetForUnbondingWhileAssetNotSupported() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
 

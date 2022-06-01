@@ -166,6 +166,8 @@ contract Reserve is Ownable, Whitelisted {
     ) {
         require(kol_ != address(0));
         require(ktt_ != address(0));
+        require(kol_.code.length != 0);
+        require(ktt_.code.length != 0);
         require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
 
         // Set storage.

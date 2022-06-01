@@ -11,6 +11,7 @@ import {Reserve} from "../../Reserve.sol";
 import {KOL} from "../../KOL.sol";
 
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
+import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
 
 /**
  * Errors library for DiscountZapper's custom errors.
@@ -78,7 +79,7 @@ contract DiscountZapperTest is Test {
 
         // This is not strictly necessary because the onlyOwner modifier is
         // executed checking whether the treasury supports the asset.
-        address asset = address(1);
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
         _supportAssetByTreasury(asset);
 
         vm.startPrank(caller);
@@ -87,12 +88,10 @@ contract DiscountZapperTest is Test {
         zapper.setDiscountForAsset(asset, 0);
     }
 
-    function testAddDiscountForAsset(
-        address asset,
-        uint discount
-    ) public {
-        _assumeValidAddress(asset);
+    function testAddDiscountForAsset(uint discount) public {
         vm.assume(discount <= MAX_DISCOUNT);
+
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         // Set asset as being supported by treasury.
         _supportAssetByTreasury(asset);
@@ -109,22 +108,22 @@ contract DiscountZapperTest is Test {
     }
 
     function testAddDiscountForAssetFailsIfAssetNotSupportedByTreasury(
-        address asset,
         uint discount
     ) public {
-        _assumeValidAddress(asset);
         vm.assume(discount <= MAX_DISCOUNT);
+
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         vm.expectRevert(bytes("")); // Empty require statement.
         zapper.setDiscountForAsset(asset, discount);
     }
 
     function testAddDiscountForAssetFailsIfDiscountTooHigh(
-        address asset,
         uint discount
     ) public {
-        _assumeValidAddress(asset);
         vm.assume(discount > MAX_DISCOUNT);
+
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         // Set asset as being supported by treasury.
         _supportAssetByTreasury(asset);
@@ -146,14 +145,6 @@ contract DiscountZapperTest is Test {
 
         // Set asset as being supported for bonding operations by treasury.
         treasury.supportAssetForBonding(asset);
-    }
-
-    function _assumeValidAddress(address who) internal {
-        vm.assume(who != address(0));
-        vm.assume(who != address(this));
-        vm.assume(who != address(treasury));
-        vm.assume(who != address(reserve));
-        vm.assume(who != address(kol));
     }
 
 }

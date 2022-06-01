@@ -1,0 +1,10 @@
+{
+    "filter_paths": "lib",
+    "solc_remaps": [
+        "ds-test/=lib/ds-test/src/",
+        "forge-std/=lib/forge-std/src/",
+        "elastic-receipt-token/=lib/elastic-receipt-token/src/",
+        "solmate/=lib/solmate/src/",
+        "solrocket/=lib/solrocket/src/"
+    ]
+}

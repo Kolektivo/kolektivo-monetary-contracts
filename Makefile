@@ -47,21 +47,21 @@ testGeoNFT: ## Run GeoNFT tests
 ## -----------------------------------------------------------------------------
 ## Static Analyzers
 
-.PHONY: slither
-slither: ## Run slither analyzer against project (requires solc-select)
+.PHONY: analyze-slither
+analyze-slither: ## Run slither analyzer against project (requires solc-select)
 	@solc-select install 0.8.10
 	@solc-select use 0.8.10
 	@slither src
 
 # Something like this:
 # @docker run -v $(pwd):/tmp mythril/myth analyze /tmp/<PATH TO CONTRACT>
-.PHONY: mythril
-mythril: ## Run mythril analyzer against project (requires docker)
+.PHONY: analyze-mythril
+analyze-mythril: ## Run mythril analyzer against project (requires docker)
 	@echo "NOT YET IMPLEMENTED"
 
-.PHONY: c4udit
-c4udit: ## Run c4udit analyzer against project
-	@c4udit src/
+.PHONY: analyze-c4udit
+analyze-c4udit: ## Run c4udit analyzer against project
+	@c4udit src
 
 ## -----------------------------------------------------------------------------
 ## Gas Snapshots and Reports
@@ -79,4 +79,4 @@ gas-snapshots: ## Create test gas snapshots
 
 .PHONY: help
 help:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

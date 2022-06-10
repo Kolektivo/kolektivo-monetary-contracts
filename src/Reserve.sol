@@ -10,12 +10,11 @@ import {Whitelisted} from "solrocket/Whitelisted.sol";
 import {Treasury} from "./Treasury.sol";
 import {KOL} from "./KOL.sol";
 
-
 /**
  * @notice Reserve
  *
  * @dev The Kolektivo reserve manages the KOL supply, a fractional receipt
- *      money based on on the KTT token.
+ *      money based on the KTT token.
  *
  *      Whitelisted addresses are eligible to deposit KTT tokens to receive
  *      newly minted KOL tokens or burn KOL tokens to withdraw KTT tokens from
@@ -431,9 +430,9 @@ contract Reserve is Ownable, Whitelisted {
     }
 
     /// @notice Returns the current reserve status.
-    /// @return uint: Reserve denominated in USD with 18 decimal precision.
-    /// @return uint: Supply denominated in USD with 18 decimal precision.
-    /// @return uint: Bps of supply backed by reserve.
+    /// @return uint Reserve denominated in USD with 18 decimal precision.
+    /// @return uint Supply denominated in USD with 18 decimal precision.
+    /// @return uint Bps of supply backed by reserve.
     function reserveStatus() external view returns (uint, uint, uint) {
         return (_reserveAdjusted(), _supply(), _backingInBPS);
     }

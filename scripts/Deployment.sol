@@ -8,6 +8,22 @@ import {KOL} from "../src/KOL.sol";
 import {Reserve} from "../src/Reserve.sol";
 import {Treasury} from "../src/Treasury.sol";
 
+interface ITSOwnable {
+    function setPendingOwner(address to) external;
+}
+
+/**
+ * @title Kolektivo Deployment Script
+ *
+ * @dev Deploys all contracts and changes the contract's owner.
+ *
+ *      Constructor arguments and owner address are accessed via environment
+ *      variables.
+ *
+ *      Note that the contracts use a Two-Step Transfer Ownable implementation.
+ *      Therefore, the new owner needs to accept the ownership for each
+ *      contract.
+ */
 contract Deployment is Script {
 
     Oracle oracle;
@@ -29,7 +45,39 @@ contract Deployment is Script {
         console2.log("Deployment of Treasury at address", address(treasury));
         console2.log("Deployment of KOL      at address", address(kol));
         console2.log("Deployment of Reserve  at address", address(reserve));
+
+        // Set pending owner for each contract.
+        address pendingOwner = vm.envAddress("TRUSTED_OWNER");
+        require(
+            pendingOwner != address(0),
+            "run: Missing env variable: trusted owner"
+        );
+
+        vm.startBroadcast();
+        {
+            oracle.setPendingOwner(pendingOwner);
+            geoNFT.setPendingOwner(pendingOwner);
+            treasury.setPendingOwner(pendingOwner);
+            kol.setPendingOwner(pendingOwner);
+            reserve.setPendingOwner(pendingOwner);
+        }
+        vm.stopBroadcast();
+
+        // Checks pending owners.
+        assert(oracle.pendingOwner() == pendingOwner);
+        assert(geoNFT.pendingOwner() == pendingOwner);
+        assert(treasury.pendingOwner() == pendingOwner);
+        assert(kol.pendingOwner() == pendingOwner);
+        assert(reserve.pendingOwner() == pendingOwner);
+
+        console2.log(
+            "Owner switch succesfully initiated to address",
+            pendingOwner
+        );
     }
+
+    //--------------------------------------------------------------------------
+    // Deployment Functions
 
     function _deployOracle() private {
         // Read envirvonment variables.

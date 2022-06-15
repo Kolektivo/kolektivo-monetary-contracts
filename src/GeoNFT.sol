@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
 
-import {Ownable} from "solrocket/Ownable.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
 
 import {GeoCoordinates} from "./lib/GeoCoordinates.sol";
 
@@ -21,7 +21,7 @@ import {GeoCoordinates} from "./lib/GeoCoordinates.sol";
  *
  * @author byterocket
  */
-contract GeoNFT is ERC721, Ownable {
+contract GeoNFT is ERC721, TSOwnable {
 
     //--------------------------------------------------------------------------
     // Types

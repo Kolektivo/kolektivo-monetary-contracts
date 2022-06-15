@@ -3,8 +3,6 @@ pragma solidity 0.8.10;
 
 import "./Test.t.sol";
 
-import "../../lib/GeoCoordinates.sol";
-
 /**
  * @dev onlyOwner Function Tests.
  */

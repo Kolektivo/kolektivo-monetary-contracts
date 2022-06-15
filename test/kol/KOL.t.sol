@@ -2,9 +2,8 @@
 pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
 
-import "../../KOL.sol";
+import "src/KOL.sol";
 
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";

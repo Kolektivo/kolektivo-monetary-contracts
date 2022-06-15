@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import {Ownable} from "solrocket/Ownable.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
 
 import "./lib/Select.sol";
 
@@ -24,7 +24,7 @@ import {IOracle} from "./interfaces/IOracle.sol";
  * @author Ampleforth
  * @author byterocket
  */
-contract Oracle is Ownable, IOracle {
+contract Oracle is TSOwnable, IOracle {
 
     struct Report {
         uint timestamp;

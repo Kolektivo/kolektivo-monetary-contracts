@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
-import {Ownable} from "solrocket/Ownable.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
 import {Whitelisted} from "solrocket/Whitelisted.sol";
 
 /**
@@ -19,7 +19,7 @@ import {Whitelisted} from "solrocket/Whitelisted.sol";
  *
  * @author byterocket
  */
-contract KOL is ERC20, Ownable, Whitelisted {
+contract KOL is ERC20, TSOwnable, Whitelisted {
 
     // @todo Issue #15
 

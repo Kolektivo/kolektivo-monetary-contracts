@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
-import {Ownable} from "solrocket/Ownable.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
 
 interface ITreasury {
     function bond(address asset, uint amount) external;
@@ -29,7 +29,7 @@ interface IReserve {
  *
  * @author byterocket
  */
-contract DiscountZapper is Ownable {
+contract DiscountZapper is TSOwnable {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------

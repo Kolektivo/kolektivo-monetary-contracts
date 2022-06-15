@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
-import {Ownable} from "solrocket/Ownable.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
 import {Whitelisted} from "solrocket/Whitelisted.sol";
 
 import {Treasury} from "./Treasury.sol";
@@ -31,7 +31,7 @@ import {KOL} from "./KOL.sol";
  *
  * @author byterocket
  */
-contract Reserve is Ownable, Whitelisted {
+contract Reserve is TSOwnable, Whitelisted {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------

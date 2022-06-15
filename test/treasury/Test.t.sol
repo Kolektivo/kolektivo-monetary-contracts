@@ -2,9 +2,8 @@
 pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
 
-import "../../Treasury.sol";
+import "src/Treasury.sol";
 
 /**
  * Errors library for Treasury's custom errors.

@@ -2,9 +2,8 @@
 pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
 
-import "../../Oracle.sol";
+import "src/Oracle.sol";
 
 /**
  * Errors library for Oracle's custom errors.

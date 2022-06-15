@@ -2,13 +2,11 @@
 pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
 
-import "../../zaps/DiscountZapper.sol";
-
-import {Treasury} from "../../Treasury.sol";
-import {Reserve} from "../../Reserve.sol";
-import {KOL} from "../../KOL.sol";
+import {DiscountZapper} from "src/zaps/DiscountZapper.sol";
+import {Treasury} from "src/Treasury.sol";
+import {Reserve} from "src/Reserve.sol";
+import {KOL} from "src/KOL.sol";
 
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";

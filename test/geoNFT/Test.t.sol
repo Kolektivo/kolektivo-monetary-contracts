@@ -2,9 +2,9 @@
 pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
 
-import "../../GeoNFT.sol";
+import "src/GeoNFT.sol";
+import "src/lib/GeoCoordinates.sol";
 
 /**
  * Errors library for GeoNFT's custom errors.

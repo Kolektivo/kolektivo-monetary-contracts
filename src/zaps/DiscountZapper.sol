@@ -51,7 +51,10 @@ contract DiscountZapper is TSOwnable {
     /// @dev 10,000 bps are 100%.
     uint private constant BPS = 10_000;
 
-    // @todo Issue #18, needs decision.
+    // @todo Issue #18 "What should be the maximum discount allowed?"
+    // Need a decision about the value of the following constant.
+    // Note that this issue is also open in the Reserve.
+
     /// @dev The max discount allowed is 30%.
     uint private constant MAX_DISCOUNT = 3_000;
 

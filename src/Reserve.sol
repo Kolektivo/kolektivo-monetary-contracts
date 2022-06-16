@@ -137,7 +137,10 @@ contract Reserve is TSOwnable, Whitelisted {
     /// @dev The min amount in bps of reserve to supply.
     uint private constant MIN_BACKING_IN_BPS = 5_000; // 50%
 
-    // @todo Issue #18, needs decision.
+    // @todo Issue #18 "What should be the maximum discount allowed?"
+    // Need a decision about the value of the following constant.
+    // Note that this issue is also open in the DiscountZapper.
+
     /// @dev The max discount allowed for the discountZapper implementation.
     uint private constant MAX_DISCOUNT = 3_000; // 30%
 

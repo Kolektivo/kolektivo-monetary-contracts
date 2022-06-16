@@ -149,7 +149,8 @@ contract GeoNFT is ERC721, TSOwnable {
         );
     }
 
-    // @todo tokenURI
+    // @todo Issue #24 "What should be the tokens URI?"
+    // Need a decision about the URI construction.
     function tokenURI(uint id)
         public
         view

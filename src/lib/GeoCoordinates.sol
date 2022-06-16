@@ -38,5 +38,4 @@ library GeoCoordinates {
         return longitude >= MIN_LONGITUDE && longitude <= MAX_LONGITUDE;
     }
 
-
 }

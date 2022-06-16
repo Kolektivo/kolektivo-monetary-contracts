@@ -21,7 +21,12 @@ import {Whitelisted} from "solrocket/Whitelisted.sol";
  */
 contract KOL is ERC20, TSOwnable, Whitelisted {
 
-    // @todo Issue #15
+    // @todo Issue #15 "Not possible to have multiple Reserves mint the same KOL token"
+    // If there should be more than one Reserve being eligible to mint KOL
+    // tokens the contract's architecture needs to be refactored.
+    // - One possibility would be to use a whitelist to grant mint permissions.
+    // - If it is clear that ONLY ONE Reserve should ever be allowed to mint
+    //   it would be possible to make the Reserve itself the KOL token.
 
     //--------------------------------------------------------------------------
     // Errors

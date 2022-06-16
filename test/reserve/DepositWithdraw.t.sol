@@ -313,24 +313,18 @@ contract ReserveDepositWithdraw is ReserveTest {
         vm.prank(zapper);
         ktt.approve(address(reserve), deposit);
 
-        // Expect revert if deposit amount is zero.
-        if (deposit == 0) {
-            vm.prank(zapper);
-
-            vm.expectRevert(bytes("")); // Empty require statement.
-            reserve.depositAllWithDiscountFor(receiver, discount);
-
-            return;
-        }
-
         uint discountedTokens = (deposit * discount) / BPS;
+
+        // Calculate the new resulting backing of the reserve.
+        uint kttSupply = deposit;
+        uint newKOLSupply = kttSupply + discountedTokens;
+        uint newMinBacking = newKOLSupply != 0
+            ? (kttSupply * BPS) / newKOLSupply
+            : BPS;
 
         // Expect revert if discount would decrease the backing below
         // DEFAULT_MIN_BACKING.
-        // Note that this case is NOT triggered if the deposit amount is so
-        // small that the discounted token amount is rounded down to zero, i.e.
-        // discountedToken == 0.
-        if (discount > BPS - DEFAULT_MIN_BACKING && discountedTokens != 0) {
+        if (newMinBacking < MIN_BACKING_IN_BPS) {
             vm.prank(zapper);
 
             vm.expectRevert(Errors.SupplyExceedsReserveLimit(
@@ -341,12 +335,6 @@ contract ReserveDepositWithdraw is ReserveTest {
 
             return;
         }
-        /*
-        uint backing =
-            discountedTokens == 0
-                ? BPS
-                : BPS - discount;
-        */
 
         // Make deposit.
         vm.prank(zapper);
@@ -359,10 +347,8 @@ contract ReserveDepositWithdraw is ReserveTest {
         assertEq(kol.balanceOf(receiver), deposit + discountedTokens);
         assertEq(kol.totalSupply(), deposit + discountedTokens);
 
-        // @todo Compute expected backing and check.
-        //_checkBacking(deposit, deposit + discountedTokens, backing);
+        _checkBacking(kttSupply, newKOLSupply, newMinBacking);
     }
-
 
     //--------------------------------------------------------------------------
     // Owner Deposits/Withdraws
@@ -379,6 +365,10 @@ contract ReserveDepositWithdraw is ReserveTest {
             reserve.deposit(75e16);
         }
         vm.stopPrank();
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit DebtIncurred(address(this), 25e16);
 
         // max debt amount is 25e16 because 75% is debt limit and 75e16 is
         // in the reserve.
@@ -437,6 +427,10 @@ contract ReserveDepositWithdraw is ReserveTest {
         // Incur some debt.
         reserve.incurDebt(250e18); // backing is 75%.
         _checkBacking(750e18, 1_000e18, 7_500);
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit DebtPayed(address(this), 250e18);
 
         // Pay debt back.
         reserve.payDebt(250e18);

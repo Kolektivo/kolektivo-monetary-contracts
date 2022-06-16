@@ -44,6 +44,11 @@ contract DiscountZapperTest is Test {
     uint private constant BPS = 10_000;
     uint private constant MAX_DISCOUNT = 3_000; // 30%
 
+    // Constants copied from elastic-receipt-token.
+    // Note that this is the max supply of KTT tokens supported by the Treasury.
+    // For more info see elastic-receipt-token.
+    uint internal constant MAX_SUPPLY = 1_000_000_000e18;
+
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
     event DiscountUpdated(
@@ -69,6 +74,69 @@ contract DiscountZapperTest is Test {
     //--------------------------------------------------------------------------
     // User Tests
 
+    // Note that this test does not use mocks for the Treasury, Reserve and
+    // KOL token. Only the Oracle and ERC20 asset token are mocked.
+    // This means the setup is quite cumbersome for a test BUT also reflects
+    // the production system more realistically.
+    function testZap(address caller, uint amount) public {
+        vm.assume(amount != 0 && amount < MAX_SUPPLY);
+
+        // @todo Adjust test to have:
+        // - random price of asset
+        // - random discount for asset
+
+        // Setup asset mock and oracle mock.
+        ERC20Mock asset = new ERC20Mock("TOKEN", "TKN", uint8(18));
+        OracleMock oracle = new OracleMock();
+
+        // Set asset price in oracle.
+        oracle.setDataAndValid(1e18, true); // price is 1 USD.
+
+        // Mint assets to caller.
+        asset.mint(caller, amount);
+
+        // Setup Treasury
+        // --------------
+        // Whitelist Zapper for Treasury bonding operations.
+        treasury.addToWhitelist(address(zapper));
+
+        // Mark asset as being supported in Treasury.
+        treasury.supportAsset(address(asset), address(oracle));
+
+        // Mark asset as being bondable in Treasury.
+        treasury.supportAssetForBonding(address(asset));
+
+        // Setup Reserve
+        // -------------
+        // Whitelist Reserve to mint KOL tokens.
+        kol.addToWhitelist(address(reserve));
+
+        // Set Zapper in Reserve.
+        reserve.setDiscountZapper(address(zapper));
+
+        // Setup Caller/User
+        // -----------------
+        // Give permission from caller to Zapper.
+        vm.prank(caller);
+        asset.approve(address(zapper), amount);
+
+        // Execution
+        // ---------
+        // Let caller call Zapper's zap() function.
+        vm.prank(caller);
+        zapper.zap(address(asset), amount);
+
+        // Checks
+        // ------
+        // Check that caller received the correct amount of KOL tokens.
+        assertEq(kol.balanceOf(caller), amount);
+
+        // Check that Zapper does not hold any tokens.
+        assertEq(kol.balanceOf(address(zapper)), 0);
+        assertEq(treasury.balanceOf(address(zapper)), 0); // KTT token.
+
+    }
+
     //--------------------------------------------------------------------------
     // onlyOwner Tests
 
@@ -87,12 +155,17 @@ contract DiscountZapperTest is Test {
     }
 
     function testAddDiscountForAsset(uint discount) public {
-        vm.assume(discount <= MAX_DISCOUNT);
-
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         // Set asset as being supported by treasury.
         _supportAssetByTreasury(asset);
+
+        // Expect revert if discount is higher than MAX_DISCOUNT.
+        if (discount > MAX_DISCOUNT) {
+            vm.expectRevert(bytes("")); // Empty require statement.
+            zapper.setDiscountForAsset(asset, discount);
+            return;
+        }
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
@@ -111,20 +184,6 @@ contract DiscountZapperTest is Test {
         vm.assume(discount <= MAX_DISCOUNT);
 
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
-
-        vm.expectRevert(bytes("")); // Empty require statement.
-        zapper.setDiscountForAsset(asset, discount);
-    }
-
-    function testAddDiscountForAssetFailsIfDiscountTooHigh(
-        uint discount
-    ) public {
-        vm.assume(discount > MAX_DISCOUNT);
-
-        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
-
-        // Set asset as being supported by treasury.
-        _supportAssetByTreasury(asset);
 
         vm.expectRevert(bytes("")); // Empty require statement.
         zapper.setDiscountForAsset(asset, discount);

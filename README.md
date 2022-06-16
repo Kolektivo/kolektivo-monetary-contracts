@@ -2,7 +2,7 @@
 
 # Kolektivo Smart Contracts
 
-> Enabling local impact economies
+> Enabling Local Impact Economies
 
 ## Installation
 

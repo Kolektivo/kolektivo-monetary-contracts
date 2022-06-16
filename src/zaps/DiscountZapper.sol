@@ -101,8 +101,15 @@ contract DiscountZapper is TSOwnable {
     /// @param amount The amount of assets to deposit.
     /// @return True if successful.
     function zap(address asset, uint amount) external returns (bool) {
+        // Note that it's not neccessary to check the asset's code size.
+        // This is due to the asset has to be supported by the treasury
+        // which include this check.
+
         // Fetch assets from msg.sender.
         ERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
+
+        // Give allowance for treasury to spend the asset.
+        ERC20(asset).safeApprove(address(_treasury), amount);
 
         // Bond assets into treasury and receive KTT tokens.
         _treasury.bond(asset, amount);

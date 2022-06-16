@@ -22,4 +22,4 @@ positive side-effect that caller's do not need to include the Interface
 definitions into their codebase.
 
 However, to work against the loss of type information make sure that the
-documentation is sufficint for developers reason about the returned address.
+documentation is sufficint for developers to reason about the returned address.

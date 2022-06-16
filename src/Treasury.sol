@@ -475,18 +475,18 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         uint len = supportedAssets.length;
         for (uint i; i < len; ) {
             if (asset == supportedAssets[i]) {
+                // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
                     supportedAssets[i] = supportedAssets[len - 1];
                 }
                 supportedAssets.pop();
-                // @todo break; ?
+
+                emit AssetMarkedAsUnsupported(asset);
+                break;
             }
 
             unchecked { ++i; }
         }
-
-        // Notify off-chain services.
-        emit AssetMarkedAsUnsupported(asset);
     }
 
     /// @notice Updates the oracle for an asset.

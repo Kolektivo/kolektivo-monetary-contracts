@@ -1,46 +1,38 @@
-<h1 align=center><code>
-Kolektivo Smart Contracts
-</code></h1>
+<img align="right" width="150" height="150" top="100" src="./assets/kolektivo.png">
+
+# Kolektivo Smart Contracts
+
+> Enabling local impact economies
 
 ## Installation
 
-To install with [**DappTools**](https://github.com/dapphub/dapptools):
+The Kolektivo smart contracts are developed using the [foundry toolchain](https://getfoundry.sh).
 
-```sh
-dapp install byterocket/KTT-Reserve
+For installation, run
 ```
-
-To install with [**Foundry**](https://github.com/gakonst/foundry):
-
-```sh
-forge install byterocket/KTT-Reserve
+forge install byterocket/kolektivo-contracts
 ```
 
 ## Usage
 
-Common tasks are executed through a `Makefile`:
+Common tasks are executed through a `Makefile`.
+
+The `Makefile` supports a help command, i.e. `make help`.
 
 ```
-make help
+$ make help
 > build                    Build project
 > clean                    Remove build artifacts
 > test                     Run whole testsuite
-> testKOL                  Run KOL token tests
-> testOracle               Run Oracle tests
-> testReserve              Run Reserve tests
-> testTreasury             Run Treasury tests
 > update                   Update dependencies
+> [...]
 ```
 
-# Dependencies
+## Dependencies
 
 - [byterocket's solrocket](https://github.com/byterocket/solrocket)
 - [merkleplant's ElasticReceiptToken](https://github.com/pmerkleplant/elastic-receipt-token)
 - [Rari Capital's solmate](https://github.com/rari-capital/solmate)
-
-## Test Dependencies
-
-- [brockelmore's forge-std](https://github.com/brockelmore/forge-std)
 
 ## Safety
 

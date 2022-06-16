@@ -48,11 +48,13 @@ contract ReserveTest is Test {
     event BackingInBPSChanged(uint oldBackingInBPS, uint newBackingInBPS);
     event PriceFloorChanged(uint oldPriceFloor, uint newPriceFloor);
     event PriceCeilingChanged(uint oldPriceCeiling, uint newPriceCeiling);
-    event MinBackingInBPSChanged(uint oldMinBackingInBPS,
-                                 uint newMinBackingInBPS);
+    event MinBackingInBPSChanged(
+        uint oldMinBackingInBPS,
+        uint newMinBackingInBPS
+    );
     event DiscountZapperChanged(address indexed from, address indexed to);
-    event IncurredDebt(address indexed who, uint ktts);
-    event PayedDebt(address indexed who, uint ktts);
+    event DebtIncurred(address indexed who, uint ktts);
+    event DebtPayed(address indexed who, uint ktts);
 
     // Events copied from KOL tokens.
     // Note that the Event declarations are needed to test for emission.

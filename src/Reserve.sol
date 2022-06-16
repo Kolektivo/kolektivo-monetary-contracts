@@ -86,12 +86,12 @@ contract Reserve is TSOwnable, Whitelisted {
     /// @notice Event emitted when new debt incurred.
     /// @param who The address who incurred the debt.
     /// @param ktts The debt amount of KTT tokens incurred.
-    event IncurredDebt(address indexed who, uint ktts);
+    event DebtIncurred(address indexed who, uint ktts);
 
     /// @notice Event emitted when debt got repayed.
     /// @param who The address who repayed debt.
     /// @param ktts The debt amount of KTT tokens payed.
-    event PayedDebt(address indexed who, uint ktts);
+    event DebtPayed(address indexed who, uint ktts);
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -362,7 +362,8 @@ contract Reserve is TSOwnable, Whitelisted {
         // Note to not create debt without any reserve backing.
         require(_reserveAdjusted() != 0);
 
-        // @todo Emit event, adjust tests.
+        // Notify off-chain services.
+        emit DebtIncurred(msg.sender, ktts);
 
         // Note that the conversion rate of KOL:KTT is 1:1.
         _kol.mint(msg.sender, ktts);
@@ -379,9 +380,10 @@ contract Reserve is TSOwnable, Whitelisted {
         postambleUpdateBacking
         onlyOwner
     {
-        _kol.burn(msg.sender, kols);
+        // Notify off-chain services.
+        emit DebtPayed(msg.sender, kols);
 
-        // @todo Emit event, adjust tests.
+        _kol.burn(msg.sender, kols);
     }
 
     //----------------------------------

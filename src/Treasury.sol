@@ -465,10 +465,10 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
             return;
         }
 
-        // Remove assets' oracle.
+        // Remove asset's oracle.
         delete oraclePerAsset[asset];
 
-        // Remote asset's last price.
+        // Remove asset's last price.
         delete lastPricePerAsset[asset];
 
         // Remove asset from supportedAssets array.
@@ -479,6 +479,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
                     supportedAssets[i] = supportedAssets[len - 1];
                 }
                 supportedAssets.pop();
+                // @todo break; ?
             }
 
             unchecked { ++i; }
@@ -609,7 +610,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         private
         returns (uint, bool)
     {
-        // Note that the price is returned with 18 decimal precision.
+        // Note that the price is returned in 18 decimal precision.
         uint priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();

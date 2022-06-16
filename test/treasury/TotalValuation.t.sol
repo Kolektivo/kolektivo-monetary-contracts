@@ -25,18 +25,45 @@ contract TreasuryTotalValuation is TreasuryTest {
 
     Asset[] assets;
 
-    function testTotalValuation(uint assetAmount) public {
+    function testTotalValuationWithWadAssets(uint assetAmount) public {
         assetAmount %= MAX_ASSETS;
         if (assetAmount == 0) {
             return;
         }
 
-        uint want = setUpAssets(assetAmount);
+        uint want = setUpWadAssets(assetAmount);
         uint got = treasury.totalValuation();
         assertEq(got, want);
     }
 
-    function setUpAssets(uint amount) public returns (uint) {
+    function testTotalValuationWithNonWadAssets()
+        public
+    {
+        // Asset 1:
+        // price = 1e18, decimals = 20, balance = 1e20
+        // => valuation = 1$
+        OracleMock o1 = new OracleMock();
+        o1.setDataAndValid(1e18, true);
+        ERC20Mock t1 = new ERC20Mock("T1", "Token 1", uint8(20));
+        treasury.supportAsset(address(t1), address(o1));
+        t1.mint(address(treasury), 1e20); // 1 USD
+
+        // Asset 2:
+        // price = 2e18, decimals = 5, balance = 1e5
+        // => valuation = 2$
+        OracleMock o2 = new OracleMock();
+        o2.setDataAndValid(2e18, true);
+        ERC20Mock t2 = new ERC20Mock("T2", "Token 2", uint8(5));
+        treasury.supportAsset(address(t2), address(o2));
+        t2.mint(address(treasury), 1e5); // 2 USD
+
+        assertEq(treasury.totalValuation(), 3e18);
+    }
+
+    //--------------------------------------------------------------------------
+    // Helper
+
+    function setUpWadAssets(uint amount) private returns (uint) {
         uint totalValuation;
 
         for (uint i; i < amount; i++) {
@@ -45,11 +72,9 @@ contract TreasuryTotalValuation is TreasuryTest {
             uint price = (amount % (i+1)) + 1;
             uint balance = amount % (i+1);
 
-            // @todo Only 18 decimals supported.
             price *= 1e18;
             balance *= 1e18;
 
-            // @todo Only 18 decimals supported.
             if (balance != 0) {
                 totalValuation += (price * balance) / 1e18;
             }
@@ -73,30 +98,6 @@ contract TreasuryTotalValuation is TreasuryTest {
         }
 
         return totalValuation;
-    }
-
-    function testTotalValuationWithAssetsWithNonWadAssets()
-        public
-    {
-        // Asset 1:
-        // price = 1e18, decimals = 20, balance = 1e20
-        // => valuation = 1$
-        OracleMock o1 = new OracleMock();
-        o1.setDataAndValid(1e18, true);
-        ERC20Mock t1 = new ERC20Mock("T1", "Token 1", uint8(20));
-        treasury.supportAsset(address(t1), address(o1));
-        t1.mint(address(treasury), 1e20); // 1 USD
-
-        // Asset 2:
-        // price = 2e18, decimals = 5, balance = 1e5
-        // => valuation = 2$
-        OracleMock o2 = new OracleMock();
-        o2.setDataAndValid(2e18, true);
-        ERC20Mock t2 = new ERC20Mock("T2", "Token 2", uint8(5));
-        treasury.supportAsset(address(t2), address(o2));
-        t2.mint(address(treasury), 1e5); // 2 USD
-
-        assertEq(treasury.totalValuation(), 3e18);
     }
 
 }

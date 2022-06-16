@@ -12,3 +12,14 @@ Use empty **require** statements for (input) validation for only-owner functions
 However, if an applicable error type exists already in the codebase, revert using the error type.
 
 Use **assert** statements for internal invariants that should **never** be broken.
+
+### Returning addresses vs. Interface types
+
+Always return addresses instead of concrete interface types.
+
+While this style reduces the semantic meaning of the return types it has the
+positive side-effect that caller's do not need to include the Interface
+definitions into their codebase.
+
+However, to work against the loss of type information make sure that the
+documentation is sufficint for developers reason about the returned address.

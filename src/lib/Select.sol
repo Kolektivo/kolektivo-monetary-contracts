@@ -2,7 +2,7 @@
 pragma solidity 0.8.10;
 
 /**
- * @notice Select Library
+ * @title Select Library
  *
  * @dev Provides functionality to compute the median of a set of uints.
  *
@@ -11,7 +11,7 @@ pragma solidity 0.8.10;
  */
 library Select {
 
-    /// @dev Computes the median of the first size elements in the array.
+    /// @notice Computes the median of the first size elements in the array.
     function computeMedian(uint[] memory array, uint size)
         internal
         pure

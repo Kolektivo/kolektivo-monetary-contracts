@@ -342,7 +342,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
             oracle = oraclePerAsset[asset];
             (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
 
-            // Continue/Break early if there is not asset balance.
+            // Continue/Break early if there is no asset balance.
             // Note to query oracle anyway to update last price.
             if (assetBalance == 0) {
                 if (i + 1 == len) {
@@ -615,7 +615,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
-        // Return false if oracle is invalid or price is zero.
+        // Return (0, false) if oracle is invalid or price is zero.
         if (!valid || priceWad == 0) {
             return (0, false);
         }
@@ -631,6 +631,8 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
 
         return (priceWad, true);
     }
+
+    // @todo Use Wad.sol library.
 
     /// @dev Returns the amount in wad format, i.e. 18 decimal precision.
     function _convertToWad(address asset, uint amount)

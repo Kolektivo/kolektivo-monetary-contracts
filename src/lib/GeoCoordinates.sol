@@ -2,7 +2,7 @@
 pragma solidity 0.8.10;
 
 /**
- * @notice GeoCoordinates Library
+ * @title GeoCoordinates Library
  *
  * @dev Provides functionality to validate latitude and longitude coordinates.
  *

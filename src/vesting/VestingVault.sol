@@ -27,14 +27,9 @@ abstract contract VestingVault is TSOwnable, IVestingVault {
         token = token_;
     }
 
-    function depositFor(
-        address recipient,
-        uint amount,
-        uint endOfVestingTimestamp
-    ) external {
-        // Fetch tokens.
-
-    }
+    function depositFor(address recipient, uint amount, uint vestingDuration)
+        external
+        virtual;
 
     function claim() external virtual;
 

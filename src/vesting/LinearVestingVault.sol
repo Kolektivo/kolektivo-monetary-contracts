@@ -16,16 +16,38 @@ import {VestingVault} from "./VestingVault.sol";
  */
 contract LinearVestingVault is VestingVault {
 
-    constructor(address token_) {
-        require(token_ != address(0));
-        require(token_.code.length != 0);
-
-        token = token_;
+    constructor(address token_) VestingVault(token_) {
+        // NO-OP
     }
 
-    function depositFor(address recipient, uint amount) external {
+    function depositFor(address recipient, uint amount, uint vestingDuration)
+        external
+        override(VestingVault)
+    {
         // Fetch tokens.
 
+    }
+
+    function claim() external override(VestingVault) {
+
+    }
+
+    function vestedFor(address recipient)
+        external
+        override(VestingVault)
+        view
+        returns (uint)
+    {
+        return 0;
+    }
+
+    function unvestedFor(address recipient)
+        external
+        override(VestingVault)
+        view
+        returns (uint)
+    {
+        return 0;
     }
 
 }

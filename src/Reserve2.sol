@@ -188,8 +188,11 @@ contract Reserve2 is TSOwnable, IReserve2 {
     //----------------------------------
     // Bonding Limit Mappings
 
-    /// @dev If max is 0 it's treated as infinte, i.e. no maximum set.
+    /// @dev If limit is 0 it's treated as infinte, i.e. no maximum set.
     mapping(address => uint) public bondingLimitPerERC20;
+
+    // @todo onlyOwner setter functions.
+    mapping(address => uint) public unbondingLimitPerERC20;
 
     //----------------------------------
     // Reserve Management
@@ -211,9 +214,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
         require(token_.code.length != 0);
 
         // Check that tokenOracle delivers valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(tokenOracle_);
-        require(valid);
+        /*uint price = */ _queryOracle(tokenOracle_);
 
         // Check vestingVault's validity.
         require(vestingVault_ != address(0));
@@ -241,31 +242,31 @@ contract Reserve2 is TSOwnable, IReserve2 {
     // @todo Changed function param order of un/bond functions!
 
     function bondERC20(address erc20, uint erc20Amount) external {
-        _bondERC20(msg.sender, msg.sender, erc20, erc20Amount);
+        _bondERC20(erc20, msg.sender, msg.sender, erc20Amount);
     }
 
     function bondERC20For(
-        address to,
         address erc20,
+        address to,
         uint erc20Amount
     ) external {
-        _bondERC20(msg.sender, to, erc20, erc20Amount);
+        _bondERC20(erc20, msg.sender, to, erc20Amount);
     }
 
     function bondERC20All(address erc20) external {
         _bondERC20(
-            msg.sender,
-            msg.sender,
             erc20,
+            msg.sender,
+            msg.sender,
             ERC20(erc20).balanceOf(msg.sender)
         );
     }
 
-    function bondERC20AllFor(address to, address erc20) external {
+    function bondERC20AllFor(address erc20, address to) external {
         _bondERC20(
+            erc20,
             msg.sender,
             to,
-            erc20,
             ERC20(erc20).balanceOf(msg.sender)
         );
     }
@@ -274,11 +275,11 @@ contract Reserve2 is TSOwnable, IReserve2 {
     // Bond ERC721Id Functions
 
     function bondERC721Id(ERC721Id memory erc721Id) external {
-        _bondERC721Id(msg.sender, msg.sender, erc721Id);
+        _bondERC721Id(erc721Id, msg.sender, msg.sender);
     }
 
-    function bondERC721IdFor(address to, ERC721Id memory erc721Id) external {
-        _bondERC721Id(msg.sender, to, erc721Id);
+    function bondERC721IdFor(ERC721Id memory erc721Id, address to) external {
+        _bondERC721Id(erc721Id, msg.sender, to);
     }
 
     //----------------------------------
@@ -288,31 +289,31 @@ contract Reserve2 is TSOwnable, IReserve2 {
     // Unbond ERC20 Functions
 
     function unbondERC20(address erc20, uint tokenAmount) external {
-        _unbondERC20(msg.sender, msg.sender, erc20, tokenAmount);
+        _unbondERC20(erc20, msg.sender, msg.sender, tokenAmount);
     }
 
     function unbondERC20To(
-        address to,
         address erc20,
+        address to,
         uint tokenAmount
     ) external {
-        _unbondERC20(msg.sender, to, erc20, tokenAmount);
+        _unbondERC20(erc20, msg.sender, to, tokenAmount);
     }
 
     function unbondERC20All(address erc20) external {
         _unbondERC20(
-            msg.sender,
-            msg.sender,
             erc20,
+            msg.sender,
+            msg.sender,
             _token.balanceOf(address(this))
         );
     }
 
-    function unbondERC20AllTo(address to, address erc20) external {
+    function unbondERC20AllTo(address erc20, address to) external {
         _unbondERC20(
+            erc20,
             msg.sender,
             to,
-            erc20,
             _token.balanceOf(address(this))
         );
     }
@@ -324,15 +325,15 @@ contract Reserve2 is TSOwnable, IReserve2 {
         ERC721Id memory erc721Id,
         uint tokenAmount
     ) external {
-        _unbondERC721Id(msg.sender, msg.sender, erc721Id, tokenAmount);
+        _unbondERC721Id(erc721Id, msg.sender, msg.sender, tokenAmount);
     }
 
     function unbondERC721IdTo(
-        address to,
         ERC721Id memory erc721Id,
+        address to,
         uint tokenAmount
     ) external {
-        _unbondERC721Id(msg.sender, to, erc721Id, tokenAmount);
+        _unbondERC721Id(erc721Id, msg.sender, to, tokenAmount);
     }
 
     //--------------------------------------------------------------------------
@@ -375,11 +376,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
         require(oldOracle == address(0));
 
         // Check that oracle delivers valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(oracle);
-        if (!valid) {
-            revert("Invalid oracle");
-        }
+        /*uint price = */ _queryOracle(oracle);
 
         // Add erc20 and oracle to mappings.
         supportedERC20s.push(erc20);
@@ -411,11 +408,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
         require(oldOracle == address(0));
 
         // Check that oracle delivers valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(oracle);
-        if (!valid) {
-            revert("Invalid oracle");
-        }
+        /*uint price = */ _queryOracle(oracle);
 
         // Add erc721Id and oracle to mappings.
         supportedERC721Ids.push(erc721Id);
@@ -497,11 +490,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
         }
 
         // Check that new oracle delivers valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(oracle);
-        if (!valid) {
-            revert("Oracle invalid");
-        }
+        /*uint price = */ _queryOracle(oracle);
 
         // Update erc20's oracle and notify off-chain services.
         oraclePerERC20[erc20] = oracle;
@@ -524,11 +513,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
         }
 
         // Check that new oracle delivers valid data.
-        bool valid;
-        (/*price*/, valid) = _queryOracle(oracle);
-        if (!valid) {
-            revert("Oracle invalid");
-        }
+        /*uint price = */ _queryOracle(oracle);
 
         // Update erc721Id's oracle and notify off-chain services.
         oraclePerERC721Id[erc721IdHash] = oracle;
@@ -666,6 +651,8 @@ contract Reserve2 is TSOwnable, IReserve2 {
         uint erc20Amount
     )
         private
+        // Note that if an ERC20 is bondable, it is also supported.
+        // isSupportedERC20(erc20)
         isBondableERC20(erc20)
         isNotExceedingERC20BondingLimit(erc20, erc20Amount)
         validRecipient(to)
@@ -675,35 +662,10 @@ contract Reserve2 is TSOwnable, IReserve2 {
         // Fetch amount of erc20 tokens.
         ERC20(erc20).safeTransferFrom(from, address(this), erc20Amount);
 
-        // Query erc20's price oracle.
-        bool valid;
-        uint priceWad;
-        (priceWad, valid) = _queryOracle(oraclePerERC20[erc20]);
-        if (!valid) {
-            revert("Invalid Oracle");
-        }
-
-        // Calculate the total value of erc20 tokens bonded.
-        uint valuationWad = (erc20Amount * priceWad) / 1e18;
-
-        // Query token's price oracle.
-        // Note that the priceWad and valid variables are re-used.
-        (priceWad, valid) = _queryOracle(_tokenOracle);
-        if (!valid) {
-            revert("Invalid Token Oracle");
-        }
-
-        // Calculate the number of tokens to mint (no discount applied yet).
-        uint toMint = (valuationWad * priceWad) / BPS;
-
-        // Add discount if applicable.
-        uint discount = discountPerERC20[erc20];
-        if (discount != 0) {
-            toMint += (toMint * discount) / BPS;
-        }
+        uint toMint = _getTokenAmountToMint(erc20, erc20Amount);
 
         // Mint tokens.
-        _commitTokenMint(to, toMint, vestingDurationPerERC20[erc20]);
+        _commitERC20TokenMint(erc20, to, toMint);
     }
 
     function _bondERC721Id(
@@ -712,6 +674,8 @@ contract Reserve2 is TSOwnable, IReserve2 {
         address to
     )
         private
+        // Note that if an ERC721Id is bondable, it is also supported.
+        // isSupportedERC721Id(erc721Id)
         isBondableERC721Id(erc721Id)
         validRecipient(to)
         onBeforeUpdateBacking(true)
@@ -726,23 +690,15 @@ contract Reserve2 is TSOwnable, IReserve2 {
         );
 
         // Query erc721Id's price oracle.
-        bool valid;
-        uint priceWad;
-        (priceWad, valid) = _queryOracle(oraclePerERC721Id[erc721IdHash]);
-        if (!valid) {
-            revert("Invalid Oracle");
-        }
+        uint priceWad = _queryOracle(oraclePerERC721Id[erc721IdHash]);
 
         // Note that the price equals the token amount to mint because the
         // amount bonded is always 1 (no discount applied yet).
         uint toMint = priceWad;
 
         // Query token's price oracle.
-        // Note that the priceWad and valid variables are re-used.
-        (priceWad, valid) = _queryOracle(_tokenOracle);
-        if (!valid) {
-            revert("Invalid Token Oracle");
-        }
+        // Note that the priceWad variable is re-used.
+        priceWad = _queryOracle(_tokenOracle);
 
         // Add discount if applicable.
         uint discount = discountPerERC721Id[erc721IdHash];
@@ -751,7 +707,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
         }
 
         // Mint tokens.
-        _commitTokenMint(to, toMint, vestingDurationPerERC721Id[erc721IdHash]);
+        _commitERC721IdTokenMint(erc721IdHash, to, toMint);
     }
 
     //----------------------------------
@@ -774,32 +730,21 @@ contract Reserve2 is TSOwnable, IReserve2 {
         onBeforeUpdateBacking(true)
     {
         // Query token's price oracle.
-        bool valid;
-        uint priceWad;
-        (priceWad, valid) = _queryOracle(_tokenOracle);
-        if (!valid) {
-            revert("Invalid Token Oracle");
-        }
+        uint priceWad = _queryOracle(_tokenOracle);
 
         // Calculate valuation of tokens to burn.
         uint tokenValue = (tokenAmount * priceWad) / 1e18;
 
         // Query erc20's price oracle.
-        // Note that the priceWad and valid variables are re-used.
-        (priceWad, valid) = _queryOracle(_tokenOracle);
-        if (!valid) {
-            revert("Invalid Oracle");
-        }
+        // Note that the priceWad variable is re-used.
+        priceWad = _queryOracle(_tokenOracle);
 
         // Calculate the amount of erc20 tokens to withdraw.
         uint erc20Amount = (tokenValue * 1e18) / priceWad;
 
-        // @todo Check that erc20Amount non-zero.
-
-        // Revert if reserve's erc20 tokens balance insufficient.
-        // @todo Should also have lower limit per ERC20 mapping!
-        if (ERC20(erc20).balanceOf(address(this)) < erc20Amount) {
-            revert("Insufficient Reserve Balance");
+        // Revert in case erc20 tokens are not withdrawable.
+        if (!_isERC20AmountWithdrawable(erc20, erc20Amount)) {
+            revert("ERC20 unbonding limit exceeded");
         }
 
         // Withdraw erc20s and burn tokens.
@@ -821,23 +766,17 @@ contract Reserve2 is TSOwnable, IReserve2 {
         validAmount(tokenAmount)
         onBeforeUpdateBacking(true)
     {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
         // Query token's price oracle.
-        bool valid;
-        uint priceWad;
-        (priceWad, valid) = _queryOracle(_tokenOracle);
-        if (!valid) {
-            revert("Invalid Token Oracle");
-        }
+        uint priceWad = _queryOracle(_tokenOracle);
 
         // Calculate valuation of tokens to burn.
         uint tokenValue = (tokenAmount * priceWad) / 1e18;
 
         // Query erc721Id's price oracle.
-        // Note that the priceWad and valid variables are re-used.
-        (priceWad, valid) = _queryOracle(oraclePerERC721Id[erc721IdHash]);
-        if (!valid) {
-            revert("Invalid Oracle");
-        }
+        // Note that the priceWad variable is re-used.
+        priceWad = _queryOracle(oraclePerERC721Id[erc721IdHash]);
 
         // Revert if valuation of token amount not sufficient.
         if (priceWad > tokenValue) {
@@ -845,8 +784,49 @@ contract Reserve2 is TSOwnable, IReserve2 {
         }
 
         // Withdraw ERC721Id and burn tokens.
-        ERC721(erc721Id.erc721).safeTransfer(to, erc721.id);
+        ERC721(erc721Id.erc721).safeTransferFrom(
+            address(this),
+            to,
+            erc721Id.id
+        );
         _token.burn(from, tokenAmount);
+    }
+
+    function _isERC20AmountWithdrawable(address erc20, uint amount)
+        private
+        returns (bool)
+    {
+        // @todo Check that erc20Amount non-zero.
+        uint balance = ERC20(erc20).balanceOf(address(this));
+        if (balance < amount) {
+            return false;
+        }
+
+        uint limit = unbondingLimitPerERC20[erc20];
+        if (balance - amount < limit) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function _getTokenAmountToMint(address erc20, uint amount)
+        private
+        returns (uint)
+    {
+        // Query erc20's price oracle.
+        uint priceWad = _queryOracle(oraclePerERC20[erc20]);
+
+        // Calculate the total value of erc20 tokens.
+        uint valuationWad = (amount * priceWad) / 1e18;
+
+        // Calculate the number of tokens to mint (no discount applied yet).
+        uint toMint = (valuationWad * _queryOracle(_tokenOracle)) / BPS;
+
+        // Add discount.
+        toMint = _applyDiscount(erc20, toMint);
+
+        return toMint;
     }
 
     //----------------------------------
@@ -874,12 +854,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
 
     function _supplyValuation() private returns (uint) {
         // Query token's price.
-        bool valid;
-        uint priceWad;
-        (priceWad, valid) = _queryOracle(_tokenOracle);
-        if (!valid) {
-            revert("Token Oracle invalid");
-        }
+        uint priceWad = _queryOracle(_tokenOracle);
 
         // Calculate and return total valuation of tokens created.
         return (_token.totalSupply() * priceWad) / 1e18;
@@ -921,10 +896,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
             }
 
             // Query oracle for erc20's price.
-            (priceWad, valid) = _queryOracle(oraclePerERC20[erc20]);
-            if (!valid) {
-                revert("Invalid oracle");
-            }
+            priceWad = _queryOracle(oraclePerERC20[erc20]);
 
             // Add asset's valuation to the total valuation.
             totalWad += (balanceWad * priceWad) / 1e18;
@@ -961,10 +933,7 @@ contract Reserve2 is TSOwnable, IReserve2 {
             }
 
             // Query oracle for erc721Id's price.
-            (priceWad, valid) = _queryOracle(oraclePerERC721Id[erc721IdHash]);
-            if (!valid) {
-                revert("Invalid oracle");
-            }
+            priceWad = _queryOracle(oraclePerERC721Id[erc721IdHash]);
 
             // Add erc721Id's price to the total valuation.
             totalWad += priceWad;
@@ -978,18 +947,19 @@ contract Reserve2 is TSOwnable, IReserve2 {
     //----------------------------------
     // Oracle Functions
 
-    function _queryOracle(address oracle) private returns (uint, bool) {
+    // @todo Rename to something like _getPriceFrom(oracle...);
+    function _queryOracle(address oracle) private returns (uint) {
         // Note that the price is returned in 18 decimal precision.
         uint price;
         bool valid;
         (price, valid) = IOracle(oracle).getData();
 
         if (!valid || price == 0) {
-            // Return (0, false) if oracle is invalid or price is zero.
-            return (0, false);
+            // Revert if oracle is invalid or price is zero.
+            revert("Invalid Oracle");
         } else {
-            // Otherwise return (price, true).
-            return (price, true);
+            // Otherwise return the price.
+            return price;
         }
     }
 
@@ -1007,11 +977,13 @@ contract Reserve2 is TSOwnable, IReserve2 {
     //----------------------------------
     // Minting Functions
 
-    function _commitTokenMint(
+    function _commitERC20TokenMint(
+        address erc20,
         address to,
-        uint amount,
-        uint vestingDuration
+        uint amount
     ) private {
+        uint vestingDuration = vestingDurationPerERC20[erc20];
+
         if (vestingDuration == 0) {
             // No vesting, mint tokens directly to user.
             _token.mint(to, amount);
@@ -1027,6 +999,41 @@ contract Reserve2 is TSOwnable, IReserve2 {
                 vestingDuration
             );
         }
+    }
+
+    function _commitERC721IdTokenMint(
+        bytes32 erc721IdHash,
+        address to,
+        uint amount
+    ) private {
+        uint vestingDuration = vestingDurationPerERC721Id[erc721IdHash];
+
+        if (vestingDuration == 0) {
+            // No vesting, mint tokens directly to user.
+            _token.mint(to, amount);
+        } else {
+            // Vest token via vesting vault.
+            _token.mint(address(this), amount);
+
+            // Note that the tokens are fetched from address(this) to the
+            // vesting vault.
+            _vestingVault.depositFor(
+                to,
+                amount,
+                vestingDuration
+            );
+        }
+    }
+
+    //----------------------------------
+    // Discount Functions
+
+    function _applyDiscount(address erc20, uint amount) private returns (uint) {
+        uint discount = discountPerERC20[erc20];
+
+        return discount == 0
+            ? amount
+            : amount + (amount * discount) / BPS;
     }
 
 }

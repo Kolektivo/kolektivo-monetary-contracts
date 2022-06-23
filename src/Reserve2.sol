@@ -900,13 +900,16 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         // Calculate the amount of tokens to burn.
         uint tokenAmount = (priceWad / _priceOfToken()) * 1e18;
 
-        // Withdraw ERC721Id and burn tokens.
+        // Burn tokens and withdraw ERC721Id.
+        // Note that the ERC721 transfer triggers a callback if the recipient
+        // is a contract. However, reentry should not be a problem as the
+        // transfer is the last operation executed.
+        _token.burn(from, tokenAmount);
         ERC721(erc721Id.erc721).safeTransferFrom(
             address(this),
             to,
             erc721Id.id
         );
-        _token.burn(from, tokenAmount);
     }
 
     function _computeMintAmountGivenERC20(address erc20, uint amount)

@@ -224,8 +224,10 @@ interface IReserve2Owner is IReserve2 {
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
     /// @param oracle The ERC721Id instance's price oracle of type IOracle.
-    function supportERC721Id(ERC721Id memory erc721Id, address oracle)
-        external;
+    function supportERC721Id(
+        ERC721Id memory erc721Id,
+        address oracle
+    ) external;
 
     /// @notice Marks given ERC20 token as being unsupported.
     /// @dev Only callable by owner.
@@ -247,13 +249,16 @@ interface IReserve2Owner is IReserve2 {
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
     /// @param oracle The new ERC721Id instance's price oracle of type IOracle.
-    function updateOracleForERC721Id(ERC721Id memory erc721Id, address oracle)
-        external;
+    function updateOracleForERC721Id(
+        ERC721Id memory erc721Id,
+        address oracle
+    ) external;
 
     //----------------------------------
     // Un/Bonding Management
 
     /// @notice Marks given ERC20 token as supported or unsupported for bonding.
+    /// @dev ERC20 token must be supported already.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param support Whether the ERC20 token should be supported or
@@ -262,15 +267,19 @@ interface IReserve2Owner is IReserve2 {
 
     /// @notice Marks given ERC721Id instance as supported or unsupported for
     ///         bonding.
+    /// @dev ERC721 instance must be supported already.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
     /// @param support Whether the ERC721Id instance should be supported or
     ///                unsupported for bonding.
-    function supportERC721IdForBonding(ERC721Id memory erc721Id, bool support)
-        external;
+    function supportERC721IdForBonding(
+        ERC721Id memory erc721Id,
+        bool support
+    ) external;
 
     /// @notice Marks given ERC20 token as supported or unsupported for
     ///         unbonding.
+    /// @dev ERC20 token must be supported already.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param support Whether the ERC20 token should be supported or
@@ -279,12 +288,15 @@ interface IReserve2Owner is IReserve2 {
 
     /// @notice Marks given ERC721Id instance as supported or unsupported for
     ///         unbonding.
+    /// @dev ERC721 instance must be supported already.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
     /// @param support Whether the ERC721Id instance should be supported or
     ///                unsupported for bonding.
-    function supportERC721IdForUnbonding(ERC721Id memory erc721Id, bool support)
-        external;
+    function supportERC721IdForUnbonding(
+        ERC721Id memory erc721Id,
+        bool support
+    ) external;
 
     /// @notice Sets the maximum balance of given ERC20 token allowed in the
     ///         reserve.
@@ -315,8 +327,10 @@ interface IReserve2Owner is IReserve2 {
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
     /// @param discount The discount for the ERC721Id instance.
-    function setDiscountForERC721Id(ERC721Id memory erc721Id, uint discount)
-        external;
+    function setDiscountForERC721Id(
+        ERC721Id memory erc721Id,
+        uint discount
+    ) external;
 
     //----------------------------------
     // Vesting Management
@@ -338,8 +352,8 @@ interface IReserve2Owner is IReserve2 {
     /// @param vestingDuration The vesting duration for the ERC721Id instance.
     function setVestingForERC721Id(
         ERC721Id memory erc721Id,
-        uint vestingDuration)
-    external;
+        uint vestingDuration
+    ) external;
 
     //---------------------------------
     // Reserve Management

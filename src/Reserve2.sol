@@ -40,6 +40,12 @@ import {Wad} from "./lib/Wad.sol";
         - asset: ERC20 or ERC721Id token.
  */
 
+/**
+ TODOs:
+    - Whitelist for un/bonding etc?
+    - Treasury soll NFT receiver haben
+ */
+
 interface IERC20MintBurn is IERC20 {
     function mint(address to, uint amount) external;
     function burn(address from, uint amount) external;
@@ -180,38 +186,53 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //----------------------------------
     // Asset Mappings
 
+    // @todo How does public function look like?
     address[] public supportedERC20s;
     ERC721Id[] public supportedERC721Ids;
 
-    // address of type ERC20 => address of type IOracle.
+    /// @inheritdoc IReserve2
     mapping(address => address) public oraclePerERC20;
-    // ERC721Id => address of type IOracle.
+
+    /// @inheritdoc IReserve2
     mapping(bytes32 => address) public oraclePerERC721Id;
 
     //----------------------------------
     // Un/Bonding Mappings
 
+    /// @inheritdoc IReserve2
     mapping(address => bool) public isERC20Bondable;
+
+    /// @inheritdoc IReserve2
+    mapping(bytes32 => bool) public isERC721IdBondable;
+
+    /// @inheritdoc IReserve2
     mapping(address => bool) public isERC20Unbondable;
 
-    mapping(bytes32 => bool) public isERC721IdBondable;
+    /// @inheritdoc IReserve2
     mapping(bytes32 => bool) public isERC721IdUnbondable;
 
-    /// @dev If limit is 0 it's treated as infinte, i.e. no maximum set.
+    /// @inheritdoc IReserve2
     mapping(address => uint) public bondingLimitPerERC20;
 
+    /// @inheritdoc IReserve2
     mapping(address => uint) public unbondingLimitPerERC20;
 
     //----------------------------------
     // Discount Mappings
 
+    /// @inheritdoc IReserve2
     mapping(address => uint) public discountPerERC20;
+
+    /// @inheritdoc IReserve2
     mapping(bytes32 => uint) public discountPerERC721Id;
 
     //----------------------------------
     // Vesting Mappings
 
+    /// @inheritdoc IReserve2
     mapping(address => uint) public vestingDurationPerERC20;
+
+    /// @inheritdoc IReserve2
     mapping(bytes32 => uint) public vestingDurationPerERC721Id;
 
     //----------------------------------
@@ -270,10 +291,12 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //--------------
     // Bond ERC20 Functions
 
+    /// @inheritdoc IReserve2
     function bondERC20(address erc20, uint erc20Amount) external {
         _bondERC20(erc20, msg.sender, msg.sender, erc20Amount);
     }
 
+    /// @inheritdoc IReserve2
     function bondERC20For(
         address erc20,
         address to,
@@ -282,6 +305,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         _bondERC20(erc20, msg.sender, to, erc20Amount);
     }
 
+    /// @inheritdoc IReserve2
     function bondERC20All(address erc20) external {
         _bondERC20(
             erc20,
@@ -291,6 +315,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         );
     }
 
+    /// @inheritdoc IReserve2
     function bondERC20AllFor(address erc20, address to) external {
         _bondERC20(
             erc20,
@@ -303,10 +328,12 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //--------------
     // Bond ERC721Id Functions
 
+    /// @inheritdoc IReserve2
     function bondERC721Id(ERC721Id memory erc721Id) external {
         _bondERC721Id(erc721Id, msg.sender, msg.sender);
     }
 
+    /// @inheritdoc IReserve2
     function bondERC721IdFor(ERC721Id memory erc721Id, address to) external {
         _bondERC721Id(erc721Id, msg.sender, to);
     }
@@ -317,10 +344,12 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //--------------
     // Unbond ERC20 Functions
 
+    /// @inheritdoc IReserve2
     function unbondERC20(address erc20, uint tokenAmount) external {
         _unbondERC20(erc20, msg.sender, msg.sender, tokenAmount);
     }
 
+    /// @inheritdoc IReserve2
     function unbondERC20To(
         address erc20,
         address to,
@@ -329,6 +358,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         _unbondERC20(erc20, msg.sender, to, tokenAmount);
     }
 
+    /// @inheritdoc IReserve2
     function unbondERC20All(address erc20) external {
         _unbondERC20(
             erc20,
@@ -338,6 +368,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         );
     }
 
+    /// @inheritdoc IReserve2
     function unbondERC20AllTo(address erc20, address to) external {
         _unbondERC20(
             erc20,
@@ -350,16 +381,15 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //--------------
     // Unbond ERC721Id Functions
 
-    function unbondERC721Id(
-        ERC721Id memory erc721Id
-    ) external {
+    /// @inheritdoc IReserve2
+    function unbondERC721Id(ERC721Id memory erc721Id) external {
         _unbondERC721Id(erc721Id, msg.sender, msg.sender);
     }
 
-    function unbondERC721IdTo(
-        ERC721Id memory erc721Id,
-        address to
-    ) external {
+    /// @inheritdoc IReserve2
+    function unbondERC721IdTo(ERC721Id memory erc721Id, address to)
+        external
+    {
         _unbondERC721Id(erc721Id, msg.sender, to);
     }
 
@@ -587,12 +617,10 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //----------------------------------
     // Un/Bonding Management
 
-    // @todo Should we require that the erc20/erc721Id is already supported before
-    //       being able to add un/bonding support, discount and vesting?
-
     /// @inheritdoc IReserve2Owner
     function supportERC20ForBonding(address erc20, bool support)
         external
+        isSupportedERC20(erc20)
         onlyOwner
     {
         bool oldSupport = isERC20Bondable[erc20];
@@ -606,6 +634,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC721IdForBonding(ERC721Id memory erc721Id, bool support)
         external
+        isSupportedERC721Id(erc721Id)
         onlyOwner
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
@@ -621,6 +650,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC20ForUnbonding(address erc20, bool support)
         external
+        isSupportedERC20(erc20)
         onlyOwner
     {
         bool oldSupport = isERC20Unbondable[erc20];
@@ -634,6 +664,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC721IdForUnbonding(ERC721Id memory erc721Id, bool support)
         external
+        isSupportedERC721Id(erc721Id)
         onlyOwner
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);

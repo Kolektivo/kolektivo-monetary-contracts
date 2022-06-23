@@ -8,7 +8,6 @@ import "./Test.t.sol";
  */
 contract ReserveOnlyOwner is ReserveTest {
 
-
     function testOnlyOwnerFunctionsNotPubliclyCallable(address caller) public {
         vm.assume(caller != reserve.owner());
 

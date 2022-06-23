@@ -580,8 +580,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function updateOracleForERC20(address erc20, address oracle)
         external
-        isSupportedERC20(erc20)
         onlyOwner
+        isSupportedERC20(erc20)
     {
         // Cache old oracle.
         address oldOracle = oraclePerERC20[erc20];
@@ -602,8 +602,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function updateOracleForERC721Id(ERC721Id memory erc721Id, address oracle)
         external
-        isSupportedERC721Id(erc721Id)
         onlyOwner
+        isSupportedERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
@@ -629,8 +629,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC20ForBonding(address erc20, bool support)
         external
-        isSupportedERC20(erc20)
         onlyOwner
+        isSupportedERC20(erc20)
     {
         bool oldSupport = isERC20Bondable[erc20];
 
@@ -643,8 +643,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC721IdForBonding(ERC721Id memory erc721Id, bool support)
         external
-        isSupportedERC721Id(erc721Id)
         onlyOwner
+        isSupportedERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
@@ -659,8 +659,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC20ForUnbonding(address erc20, bool support)
         external
-        isSupportedERC20(erc20)
         onlyOwner
+        isSupportedERC20(erc20)
     {
         bool oldSupport = isERC20Unbondable[erc20];
 
@@ -673,8 +673,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function supportERC721IdForUnbonding(ERC721Id memory erc721Id, bool support)
         external
-        isSupportedERC721Id(erc721Id)
         onlyOwner
+        isSupportedERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
@@ -812,8 +812,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function incurDebt(uint amount)
         external
-        onBeforeUpdateBacking(true)
         onlyOwner
+        onBeforeUpdateBacking(true)
     {
         // Mint tokens, i.e. create debt.
         _token.mint(msg.sender, amount);
@@ -825,11 +825,11 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @inheritdoc IReserve2Owner
     function payDebt(uint amount)
         external
+        onlyOwner
         // Note that min backing is not enforced. Otherwise it would be
         // impossible to partially repay debt after valuation contracted to
         // below min backing requirement.
         onBeforeUpdateBacking(false)
-        onlyOwner
     {
         // Burn tokens, i.e. repay debt.
         _token.burn(msg.sender, amount);

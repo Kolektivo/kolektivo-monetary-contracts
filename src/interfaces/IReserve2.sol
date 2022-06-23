@@ -198,17 +198,24 @@ interface IReserve2 {
     /// @return uint BPS of supply backed by reserve.
     function reserveStatus() external returns (uint, uint, uint);
 
-
     //--------------------------------------------------------------------------
     // View Functions
 
     /// @notice Returns the token address the reserve is backing.
     function token() external view returns (address);
 
-    /// @notice Returns the reserve's token's price oracle address.
-    /// @dev Changeable by owner.
-    /// @dev Is of type IOracle.
-    function tokenOracle() external view returns (address);
+    /// @notice Returns the hash identifier gor given ERC721Id instance.
+    /// @param erc721Id The ERC721Id instance.
+    /// @return The hash identifier for given ERC721Id instance.
+    function hashOfERC721Id(ERC721Id memory erc721Id)
+        external
+        pure
+        returns (bytes32);
+
+    // @todo supported arrays.
+
+    //----------------------------------
+    // Vesting View Functions
 
     /// @notice Returns the reserve's vesting vault address used for vested
     ///         bonding operations.
@@ -216,7 +223,13 @@ interface IReserve2 {
     /// @dev Is of type IVestingVault.
     function vestingVault() external view returns (address);
 
-    // @todo supported arrays.
+    //----------------------------------
+    // Oracle View Functions
+
+    /// @notice Returns the reserve's token's price oracle address.
+    /// @dev Changeable by owner.
+    /// @dev Is of type IOracle.
+    function tokenOracle() external view returns (address);
 
     /// @notice Returns the price oracle for given ERC20 token address.
     /// @param erc20 The ERC20 token address.

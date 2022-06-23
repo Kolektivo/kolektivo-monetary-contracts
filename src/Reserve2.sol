@@ -409,6 +409,15 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         return address(_token);
     }
 
+    /// @inheritdoc IReserve2
+    function hashOfERC721Id(ERC721Id memory erc721Id)
+        external
+        pure
+        returns (bytes32)
+    {
+        return _hashOfERC721Id(erc721Id);
+    }
+
     //--------------------------------------------------------------------------
     // onlyOwner Functions
 

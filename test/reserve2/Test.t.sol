@@ -33,11 +33,11 @@ contract Reserve2Test is Test {
     Reserve2 reserve;
 
     // Mocks.
-    ERC20Mock token;                  // The reserve token.
-    OracleMock tokenOracle;           // The reserve token's price oracle.
-    VestingVaultMock vestingVault;    // The vesting vault for ERC20 bondings.
-    ERC721Mock nft;                   // A ERC721 contract.
-    OracleMock defaultERC721IdOracle; // The default ERC721Id's price oracle.
+    ERC20Mock token;                  // The reserve token
+    OracleMock tokenOracle;           // The reserve token's price oracle
+    VestingVaultMock vestingVault;    // The vesting vault for ERC20 bondings
+    ERC721Mock nft;                   // A ERC721 contract
+    OracleMock defaultERC721IdOracle; // The default ERC721Id's price oracle
 
     // Test constants.
     uint constant DEFAULT_MIN_BACKING = 7_500; // 75%

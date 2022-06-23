@@ -104,7 +104,59 @@ contract Reserve2OnlyOwner is Reserve2Test {
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.payDebt(1e18);
-
     }
 
+    //----------------------------------
+    // Emergency Functions
+
+    function testExecuteTx() public {
+        // Call a public callable function on the reserve2.
+        address target = address(reserve);
+        bytes memory data = abi.encodeWithSignature(
+            "token()"
+        );
+
+        reserve.executeTx(target, data);
+    }
+
+    //----------------------------------
+    // Token Management
+
+    function testSetTokenOracle() public {
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        // @todo Test: Check event emission
+        reserve.setTokenOracle(address(o));
+    }
+
+    function testSetTokenOracle_NotAcceptedIfInvalid() public {
+        // Invalid oracle is not accepted.
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, false);
+
+        vm.expectRevert(bytes("")); // Empty require statement
+        reserve.setTokenOracle(address(o));
+
+        // Oracle delivering price of zero is not accepted.
+        o.setDataAndValid(0, true);
+
+        vm.expectRevert(bytes("")); // Empty require statement
+        reserve.setTokenOracle(address(o));
+    }
+
+    //----------------------------------
+    // Asset Management
+
+    //----------------------------------
+    // Un/Bonding Management
+
+    //----------------------------------
+    // Discount Management
+
+    //----------------------------------
+    // Vesting Management
+
+    //---------------------------------
+    // Reserve Management
 }

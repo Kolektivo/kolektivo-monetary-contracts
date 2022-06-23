@@ -155,7 +155,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         _;
     }
 
-    /// @notice Modifier to guarantee function is only callable for bondable
+    /// @notice Modifier to guarantee function is only callable with bondable
     ///         assets.
     modifier isBondable(address asset) {
         if (!isSupportedForBonding[asset]) {
@@ -164,7 +164,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         _;
     }
 
-    /// @notice Modifier to guarantee function is only callable for unbondable
+    /// @notice Modifier to guarantee function is only callable with unbondable
     ///         assets.
     modifier isUnbondable(address asset) {
         if (!isSupportedForUnbonding[asset]) {

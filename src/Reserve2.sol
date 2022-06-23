@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
+// External Interfaces.
 import {IERC20} from "./interfaces/_external/IERC20.sol";
 
+// External Contracts.
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-
 import {TSOwnable} from "solrocket/TSOwnable.sol";
 import {Whitelisted} from "solrocket/Whitelisted.sol";
 
-import {Treasury} from "./Treasury.sol";
+// External Libraries.
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
+// Internal Interfaces.
 import {IOracle} from "./interfaces/IOracle.sol";
 import {IVestingVault} from "./interfaces/IVestingVault.sol";
-import {IReserve2} from "./interfaces/IReserve2.sol";
-import {IReserve2Owner} from "./interfaces/IReserve2Owner.sol";
+import {IReserve2Owner, IReserve2} from "./interfaces/IReserve2Owner.sol";
 
+// Internal Libraries.
 import {Wad} from "./lib/Wad.sol";
 
 /**
@@ -50,12 +52,13 @@ interface IERC20MintBurn is IERC20 {
  *
  * @author byterocket
  */
-contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
+contract Reserve2 is TSOwnable, IReserve2Owner {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
     // Modifiers
 
+    /// @dev Modifier to guarantee token recipient is valid.
     modifier validRecipient(address to) {
         if (to == address(0) || to == address(this)) {
             revert("Invalid recipient");
@@ -63,6 +66,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee token amount is valid.
     modifier validAmount(uint amount) {
         if (amount == 0) {
             revert("Invalid amount");
@@ -70,6 +74,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee function is only callable for supported
+    ///      ERC20 token.
     modifier isSupportedERC20(address erc20) {
         if (oraclePerERC20[erc20] == address(0)) {
             revert("ERC20 not supported");
@@ -77,6 +83,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee function is only callable for supported
+    ///      ERC721Id instances.
     modifier isSupportedERC721Id(ERC721Id memory erc721) {
         if (oraclePerERC721Id[_hashOfERC721Id(erc721)] == address(0)) {
             revert("ERC721Id not supported");
@@ -84,6 +92,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee function is only callable with bondable
+    ///      ERC20 token.
     modifier isBondableERC20(address erc20) {
         if (!isERC20Bondable[erc20]) {
             revert("ERC20 not bondable");
@@ -91,6 +101,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee function is only callable with bondable
+    ///      ERC721Id instances.
     modifier isBondableERC721Id(ERC721Id memory erc721Id) {
         if (!isERC721IdBondable[_hashOfERC721Id(erc721Id)]) {
             revert("ERC721Id not bondable");
@@ -98,6 +110,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee function is only callable with unbondable
+    ///      ERC20 token.
     modifier isUnbondableERC20(address erc20) {
         if (!isERC20Unbondable[erc20]) {
             revert("ERC20 not unbondable");
@@ -105,6 +119,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee function is only callable with unbondable
+    ///      ERC721Id instances.
     modifier isUnbondableERC721Id(ERC721Id memory erc721Id) {
         if (!isERC721IdUnbondable[_hashOfERC721Id(erc721Id)]) {
             revert("ERC721Id not unbondable");
@@ -112,6 +128,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to guarantee an ERC20 token bonding with given amount
+    ///      does not exceed the bonding limit.
     modifier isNotExceedingERC20BondingLimit(address erc20, uint amount) {
         uint balance = ERC20(erc20).balanceOf(address(this));
         uint limit = bondingLimitPerERC20[erc20];
@@ -124,6 +142,10 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         _;
     }
 
+    /// @dev Modifier to update the internal backing ratio after a function
+    ///      execution.
+    /// @param requireMinBacking Whether the call should revert if the minimal
+    ///                          backing requirement is not met anymore.
     modifier onBeforeUpdateBacking(bool requireMinBacking) {
         _;
 
@@ -372,6 +394,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     //----------------------------------
     // Token Management
 
+    /// @inheritdoc IReserve2Owner
     function setTokenOracle(address tokenOracle_) external onlyOwner {
         if (tokenOracle != tokenOracle_) {
             // Check oracle's validity.
@@ -385,6 +408,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     //----------------------------------
     // Asset Management
 
+    /// @inheritdoc IReserve2Owner
     function supportERC20(address erc20, address oracle) external onlyOwner {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's SafeTransferLib does not include this check.
@@ -412,6 +436,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         // @todo emit event.
     }
 
+    /// @inheritdoc IReserve2Owner
     function supportERC721Id(ERC721Id memory erc721Id, address oracle)
         external
         onlyOwner
@@ -444,6 +469,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         // @todo Emit event.
     }
 
+    /// @inheritdoc IReserve2Owner
     function unsupportERC20(address erc20) external onlyOwner {
         // Do nothing if erc20 is already not supported.
         // Note that we do not use the isSupportedERC20 modifier to be idempotent.
@@ -472,6 +498,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function unsupportERC721Id(ERC721Id memory erc721Id) external onlyOwner {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
@@ -502,6 +529,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function updateOracleForERC20(address erc20, address oracle)
         external
         isSupportedERC20(erc20)
@@ -523,6 +551,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         // @todo Emit event.
     }
 
+    /// @inheritdoc IReserve2Owner
     function updateOracleForERC721Id(ERC721Id memory erc721Id, address oracle)
         external
         isSupportedERC721Id(erc721Id)
@@ -549,6 +578,10 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     //----------------------------------
     // Un/Bonding Management
 
+    // @todo Should we require that the erc20/erc721Id is already supported before
+    //       being able to add un/bonding support, discount and vesting?
+
+    /// @inheritdoc IReserve2Owner
     function supportERC20ForBonding(address erc20)
         external
         onlyOwner
@@ -559,6 +592,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function supportERC721IdForBonding(ERC721Id memory erc721Id)
         external
         onlyOwner
@@ -571,6 +605,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function unsupportERC20ForBonding(address erc20)
         external
         onlyOwner
@@ -581,6 +616,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function unsupportERC721IdForBonding(ERC721Id memory erc721Id)
         external
         onlyOwner
@@ -594,6 +630,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
 
     }
 
+    /// @inheritdoc IReserve2Owner
     function supportERC20ForUnbonding(address erc20)
         external
         onlyOwner
@@ -604,7 +641,8 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
-    function supportERC721IdForUndbonding(ERC721Id memory erc721Id)
+    /// @inheritdoc IReserve2Owner
+    function supportERC721IdForUnbonding(ERC721Id memory erc721Id)
         external
         onlyOwner
     {
@@ -616,6 +654,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function unsupportERC20ForUnbonding(address erc20)
         external
         onlyOwner
@@ -626,6 +665,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function unsupportERC721IdForUnbonding(ERC721Id memory erc721Id)
         external
         onlyOwner
@@ -638,6 +678,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function setERC20BondingLimit(address erc20, uint limit)
         external
         onlyOwner
@@ -650,6 +691,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function setERC20UnbondingLimit(address erc20, uint limit)
         external
         onlyOwner
@@ -665,6 +707,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     //----------------------------------
     // Discount Management
 
+    /// @inheritdoc IReserve2Owner
     function setDiscountForERC20(address erc20, uint discount)
         external
         onlyOwner
@@ -678,6 +721,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function setDiscountForERC721Id(ERC721Id memory erc721Id, uint discount)
         external
         onlyOwner
@@ -696,6 +740,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     //----------------------------------
     // Vesting Management
 
+    /// @inheritdoc IReserve2Owner
     function setVestingVault(address vestingVault_) external onlyOwner {
         if (vestingVault != vestingVault_) {
             // Check new vesting vault's validity.
@@ -712,30 +757,32 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
-    function setVestingForERC20(address erc20, uint vesting)
+    /// @inheritdoc IReserve2Owner
+    function setVestingForERC20(address erc20, uint vestingDuration)
         external
         onlyOwner
     {
         // Cache old vesting.
-        uint oldVesting = vestingDurationPerERC20[erc20];
+        uint oldVestingDuration = vestingDurationPerERC20[erc20];
 
-        if (vesting != oldVesting) {
-            vestingDurationPerERC20[erc20] = vesting;
+        if (vestingDuration != oldVestingDuration) {
+            vestingDurationPerERC20[erc20] = vestingDuration;
             // @todo Emit event.
         }
     }
 
-    function setVestingForERC721Id(ERC721Id memory erc721Id, uint vesting)
-        external
-        onlyOwner
-    {
+    /// @inheritdoc IReserve2Owner
+    function setVestingForERC721Id(
+        ERC721Id memory erc721Id,
+        uint vestingDuration
+    ) external onlyOwner {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
         // Cache old vesting.
-        uint oldVesting = vestingDurationPerERC721Id[erc721IdHash];
+        uint oldVestingDuration = vestingDurationPerERC721Id[erc721IdHash];
 
-        if (vesting != oldVesting) {
-            vestingDurationPerERC721Id[erc721IdHash] = vesting;
+        if (vestingDuration != oldVestingDuration) {
+            vestingDurationPerERC721Id[erc721IdHash] = vestingDuration;
             // @todo Emit event.
         }
     }
@@ -743,6 +790,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     //----------------------------------
     // Reserve Management
 
+    /// @inheritdoc IReserve2Owner
     function setMinBacking(uint minBacking_) external onlyOwner {
         // @todo Disallow setting minBacking lower than current backing?
 
@@ -752,6 +800,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         }
     }
 
+    /// @inheritdoc IReserve2Owner
     function incurDebt(uint amount)
         external
         onBeforeUpdateBacking(true)
@@ -764,6 +813,7 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         // @todo Emit event.
     }
 
+    /// @inheritdoc IReserve2Owner
     function payDebt(uint amount)
         external
         // Note that min backing is not enforced. Otherwise it would be
@@ -1113,17 +1163,6 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
     }
 
     //----------------------------------
-    // ERC721Id Helper Functions
-
-    function _hashOfERC721Id(ERC721Id memory erc721Id)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(erc721Id));
-    }
-
-    //----------------------------------
     // Minting Functions
 
     function _commitTokenMintGivenERC20(
@@ -1199,6 +1238,17 @@ contract Reserve2 is TSOwnable, IReserve2, IReserve2Owner {
         return discount == 0
             ? amount
             : amount + (amount * discount) / BPS;
+    }
+
+    //----------------------------------
+    // ERC721Id Helper Functions
+
+    function _hashOfERC721Id(ERC721Id memory erc721Id)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(erc721Id));
     }
 
 }

@@ -16,10 +16,6 @@ interface IReserve2 {
         uint id;
     }
 
-    struct VestedDeposit {
-        uint nonEmpty; // solidity: Defining empty struct disallowed.
-    }
-
     // @todo Define:
     // - error types
     // - function with docs

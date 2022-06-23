@@ -4,33 +4,112 @@ pragma solidity ^0.8.0;
 /**
  * @title Interface for the public functionality of the Reserve2
  *
- * @dev This interfaces declares the public functionality, struct and error
+ * @dev This interfaces declares the public functionality, structs and error
  *      types, and events for the Reserve2 contract.
  *
  * @author byterocket
  */
 interface IReserve2 {
 
+    /// @notice An ERC721Id defines one specific ERC721 NFT token.
+    ///         It is composed of the ERC721 contract address and the token's
+    ///         id.
     struct ERC721Id {
+        /// @dev The ERC721 contract address.
         address erc721;
+        /// @dev The token's id.
         uint id;
     }
 
-    // @todo Define:
-    // - error types
-    // - function with docs
-    // - structs
+    //--------------------------------------------------------------------------
+    // Errors
+
+    /// @notice Given token recipient invalid.
+    error Reserve2__InvalidRecipient();
+
+    /// @notice Given token amount invalid.
+    error Reserve2__InvalidAmount();
+
+    /// @notice Given ERC20 token address not supported.
+    error Reserve2__ERC20NotSupported();
+
+    /// @notice Given ERC721Id instance not supported.
+    error Reserve2__ERC721IdNotSupported();
+
+    /// @notice Given ERC20 token address not bondable.
+    error Reserve2__ERC20NotBondable();
+
+    /// @notice Given ERC721 instance not bondable.
+    error Reserve2__ERC721NotBondable();
+
+    /// @notice Given ERC20 token address not unbondable.
+    error Reserve2__ERC20NotUnbondable();
+
+    /// @notice Given ERC721 instance not unbondable.
+    error Reserve2__ERC721NotUnbondable();
+
+    /// @notice Bonding operation exceeded reserve's bonding limit for given
+    ///         ERC20 token address.
+    error Reserve2__ERC20BondingLimitExceeded();
+
+    /// @notice Unbonding operation exceeded reserve's unbonding limit for
+    ///         given ERC20 token address.
+    error Reserve2__ERC20UnbondingLimitExceeded();
+
+    /// @notice Reserve's balance for given ERC20 token address no sufficient.
+    error Reserve2__ERC20BalanceNotSufficient();
+
+    /// @notice Reserve's minimum backing limit exceeded.
+    error Reserve2__MinimumBackingLimitExceeded();
+
+    /// @notice Reserve received invalid oracle response.
+    error Reserve2__InvalidOracle();
+
+    //--------------------------------------------------------------------------
+    // Events
+
+    /// @notice Event emitted when reserve's backing ratio updated.
+    /// @param oldBacking The old backing percentage, denominated in bps.
+    /// @param newBacking The new backing percentage, denominated in bps.
+    event BackingUpdated(uint oldBacking, uint newBacking);
+
+    /// @notice Event emitted when ERC20 bonding operation succeeded.
+    /// @param erc20 The ERC20 token address.
+    /// @param erc20sBonded The amount of ERC20 tokens bonded.
+    /// @param tokensMinted The amount of reserve tokens minted.
+    event BondedERC20(
+        address indexed erc20,
+        uint erc20sBonded,
+        uint tokensMinted
+    );
+
+    /// @notice Event emitted when ERC721Id instance bonding operation
+    ///         succeeded.
+    /// @param erc721Id The ERC721 instance.
+    /// @param tokensMinted The amount of reserve tokens minted.
+    event BondedERC721(ERC721Id erc721Id, uint tokensMinted);
+
+    /// @notice Event emitted when ERC20 unbonding operation succeeded.
+    /// @param erc20 The ERC20 token address.
+    /// @param erc20sUnbonded The amount of ERC20 tokens unbonded.
+    /// @param tokensBurned The amount of reserve tokens burned.
+    event UnbondedERC20(
+        address indexed erc20,
+        uint erc20sUnbonded,
+        uint tokensBurned
+    );
+
+    /// @notice Event emitted when ERC721Id instance unbonding operation
+    ///         succeeded.
+    /// @param erc721Id The ERC721 instance.
+    /// @param tokensBurned The amount of reserve tokens burned.
+    event UnbondedERC721Id(ERC721Id erc721Id, uint tokensBurned);
 
     //--------------------------------------------------------------------------
     // Mutating Functions
 
-    /// @notice Returns the current Reserve's status.
-    /// @dev Note that this function does not mutate any state in the reserve.
-    ///      It is safe to see it as "view".
-    /// @return uint Reserve asset's valuation in USD with 18 decimal precision.
-    /// @return uint Token supply's valuation in USD with 18 decimal precision.
-    /// @return uint BPS of supply backed by reserve.
-    function reserveStatus() external returns (uint, uint, uint);
+    //----------------------------------
+    // Un/Bonding View Functions
 
     /// @notice Bonds given amount of ERC20 tokens from the caller and mints
     ///         corresponding reserve tokens to the caller.
@@ -107,6 +186,18 @@ interface IReserve2 {
     /// @param erc721Id The ERC721Id instance.
     function unbondERC721IdTo(ERC721Id memory erc721Id, address recipient)
         external;
+
+    //----------------------------------
+    // Reserve Management
+
+    /// @notice Returns the current Reserve's status.
+    /// @dev Note that this function does not mutate any state in the reserve.
+    ///      It is safe to see it as "view".
+    /// @return uint Reserve asset's valuation in USD with 18 decimal precision.
+    /// @return uint Token supply's valuation in USD with 18 decimal precision.
+    /// @return uint BPS of supply backed by reserve.
+    function reserveStatus() external returns (uint, uint, uint);
+
 
     //--------------------------------------------------------------------------
     // View Functions

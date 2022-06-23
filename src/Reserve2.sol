@@ -43,7 +43,7 @@ import {Wad} from "./lib/Wad.sol";
 /**
  TODOs:
     - Whitelist for un/bonding etc?
-    - Treasury soll NFT receiver haben
+    - Treasury and Reserve need to implement ERC721Receiver.
  */
 
 interface IERC20MintBurn is IERC20 {
@@ -67,7 +67,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @dev Modifier to guarantee token recipient is valid.
     modifier validRecipient(address to) {
         if (to == address(0) || to == address(this)) {
-            revert("Invalid recipient");
+            revert Reserve2__InvalidRecipient();
         }
         _;
     }
@@ -75,7 +75,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     /// @dev Modifier to guarantee token amount is valid.
     modifier validAmount(uint amount) {
         if (amount == 0) {
-            revert("Invalid amount");
+            revert Reserve2__InvalidAmount();
         }
         _;
     }
@@ -84,7 +84,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     ///      ERC20 token.
     modifier isSupportedERC20(address erc20) {
         if (oraclePerERC20[erc20] == address(0)) {
-            revert("ERC20 not supported");
+            revert Reserve2__ERC20NotSupported();
         }
         _;
     }
@@ -93,7 +93,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     ///      ERC721Id instances.
     modifier isSupportedERC721Id(ERC721Id memory erc721) {
         if (oraclePerERC721Id[_hashOfERC721Id(erc721)] == address(0)) {
-            revert("ERC721Id not supported");
+            revert Reserve2__ERC721IdNotSupported();
         }
         _;
     }
@@ -102,7 +102,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     ///      ERC20 token.
     modifier isBondableERC20(address erc20) {
         if (!isERC20Bondable[erc20]) {
-            revert("ERC20 not bondable");
+            revert Reserve2__ERC20NotBondable();
         }
         _;
     }
@@ -111,7 +111,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     ///      ERC721Id instances.
     modifier isBondableERC721Id(ERC721Id memory erc721Id) {
         if (!isERC721IdBondable[_hashOfERC721Id(erc721Id)]) {
-            revert("ERC721Id not bondable");
+            revert Reserve2__ERC721NotBondable();
         }
         _;
     }
@@ -120,7 +120,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     ///      ERC20 token.
     modifier isUnbondableERC20(address erc20) {
         if (!isERC20Unbondable[erc20]) {
-            revert("ERC20 not unbondable");
+            revert Reserve2__ERC20NotUnbondable();
         }
         _;
     }
@@ -129,7 +129,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     ///      ERC721Id instances.
     modifier isUnbondableERC721Id(ERC721Id memory erc721Id) {
         if (!isERC721IdUnbondable[_hashOfERC721Id(erc721Id)]) {
-            revert("ERC721Id not unbondable");
+            revert Reserve2__ERC721NotUnbondable();
         }
         _;
     }
@@ -142,7 +142,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         // Note that a limit of zero is interpreted as limit given.
         if (limit != 0 && balance + amount > limit) {
-            revert("ERC20 bond limit reached");
+            revert Reserve2__ERC20BondingLimitExceeded();
         }
 
         _;
@@ -158,7 +158,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         _updateBacking();
 
         if (requireMinBacking && _backing < minBacking) {
-            revert("backin < minBacking");
+            revert Reserve2__MinimumBackingLimitExceeded();
         }
     }
 
@@ -858,6 +858,9 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         // Mint tokens.
         _commitTokenMintGivenERC20(erc20, to, amount);
+
+        // Notify off-chain services.
+        emit BondedERC20(erc20, erc20Amount, amount);
     }
 
     function _bondERC721Id(
@@ -886,6 +889,9 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         // Mint tokens.
         _commitTokenMintGivenERC721Id(erc721IdHash, to, amount);
+
+        // Notify off-chain services.
+        emit BondedERC721(erc721Id, amount);
     }
 
     //----------------------------------
@@ -916,14 +922,17 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         // Revert if balance not sufficient.
         uint balance = ERC20(erc20).balanceOf(address(this));
         if (balance < erc20Amount) {
-            revert("ERC20 unbonding limit exceeded");
+            revert Reserve2__ERC20BalanceNotSufficient();
         }
 
         // Revert if unbonding limit exceeded.
         uint limit = unbondingLimitPerERC20[erc20];
         if (balance - erc20Amount < limit) {
-            revert("ERC20 unbonding limit exceeded");
+            revert Reserve2__ERC20UnbondingLimitExceeded();
         }
+
+        // Notify off-chain services.
+        emit UnbondedERC20(erc20, erc20Amount, tokenAmount);
 
         // Withdraw erc20s and burn tokens.
         ERC20(erc20).safeTransfer(to, erc20Amount);
@@ -949,6 +958,9 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         // Calculate the amount of tokens to burn.
         uint tokenAmount = (priceWad / _priceOfToken()) * 1e18;
+
+        // Notify off-chain services.
+        emit UnbondedERC721Id(erc721Id, tokenAmount);
 
         // Burn tokens and withdraw ERC721Id.
         // Note that the ERC721 transfer triggers a callback if the recipient
@@ -1016,7 +1028,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
                 : (reserveValuation * BPS) / supplyValuation;
 
         // Notify off-chain services.
-        // @todo Emit event.
+        emit BackingUpdated(_backing, newBacking);
 
         // Update storage.
         _backing = newBacking;
@@ -1128,7 +1140,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         if (!valid || price == 0) {
             // Revert if oracle is invalid or price is zero.
-            revert("Invalid Oracle");
+            revert Reserve2__InvalidOracle();
         }
 
         return price;
@@ -1142,7 +1154,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         if (!valid || price == 0) {
             // Revert if oracle is invalid or price is zero.
-            revert("Invalid Oracle");
+            revert Reserve2__InvalidOracle();
         }
 
         return price;
@@ -1156,7 +1168,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
         if (!valid || price == 0) {
             // Revert if oracle is invalid or price is zero.
-            revert("Invalid Oracle");
+            revert Reserve2__InvalidOracle();
         }
 
         return price;

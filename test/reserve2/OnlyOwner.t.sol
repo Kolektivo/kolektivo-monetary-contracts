@@ -739,4 +739,21 @@ contract Reserve2OnlyOwner is Reserve2Test {
 
     //---------------------------------
     // Reserve Management
+
+    function testSetMinBacking(uint minBacking) public {
+        vm.assume(minBacking != 0);
+
+        // @todo Check event emission.
+        reserve.setMinBacking(minBacking);
+        assertEq(reserve.minBacking(), minBacking);
+    }
+
+    function testSetMinBacking_NotAcceptedIf_IsZero() public {
+        vm.expectRevert(bytes("")); // Empty require statement
+        reserve.setMinBacking(0);
+    }
+
+    // Note that the onlyOwner functions `incurDebt` and `payDebt` are tested
+    // in the `FractionalReceiptBanking` test contract.
+
 }

@@ -263,7 +263,6 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         uint minBacking_
     ) {
         // Check token's validity.
-        require(token_ != address(0));
         require(token_.code.length != 0);
 
         // Check token oracle's validity.

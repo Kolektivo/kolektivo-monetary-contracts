@@ -56,6 +56,9 @@ contract Reserve2Test is Test {
 
     IReserve2.ERC721Id DEFAULT_ERC721ID;
 
+    // Copied from SuT.
+    uint constant BPS = 10_000;
+
     function setUp() public {
         token = new ERC20Mock("RTKN", "Reserve Token", uint8(18));
 

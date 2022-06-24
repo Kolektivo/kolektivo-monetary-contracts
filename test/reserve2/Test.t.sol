@@ -19,6 +19,18 @@ library Errors {
     bytes internal constant OnlyCallableByOwner
         = abi.encodeWithSignature("OnlyCallableByOwner()");
 
+    bytes internal constant InvalidRecipient
+        = abi.encodeWithSignature("Reserve2__InvalidRecipient()");
+
+    bytes internal constant InvalidAmount
+        = abi.encodeWithSignature("Reserve2__InvalidAmount()");
+
+    bytes internal constant ERC20NotSupported
+        = abi.encodeWithSignature("Reserve2__ERC20NotSupported()");
+
+    bytes internal constant ERC721IdNotSupported
+        = abi.encodeWithSignature("Reserve2__ERC721IdNotSupported()");
+
 }
 
 /**

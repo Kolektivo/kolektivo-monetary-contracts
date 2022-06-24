@@ -44,6 +44,8 @@ import {Wad} from "./lib/Wad.sol";
  TODOs:
     - Whitelist for un/bonding etc?
     - Treasury and Reserve need to implement ERC721Receiver.
+    - Check wad naming convention for variables.
+    - Function to receive supportedERCXXX array's length.
  */
 
 interface IERC20MintBurn is IERC20 {
@@ -186,8 +188,9 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
     //----------------------------------
     // Asset Mappings
 
-    // @todo How does public function look like?
+    // function supportedERC20s(uint index) returns (address);
     address[] public supportedERC20s;
+    // function supportedERC721Ids(uint index) returns (address, uint);
     ERC721Id[] public supportedERC721Ids;
 
     /// @inheritdoc IReserve2

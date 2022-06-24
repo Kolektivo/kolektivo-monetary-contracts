@@ -42,15 +42,14 @@ import {Wad} from "./lib/Wad.sol";
 
 /**
  TODOs:
-    - Whitelist for un/bonding etc?
-    - Treasury and Reserve need to implement ERC721Receiver.
-    - Check wad naming convention for variables.
-    - Function to receive supportedERCXXX array's length.
+    - ? Whitelist for un/bonding etc
+    - ! Treasury and Reserve need to implement ERC721Receiver.
+    - ! Check wad naming convention for variables.
 
-    - Overall, the owner functions do not include a lot of checks yet:
-        - Max discount?
-        - Bonding limit > unbonding limit requirement?
-        - Max/Min vesting duration?
+    - ? Overall, the owner functions do not include a lot of checks yet:
+        - Max discount
+        - Bonding limit > unbonding limit requirement
+        - Max/Min vesting duration
  */
 
 interface IERC20MintBurn is IERC20 {
@@ -287,6 +286,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         emit SetTokenOracle(address(0), tokenOracle_);
         emit SetVestingVault(address(0), vestingVault_);
         emit SetMinBacking(0, minBacking_);
+        emit BackingUpdated(0, BPS);
     }
 
     //--------------------------------------------------------------------------
@@ -297,6 +297,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
 
     //--------------
     // Bond ERC20 Functions
+
+    // @todo Need to convert to wad format!
 
     /// @inheritdoc IReserve2
     function bondERC20(address erc20, uint erc20Amount) external {
@@ -423,6 +425,16 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         returns (bytes32)
     {
         return _hashOfERC721Id(erc721Id);
+    }
+
+    // @todo Add to IReserve2 interface.
+    function supportedERC20sSize() external view returns (uint) {
+        return supportedERC20s.length;
+    }
+
+    // @todo Add to IReserve2 interface.
+    function supportedERC721IdsSize() external view returns (uint) {
+        return supportedERC721Ids.length;
     }
 
     //--------------------------------------------------------------------------
@@ -994,13 +1006,11 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         private
         returns (uint)
     {
-        uint priceWad = _priceOfERC20(erc20);
-
         // Calculate the total value of erc20 tokens.
-        uint valuationWad = (amount * priceWad) / 1e18;
+        uint valuationWad = (amount * _priceOfERC20(erc20)) / 1e18;
 
         // Calculate the number of tokens to mint (no discount applied yet).
-        uint toMint = (valuationWad * _priceOfToken()) / BPS;
+        uint toMint = (valuationWad * 1e18) / _priceOfToken();
 
         // Apply discount.
         toMint = _applyDiscountForERC20(erc20, toMint);
@@ -1012,14 +1022,11 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         private
         returns (uint)
     {
-        uint priceWad = _priceOfERC721Id(erc721IdHash);
-
-        // Note that price equals valuation because the amount of tokens
-        // bonded is always 1 for an erc721Id.
-        uint valuationWad = priceWad;
+        // Note that erc721Ids price equals it's bonding valuation because the
+        // amount of tokens bonded is always 1.
 
         // Calculate the number of tokens to mint (no discount applied yet).
-        uint toMint = (valuationWad * _priceOfToken()) / BPS;
+        uint toMint = (_priceOfERC721Id(erc721IdHash) * 1e18) / _priceOfToken();
 
         // Apply discount.
         toMint = _applyDiscountForERC721Id(erc721IdHash, toMint);
@@ -1089,11 +1096,8 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
                 }
             }
 
-            // Query oracle for erc20's price.
-            priceWad = _priceOfERC20(erc20);
-
             // Add asset's valuation to the total valuation.
-            totalWad += (balanceWad * priceWad) / 1e18;
+            totalWad += (balanceWad * _priceOfERC20(erc20)) / 1e18;
 
             unchecked { ++i; }
         }

@@ -668,7 +668,7 @@ contract Reserve2 is TSOwnable, IReserve2Owner {
         bool oldSupport = isERC20Unbondable[erc20];
 
         if (support != oldSupport) {
-            isERC20Bondable[erc20] = support;
+            isERC20Unbondable[erc20] = support;
             emit SetERC20UnbondingSupport(erc20, support);
         }
     }

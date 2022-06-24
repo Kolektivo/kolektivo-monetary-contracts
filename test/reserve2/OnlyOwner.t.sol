@@ -459,6 +459,199 @@ contract Reserve2OnlyOwner is Reserve2Test {
     //----------------------------------
     // Un/Bonding Management
 
+    function testSupportERC20ForBonding() public {
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        reserve.supportERC20(address(erc20), address(o));
+
+        // Set erc20 as being supported for bonding.
+        // @todo Check event emission.
+        reserve.supportERC20ForBonding(address(erc20), true);
+        assertEq(reserve.isERC20Bondable(address(erc20)), true);
+
+        // Check that function is idempotent.
+        reserve.supportERC20ForBonding(address(erc20), true);
+        assertEq(reserve.isERC20Bondable(address(erc20)), true);
+
+        // Set erc20 as being unsupported for bonding.
+        reserve.supportERC20ForBonding(address(erc20), false);
+        assertEq(reserve.isERC20Bondable(address(erc20)), false);
+
+        // Check that function is idempotent.
+        reserve.supportERC20ForBonding(address(erc20), false);
+        assertEq(reserve.isERC20Bondable(address(erc20)), false);
+    }
+
+    function testSupportERC20ForBonding_NotAcceptedIf_ERC20NotSupported()
+        public
+    {
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        vm.expectRevert(Errors.ERC20NotSupported);
+        reserve.supportERC20ForBonding(address(erc20), true);
+    }
+
+    function testSupportERC721IdForBonding() public {
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve2.ERC721Id memory erc721Id
+            = IReserve2.ERC721Id(address(erc721), 1);
+        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        reserve.supportERC721Id(erc721Id, address(o));
+
+        // Set erc721Id as being supported for bonding.
+        // @todo Check event emission.
+        reserve.supportERC721IdForBonding(erc721Id, true);
+        assertEq(reserve.isERC721IdBondable(erc721IdHash), true);
+
+        // Check that function is idempotent.
+        reserve.supportERC721IdForBonding(erc721Id, true);
+        assertEq(reserve.isERC721IdBondable(erc721IdHash), true);
+
+        // Set erc721Id as being unsupported for bonding.
+        reserve.supportERC721IdForBonding(erc721Id, false);
+        assertEq(reserve.isERC721IdBondable(erc721IdHash), false);
+
+        // Check that function is idempotent.
+        reserve.supportERC721IdForBonding(erc721Id, false);
+        assertEq(reserve.isERC721IdBondable(erc721IdHash), false);
+    }
+
+    function testSupportERC721IdForBonding_NotAcceptedIf_ERC721IdNotSupported()
+        public
+    {
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve2.ERC721Id memory erc721Id
+            = IReserve2.ERC721Id(address(erc721), 1);
+        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        vm.expectRevert(Errors.ERC721IdNotSupported);
+        reserve.supportERC721IdForBonding(erc721Id, true);
+    }
+
+    function testSupportERC20ForUnbonding() public {
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        reserve.supportERC20(address(erc20), address(o));
+
+        // Set erc20 as being supported for unbonding.
+        // @todo Check event emission.
+        reserve.supportERC20ForUnbonding(address(erc20), true);
+        assertEq(reserve.isERC20Unbondable(address(erc20)), true);
+
+        // Check that function is idempotent.
+        reserve.supportERC20ForUnbonding(address(erc20), true);
+        assertEq(reserve.isERC20Unbondable(address(erc20)), true);
+
+        // Set erc20 as being unsupported for unbonding.
+        reserve.supportERC20ForUnbonding(address(erc20), false);
+        assertEq(reserve.isERC20Unbondable(address(erc20)), false);
+
+        // Check that function is idempotent.
+        reserve.supportERC20ForUnbonding(address(erc20), false);
+        assertEq(reserve.isERC20Unbondable(address(erc20)), false);
+    }
+
+    function testSupportERC20ForUnbonding_NotAcceptedIf_ERC20NotSupported()
+        public
+    {
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        vm.expectRevert(Errors.ERC20NotSupported);
+        reserve.supportERC20ForUnbonding(address(erc20), true);
+
+        vm.expectRevert(Errors.ERC20NotSupported);
+        reserve.supportERC20ForUnbonding(address(erc20), false);
+    }
+
+    function testSupportERC721IdForUnbonding() public {
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve2.ERC721Id memory erc721Id
+            = IReserve2.ERC721Id(address(erc721), 1);
+        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        reserve.supportERC721Id(erc721Id, address(o));
+
+        // Set erc721Id as being supported for unbonding.
+        // @todo Check event emission.
+        reserve.supportERC721IdForUnbonding(erc721Id, true);
+        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), true);
+
+        // Check that function is idempotent.
+        reserve.supportERC721IdForUnbonding(erc721Id, true);
+        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), true);
+
+        // Set erc721Id as being unsupported for unbonding.
+        reserve.supportERC721IdForUnbonding(erc721Id, false);
+        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), false);
+
+        // Check that function is idempotent.
+        reserve.supportERC721IdForUnbonding(erc721Id, false);
+        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), false);
+    }
+
+    function testSupportERC721IdForUnbonding_NotAcceptedIf_ERC721IdNotSupported()
+        public
+    {
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve2.ERC721Id memory erc721Id
+            = IReserve2.ERC721Id(address(erc721), 1);
+        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        vm.expectRevert(Errors.ERC721IdNotSupported);
+        reserve.supportERC721IdForUnbonding(erc721Id, true);
+    }
+
+    function testSetERC20BondingLimit(uint limit) public {
+        // Note that ERC20 does not need to be supported.
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+
+        // @todo Check event emission.
+        reserve.setERC20BondingLimit(address(erc20), limit);
+        assertEq(reserve.bondingLimitPerERC20(address(erc20)), limit);
+
+        // Check that function is idempotent.
+        reserve.setERC20BondingLimit(address(erc20), limit);
+        assertEq(reserve.bondingLimitPerERC20(address(erc20)), limit);
+    }
+
+    function testSetERC20UnbondingLimit(uint limit) public {
+        // Note that ERC20 does not need to be supported.
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+
+        // @todo Check event emission.
+        reserve.setERC20UnbondingLimit(address(erc20), limit);
+        assertEq(reserve.unbondingLimitPerERC20(address(erc20)), limit);
+
+        // Check that function is idempotent.
+        reserve.setERC20UnbondingLimit(address(erc20), limit);
+        assertEq(reserve.unbondingLimitPerERC20(address(erc20)), limit);
+    }
+
     //----------------------------------
     // Discount Management
 

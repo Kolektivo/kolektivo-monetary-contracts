@@ -627,7 +627,7 @@ contract Reserve2OnlyOwner is Reserve2Test {
     }
 
     function testSetERC20BondingLimit(uint limit) public {
-        // Note that ERC20 does not need to be supported.
+        // Note that erc20 does not need to be supported.
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
 
         // @todo Check event emission.
@@ -640,7 +640,7 @@ contract Reserve2OnlyOwner is Reserve2Test {
     }
 
     function testSetERC20UnbondingLimit(uint limit) public {
-        // Note that ERC20 does not need to be supported.
+        // Note that erc20 does not need to be supported.
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
 
         // @todo Check event emission.
@@ -655,8 +655,87 @@ contract Reserve2OnlyOwner is Reserve2Test {
     //----------------------------------
     // Discount Management
 
+    function testSetDiscountForERC20(uint discount) public {
+        // Note that erc20 does not need to be supported.
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+
+        // @todo Check event emission.
+        reserve.setDiscountForERC20(address(erc20), discount);
+        assertEq(reserve.discountPerERC20(address(erc20)), discount);
+
+        // Check that function is idempotent.
+        reserve.setDiscountForERC20(address(erc20), discount);
+        assertEq(reserve.discountPerERC20(address(erc20)), discount);
+    }
+
+    function testSetDiscountForERC721Id(uint discount) public {
+        // Note that erc721Id does not need to be supported.
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve2.ERC721Id memory erc721Id
+            = IReserve2.ERC721Id(address(erc721), 1);
+        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+
+        // @todo Check event emission.
+        reserve.setDiscountForERC721Id(erc721Id, discount);
+        assertEq(reserve.discountPerERC721Id(erc721IdHash), discount);
+
+        // Check that function is idempotent.
+        reserve.setDiscountForERC721Id(erc721Id, discount);
+        assertEq(reserve.discountPerERC721Id(erc721IdHash), discount);
+    }
+
     //----------------------------------
     // Vesting Management
+
+    function testSetVestingVault() public {
+        VestingVaultMock vv = new VestingVaultMock(address(token));
+
+        address oldVv = reserve.vestingVault();
+
+        // @todo Check event emission.
+        reserve.setVestingVault(address(vv));
+        assertEq(reserve.vestingVault(), address(vv));
+
+        // Check allowance.
+        assertEq(token.allowance(address(reserve), address(vv)), type(uint).max);
+        assertEq(token.allowance(address(reserve), address(oldVv)), 0);
+    }
+
+    function testSetVestingVault_NotAcceptedIf_WrongTokenSupported() public {
+        VestingVaultMock vv = new VestingVaultMock(address(0));
+
+        vm.expectRevert(bytes("")); // Empty require statement
+        reserve.setVestingVault(address(vv));
+    }
+
+    function testSetVestingForERC20(uint vestingDuration) public {
+        // Note that erc20 does not need to be supported.
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+
+        // @todo Check event emission.
+        reserve.setVestingForERC20(address(erc20), vestingDuration);
+        assertEq(
+            reserve.vestingDurationPerERC20(address(erc20)),
+            vestingDuration
+        );
+    }
+
+    function testSetVestingForERC721Id(uint vestingDuration) public {
+        // Note that erc721Id does not need to be supported.
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve2.ERC721Id memory erc721Id
+            = IReserve2.ERC721Id(address(erc721), 1);
+        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+
+        // @todo Check event emission.
+        reserve.setVestingForERC721Id(erc721Id, vestingDuration);
+        assertEq(
+            reserve.vestingDurationPerERC721Id(erc721IdHash),
+            vestingDuration
+        );
+    }
 
     //---------------------------------
     // Reserve Management

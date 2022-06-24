@@ -46,6 +46,11 @@ import {Wad} from "./lib/Wad.sol";
     - Treasury and Reserve need to implement ERC721Receiver.
     - Check wad naming convention for variables.
     - Function to receive supportedERCXXX array's length.
+
+    - Overall, the owner functions do not include a lot of checks yet:
+        - Max discount?
+        - Bonding limit > unbonding limit requirement?
+        - Max/Min vesting duration?
  */
 
 interface IERC20MintBurn is IERC20 {

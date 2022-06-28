@@ -1,14 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-/**
- * @title Interface for the public functionality of the Reserve2
- *
- * @dev This interfaces declares the public functionality, structs and error
- *      types, and events for the Reserve2 contract.
- *
- * @author byterocket
- */
 interface IReserve2 {
 
     /// @notice An ERC721Id defines one specific ERC721 NFT token.

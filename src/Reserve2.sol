@@ -29,8 +29,8 @@ interface IERC20MintBurn is IERC20 {
 /**
  * @title Reserve2
  *
- * @dev The Kolektivo reserve manages a fractional receipt money based on ERC20
- *      tokens and/or ERC721 NFTs.
+ * @dev The Kolektivo reserve manages a fractional receipt money using ERC20
+ *      tokens and/or ERC721 NFTs as collateral.
  *
  *      The contract is only usable by an owner that is eligible to:
  *      - Incur debt, i.e. minting tokens without bonding assets

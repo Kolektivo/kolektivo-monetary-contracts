@@ -10,6 +10,95 @@ contract Reserve2OnlyOwner is Reserve2Test {
 
         vm.startPrank(caller);
 
+        IReserve2.ERC721Id memory erc721Id = IReserve2.ERC721Id(address(1), 1);
+
+        //----------------------------------
+        // Bond Functions
+
+        //--------------
+        // Bond ERC20 Functions
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20(address(0), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20From(address(0), address(1), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20To(address(0), address(1), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20FromTo(address(0), address(1), address(1), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20All(address(0));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20AllFrom(address(0), address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC20AllFromTo(address(0), address(1), address(1));
+
+        //--------------
+        // Bond ERC721Id Functions
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC721Id(erc721Id);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC721IdFrom(erc721Id, address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC721IdTo(erc721Id, address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.bondERC721IdFromTo(erc721Id, address(1), address(1));
+
+        //----------------------------------
+        // Unbond Functions
+
+        //--------------
+        // Unbond ERC20 Functions
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20(address(0), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20From(address(0), address(1), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20To(address(0), address(1), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20FromTo(address(0), address(1), address(1), 0);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20All(address(0));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20AllFrom(address(0), address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20AllTo(address(0), address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC20AllFromTo(address(0), address(1), address(1));
+
+        //--------------
+        // Unbond ERC721Id Functions
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC721Id(erc721Id);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC721IdFrom(erc721Id, address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC721IdTo(erc721Id, address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.unbondERC721IdFromTo(erc721Id, address(1), address(1));
+
         //----------------------------------
         // Emergency Functions
 
@@ -423,7 +512,6 @@ contract Reserve2OnlyOwner is Reserve2Test {
         erc721.mint(address(this), 1);
         IReserve2.ERC721Id memory erc721Id
             = IReserve2.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
@@ -437,7 +525,6 @@ contract Reserve2OnlyOwner is Reserve2Test {
         erc721.mint(address(this), 1);
         IReserve2.ERC721Id memory erc721Id
             = IReserve2.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
@@ -532,7 +619,6 @@ contract Reserve2OnlyOwner is Reserve2Test {
         erc721.mint(address(this), 1);
         IReserve2.ERC721Id memory erc721Id
             = IReserve2.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
@@ -617,7 +703,6 @@ contract Reserve2OnlyOwner is Reserve2Test {
         erc721.mint(address(this), 1);
         IReserve2.ERC721Id memory erc721Id
             = IReserve2.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);

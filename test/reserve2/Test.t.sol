@@ -3,6 +3,8 @@ pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
+import {IERC721Receiver} from "src/interfaces/_external/IERC721Receiver.sol";
+
 import "src/Reserve2.sol";
 
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
@@ -31,6 +33,9 @@ library Errors {
     bytes internal constant ERC721IdNotSupported
         = abi.encodeWithSignature("Reserve2__ERC721IdNotSupported()");
 
+    bytes internal constant MinimumBackingLimitExceeded
+        = abi.encodeWithSignature("Reserve2__MinimumBackingLimitExceeded()");
+
 }
 
 /**
@@ -39,7 +44,7 @@ library Errors {
  *      Provides setUp functions, access to common test utils and internal
  *      variables used throughout testing.
  */
-contract Reserve2Test is Test {
+contract Reserve2Test is Test, IERC721Receiver {
 
     // SuT.
     Reserve2 reserve;
@@ -72,7 +77,7 @@ contract Reserve2Test is Test {
         nft.mint(address(this), 1);
         DEFAULT_ERC721ID = IReserve2.ERC721Id(address(nft), 1);
         defaultERC721IdOracle = new OracleMock();
-        tokenOracle.setDataAndValid(1e18, true);
+        defaultERC721IdOracle.setDataAndValid(1e18, true);
 
         reserve = new Reserve2(
             address(token),
@@ -80,6 +85,18 @@ contract Reserve2Test is Test {
             address(vestingVault),
             DEFAULT_MIN_BACKING
         );
+    }
+
+    //--------------------------------------------------------------------------
+    // IERC721
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
     }
 
 }

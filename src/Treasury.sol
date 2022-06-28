@@ -1,19 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
+// External Interfaces.
+import {IERC20Metadata} from "./interfaces/_external/IERC20Metadata.sol";
+import {IERC721Receiver} from "./interfaces/_external/IERC721Receiver.sol";
+
+// External Contracts.
 import {ERC20} from "solmate/tokens/ERC20.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-
-import {TSOwnable} from "solrocket/TSOwnable.sol";
-import {Whitelisted} from "solrocket/Whitelisted.sol";
-
 import {
     ElasticReceiptToken
 } from "elastic-receipt-token/ElasticReceiptToken.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
+import {Whitelisted} from "solrocket/Whitelisted.sol";
 
-import {IERC20Metadata} from "./interfaces/_external/IERC20Metadata.sol";
+// External Libraries.
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
+// Internal Interfaces.
 import {IOracle} from "./interfaces/IOracle.sol";
+
+// Internal Libraries.
+import {Wad} from "./lib/Wad.sol";
 
 /**
  * @title Treasury
@@ -31,7 +38,11 @@ import {IOracle} from "./interfaces/IOracle.sol";
  *
  * @author byterocket
  */
-contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
+contract Treasury is ElasticReceiptToken,
+                     TSOwnable,
+                     Whitelisted,
+                     IERC721Receiver
+{
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
@@ -242,7 +253,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         }
 
         // Convert amount to wad.
-        uint amountWad = _convertToWad(asset, amount);
+        uint amountWad = Wad.convertToWad(asset, amount);
 
         // Calculate the amount of KTTs to mint.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
@@ -293,7 +304,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         uint withdrawableWad = (kttWad * 1e18) / priceWad;
 
         // Adjust to decimal precision of the asset.
-        uint withdrawable = _convertFromWad(asset, withdrawableWad);
+        uint withdrawable = Wad.convertFromWad(asset, withdrawableWad);
 
         // Send the assets to msg.sender.
         ERC20(asset).safeTransfer(msg.sender, withdrawable);
@@ -310,6 +321,16 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
     /// @return The USD value of assets held in the treasury.
     function totalValuation() external returns (uint) {
         return _supplyTarget();
+    }
+
+    /// @inheritdoc IERC721Receiver
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
     }
 
     //--------------------------------------------------------------------------
@@ -357,7 +378,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
                 // If the new price is valid, multiply the price with the
                 // asset's balance and add the asset's valuation to the total
                 // valuation.
-                assetBalanceWad = _convertToWad(asset, assetBalance);
+                assetBalanceWad = Wad.convertToWad(asset, assetBalance);
                 totalWad += (assetBalanceWad * priceWad) / 1e18;
             } else {
                 // If the new price is invalid, multiply the last cached price
@@ -366,7 +387,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
                 priceWad = lastPricePerAsset[asset];
                 assert(priceWad != 0);
 
-                assetBalanceWad = _convertToWad(asset, assetBalance);
+                assetBalanceWad = Wad.convertToWad(asset, assetBalance);
                 totalWad += (assetBalanceWad * priceWad) / 1e18;
             }
 
@@ -630,57 +651,6 @@ contract Treasury is ElasticReceiptToken, TSOwnable, Whitelisted {
         lastPricePerAsset[asset] = priceWad;
 
         return (priceWad, true);
-    }
-
-    // @todo Use Wad.sol library.
-
-    /// @dev Returns the amount in wad format, i.e. 18 decimal precision.
-    function _convertToWad(address asset, uint amount)
-        private
-        view
-        returns (uint)
-    {
-        uint decimals = IERC20Metadata(asset).decimals();
-
-        if (decimals == 18) {
-            // No decimal adjustment neccessary.
-            return amount;
-        }
-
-        if (decimals < 18) {
-            // If asset has less than 18 decimals, move amount by difference of
-            // decimal precision to the left.
-            return amount * 10**(18-decimals);
-        } else {
-            // If asset has more than 18 decimals, move amount by difference of
-            // decimal precision to the right.
-            return amount / 10**(decimals-18);
-        }
-    }
-
-    /// @dev Returns the amount in the asset's decimal precision format.
-    ///      Expects the amount to be in wad format, i.e. 18 decimal precision.
-    function _convertFromWad(address asset, uint amount)
-        private
-        view
-        returns (uint)
-    {
-        uint decimals = IERC20Metadata(asset).decimals();
-
-        if (decimals == 18) {
-            // No decimal adjustment neccessary.
-            return amount;
-        }
-
-        if (decimals < 18) {
-            // If asset has less than 18 decimals, move amount by difference of
-            // decimal precision to the right.
-            return amount / 10**(18-decimals);
-        } else {
-            // If asset has more than 18 decimals, move amount by difference of
-            // decimal precision to the left.
-            return amount * 10**(decimals-18);
-        }
     }
 
 }

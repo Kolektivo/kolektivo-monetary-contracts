@@ -180,11 +180,17 @@ contract Deployment2 is Script {
         );
 
         // @todo Note that we deploy the vesting vault here.
+        LinearVestingVault vv;
         vm.startBroadcast();
         {
-            LinearVestingVault vv = new LinearVestingVault(address(KOL));
+            vv = new LinearVestingVault(address(kol));
         }
         vm.stopBroadcast();
+
+        require(
+            address(vv) != address(0),
+            "_deployReserve2: Missing contract deployment: vesting vault"
+        );
 
         // Deploy Reserve.
         vm.startBroadcast();

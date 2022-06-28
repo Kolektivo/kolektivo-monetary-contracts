@@ -2,7 +2,9 @@ cache/
 out/
 keystore/
 */node_modules
+node_modules
 .vscode/
 broadcast/
-build/
-scripts/__*
+remap-imports.go
+reports
+*.code-workspace

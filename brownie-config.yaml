@@ -1,5 +1,0 @@
-project_structure:
-  build: build
-  contracts: src-generated
-  interfaces: src-generated/interfaces
-  scripts: scripts

@@ -2,6 +2,7 @@ cache/
 out/
 keystore/
 */node_modules
-remap-imports.go
 .vscode/
 broadcast/
+build/
+scripts/__*

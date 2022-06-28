@@ -21,35 +21,6 @@ import {IReserve2} from "./interfaces/IReserve2.sol";
 // Internal Libraries.
 import {Wad} from "./lib/Wad.sol";
 
-/**
- Notes:
-    - The term "supported" in context of the Reserve means that the reserve
-      has a price oracle for the asset (ERC20, ERC721Id) and takes the
-      reserve's balance for this asset into account for the backing
-      calculation.
-    - KTT (the elastic token produces by the Treasury) does not have a
-      special treatment anymore. It needs to be supported by adding a
-      price oracle.
-    - A max/min un/bonding is implemented. ERC20 tokens are not bondable
-      if it would exceed the max balance of this token the Reserve is allowed
-      to hold. Same goes for min and unbonding operations.
-    - For the backing calculation the price oracle of the "token" (KOL) is
-      taken into account to calculate the current backing.
-    - Naming Conventions:
-        - token: The token the Reserve mints/burns.
-        - asset: ERC20 or ERC721Id token.
- */
-
-/**
- TODOs:
-    - ! Check wad naming convention for variables.
-
-    - ? Overall, the owner functions do not include a lot of checks yet:
-        - Max discount
-        - Bonding limit > unbonding limit requirement
-        - Max/Min vesting duration
- */
-
 interface IERC20MintBurn is IERC20 {
     function mint(address to, uint amount) external;
     function burn(address from, uint amount) external;
@@ -58,7 +29,27 @@ interface IERC20MintBurn is IERC20 {
 /**
  * @title Reserve2
  *
- * @dev ...
+ * @dev The Kolektivo reserve manages a fractional receipt money based on ERC20
+ *      tokens and/or ERC721 NFTs.
+ *
+ *      The contract is only usable by an owner that is eligible to:
+ *      - Incur debt, i.e. minting tokens without bonding assets
+ *      - Pay debt, i.e. burn token without unbonding assets
+ *      - Un/bond ERC20 tokens and/or ERC721 NFTs
+ *      - and change settings
+ *
+ *      Note:
+ *      - The term "supported" means that the reserve has a price oracle for the
+ *        asset (ERC20, ERC721Id) and takes the reserve's balance of this asset
+ *        into account for the backing ratio computation.
+ *      - The elastic token produced by the Kolektivo treasury does NOT have any
+ *        special treatment. It needs to be supported by adding a price oracle
+ *        like any other asset.
+ *
+ *      Naming conventions:
+ *      - token : The token the reserve mints/burns, i.e. the fractional receipt
+ *                money.
+ *      - asset : ERC20 token or ERC721 NFT
  *
  * @author byterocket
  */

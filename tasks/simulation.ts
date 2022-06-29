@@ -6,10 +6,13 @@ import { Wallet } from "ethers";
 /**
  * Setup:
  * -----
- *  1. Run `source dev.env` to setup environment variables
- *  2. Start an anvil node with `anvil -b 10`
- *      - Note that `-b 10` instructs anvil to mine a new block every 10 seconds
- *  2. Execute simulation with `npx hardhat simulation`
+ *  1. Clone the repo
+ *  2. `cd` into the repo
+ *  3. Run `forge install` to install contract dependencies
+ *  4. Run `yarn` to install hardhat dependencies
+ *  5. Run `source dev.env` to setup environment variables
+ *  6. Start an anvil node with `anvil` in a new terminal session
+ *  7. Execute simulation with `npx hardhat simulation`
  */
 
 /**
@@ -70,17 +73,16 @@ export default async function simulation(
     console.info("[INFO] ERC20 minted to owner");
     console.info("       -> ERC20.balanceOf(owner): " + await erc20.balanceOf(owner.address));
 
-    // approve erc20s from owner to treasury
+    // Approve erc20s from owner to treasury
     await (await erc20.connect(owner).approve(treasury.address, erc20OwnerBalance)).wait();
     console.info("[INFO] Owner approved ERC20 for treasury");
 
-    // bond erc20 -> owner receives elastic receipt tokens
+    // Owner bonds erc20 into treasury -> owner receives elastic receipt tokens
     await (await treasury.connect(owner).bond(erc20.address, erc20OwnerBalance)).wait();
     console.info("[INFO] Owner bonded ERC20 into treasury")
     console.info("       -> Treasury.balanceOf(owner): " + await treasury.balanceOf(owner.address));
     console.info("       -> ERC20.balanceOf(owner): " + await erc20.balanceOf(owner.address));
     console.info("       -> ERC20.balanceOf(treasury): " + await erc20.balanceOf(treasury.address));
-
 
     // Change price of erc20 by +100%
     // Send previous balance of elastic receipt tokens from owner to user

@@ -1,10 +1,21 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { exec, execSync } from "child_process";
+import { Wallet } from "ethers";
 
 /**
  * Setup:
- *  - Start an anvil node
+ * -----
+ *  1. Run `source dev.env` to setup environment variables
+ *  2. Start an anvil node with `anvil -b 10`
+ *      - Note that `-b 10` instructs anvil to mine a new block every 10 seconds
+ *  2. Execute simulation with `npx hardhat simulation`
+ */
+
+/**
+ * Information:
+ * -----------
+ *
  */
 
 const ADDRESS_RESERVE2 = "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6";
@@ -14,6 +25,9 @@ const ADDRESS_GEONFT = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
 const ADDRESS_RESERVE2_TOKEN = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
 const ADDRESS_ORACLE_RESERVE2_TOKEN = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 
+const ADDRESS_ERC20 = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
+const ADDRESS_ORACLE_ERC20 = "0x610178da211fef7d417bc0e6fed39f05609ad788";
+
 export default async function simulation(
     params: any,
     hre: HardhatRuntimeEnvironment
@@ -21,22 +35,102 @@ export default async function simulation(
     const ethers = hre.ethers;
     const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
 
-    // anvil's second default wallet.
+    const [owner, oracleProvider, user] = setUpWallets(hre, provider);
+
+    const [
+        reserve2, treasury, geoNft,
+        reserve2Token, oracleReserve2Token,
+        erc20, oracleERC20
+    ] = await setUpEnvironment(hre, provider, owner);
+
+    // Setup oracleProvider as provider for all oracles
+    await (await oracleReserve2Token.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
+    console.info("[INFO] Oracle provider set up");
+
+    // Add owner to treasury whitelist
+    await (await treasury.connect(owner).addToWhitelist(owner.address)).wait();
+    console.info("[INFO] Owner whitelisted for treasury un/bonding operations");
+
+    // Set price of erc20 in oracle
+    // Note that the price is denominated in 18 decimal precision, i.e. ether
+    const priceERC20 = ethers.utils.parseUnits("1", "ether"); // 1 USD
+    await (await oracleERC20.connect(oracleProvider).pushReport(priceERC20)).wait();
+    console.info("[INFO] ERC20 price of 1 USD pushed to oracle");
+
+    // Add erc20 as being supported by treasury and supported for un/bonding
+    await (await treasury.connect(owner).supportAsset(erc20.address, oracleERC20.address)).wait();
+    await (await treasury.connect(owner).supportAssetForBonding(erc20.address)).wait();
+    await (await treasury.connect(owner).supportAssetForUnbonding(erc20.address)).wait();
+    console.info("[INFO] Treasury supports ERC20 for un/bonding operations");
+
+    // Mint erc20s to owner
+    let erc20OwnerBalance = ethers.utils.parseUnits("100", "ether"); // 100 tokens
+    await (await erc20.connect(owner).mint(owner.address, erc20OwnerBalance)).wait();
+    console.info("[INFO] ERC20 minted to owner");
+    console.info("       -> ERC20.balanceOf(owner): " + await erc20.balanceOf(owner.address));
+
+    // approve erc20s from owner to treasury
+    await (await erc20.connect(owner).approve(treasury.address, erc20OwnerBalance)).wait();
+    console.info("[INFO] Owner approved ERC20 for treasury");
+
+    // bond erc20 -> owner receives elastic receipt tokens
+    await (await treasury.connect(owner).bond(erc20.address, erc20OwnerBalance)).wait();
+    console.info("[INFO] Owner bonded ERC20 into treasury")
+    console.info("       -> Treasury.balanceOf(owner): " + await treasury.balanceOf(owner.address));
+    console.info("       -> ERC20.balanceOf(owner): " + await erc20.balanceOf(owner.address));
+    console.info("       -> ERC20.balanceOf(treasury): " + await erc20.balanceOf(treasury.address));
+
+
+    // Change price of erc20 by +100%
+    // Send previous balance of elastic receipt tokens from owner to user
+    // -> owner has 50% of elastic tokens, user has 50% of elastic tokens
+
+    // Mint geoNFT to owner.
+    // Set price of geoNFT.
+    // Support nft by reserve2, also support for un/bonding
+
+    // Bond nft from owner to reserve2
+    // -> owner receives reserve2Tokens
+
+    // Set price for elastic receipt token
+    // user approves reserve2 his elastic tokens
+    // owner bonds elastic tokens for user into reserve2
+    // -> both hold reserve2 tokens
+
+    // owner incurs debt in reserve2
+    // owner fails to incur too much debt
+
+    // change price of nft so that reserve2 is below min backing
+    // owner pays back some debt
+    // -> reserve2 above min backing
+}
+
+function setUpWallets(hre: HardhatRuntimeEnvironment, provider: any): [Wallet, Wallet, Wallet] {
+    const ethers = hre.ethers;
+
+    // anvil's second default wallet
     const owner = new ethers.Wallet("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", provider);
-    // anvil's third default wallet.
+    // anvil's third default wallet
     const oracleProvider = new ethers.Wallet("0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", provider);
+    // anvil's forth default wallet
+    const user = new ethers.Wallet("0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6", provider);
 
-    // ---------------------------------
-    // SetUp
-    // ---------------------------------
-    // Read environment variables
-    execSync("source ./dev.env");
+    return [owner, oracleProvider, user];
+}
+
+async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, owner: Wallet) {
+    const ethers = hre.ethers;
+
     // Deploy base contracts
-    //execSync("sh ./tasks/deployBaseContracts.sh");
+    execSync("sh ./tasks/deployBaseContracts.sh");
 
-    // ---------------------------------
+    // Deploy ERC20 mock token with corresponding oracle
+    execSync("sh ./tasks/deployTokenWithOracle.sh");
+
+    console.info("[INFO] All contracts deployed and owner switch initiated");
+
     // Create deployed contract objects
-    // ---------------------------------
     const reserve2 = new ethers.Contract(ADDRESS_RESERVE2, reserve2ABI(), provider);
     const treasury = new ethers.Contract(ADDRESS_TREASURY, treasuryABI(), provider);
     const geoNft = new ethers.Contract(ADDRESS_GEONFT, geoNftABI(), provider);
@@ -44,26 +138,29 @@ export default async function simulation(
     const reserve2Token = new ethers.Contract(ADDRESS_RESERVE2_TOKEN, reserve2TokenABI(), provider);
     const oracleReserve2Token = new ethers.Contract(ADDRESS_ORACLE_RESERVE2_TOKEN, oracleABI(), provider);
 
-    // ---------------------------------
+    const erc20 = new ethers.Contract(ADDRESS_ERC20, reserve2TokenABI(), provider);
+    const oracleERC20 = new ethers.Contract(ADDRESS_ORACLE_ERC20, oracleABI(), provider);
+
     // Complete owner switch for each contract
-    // ---------------------------------
     await (await reserve2.connect(owner).acceptOwnership()).wait();
     await (await treasury.connect(owner).acceptOwnership()).wait();
     await (await geoNft.connect(owner).acceptOwnership()).wait();
 
     await (await reserve2Token.connect(owner).acceptOwnership()).wait();
     await (await oracleReserve2Token.connect(owner).acceptOwnership()).wait();
-    console.log("Owner switches completed");
 
-    // ---------------------------------
-    // Set reserve2 to mintBurner of reserve2Token.
-    // ---------------------------------
+    await (await oracleERC20.connect(owner).acceptOwnership()).wait();
+    console.info("[INFO] Owner switches completed");
+
+    // Set reserve2 to mintBurner of reserve2Token
     await (await reserve2Token.connect(owner).setMintBurner(reserve2.address)).wait();
-    console.log("Reserve2Token's mintBurner set to reserve2 instance");
-}
+    console.info("[INFO] Reserve2Token's mintBurner set to reserve2 instance");
 
-//------------------------------------------------------------------------------
-// Deploy Functions
+    return [
+        reserve2, treasury, geoNft, reserve2Token,
+        oracleReserve2Token, erc20, oracleERC20
+    ];
+}
 
 //------------------------------------------------------------------------------
 // ABI Functions

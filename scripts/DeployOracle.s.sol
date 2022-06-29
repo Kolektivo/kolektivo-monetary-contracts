@@ -34,10 +34,11 @@ contract DeployOracle is Script {
             reportExpirationTime != 0,
             "DeployOracle: Missing env variable: report expiration time"
         );
-        require(
-            reportDelay != 0,
-            "DeployOracle: Missing env variable: report delay"
-        );
+        // @todo Is allowed to be 0 for simulation.
+        //require(
+        //    reportDelay != 0,
+        //    "DeployOracle: Missing env variable: report delay"
+        //);
         require(
             minimumProviders != 0,
             "DeployOracle: Missing env variable: minimum providers"

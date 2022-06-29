@@ -254,11 +254,12 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
         // Check token's validity.
         require(token_.code.length != 0);
 
+        // @todo What about oracle and vesting vault checks in constructor.
         // Check token oracle's validity.
-        require(_oracleIsValid(tokenOracle_));
+        //require(_oracleIsValid(tokenOracle_));
 
         // Check vesting vault's validity.
-        require(IVestingVault(vestingVault_).token() == token_);
+        //require(IVestingVault(vestingVault_).token() == token_);
 
         // Set storage.
         _token = IERC20MintBurn(token_);

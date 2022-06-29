@@ -1,3 +1,5 @@
+<img align="right" width="150" height="150" top="100" src="./assets/kolektivo.png">
+
 # Contributing to the Kolektivo Contracts
 
 Thanks for your interest in improving the Kolektivo contracts!

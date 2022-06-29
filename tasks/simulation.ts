@@ -124,6 +124,8 @@ function setUpWallets(hre: HardhatRuntimeEnvironment, provider: any): [Wallet, W
 async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, owner: Wallet) {
     const ethers = hre.ethers;
 
+    console.info("[INFO] Deploying all contracts. This takes a moment...");
+
     // Deploy base contracts
     execSync("sh ./tasks/deployBaseContracts.sh");
 

@@ -1,21 +1,14 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
+import { exec } from "child_process";
+
 /**
  * Setup:
  *
- *  Start anvil node with `anvil`
- *
- *  Deploy contracts (via scripts, see DEPLOYMENT.md) in this order:
- *     1. Oracle (reserve2's token price oracle)
- *     2. Reserve2Token
- *         - Note that the mintBurner address needs to be changed after deployment
- *     3. GeoNFT
- *     4. Treasury
- *     5. Reserve2
- *         - Note to adjust the dev.env file to add the already deployed contracts,
- *           and to run `source dev.env` again
- *
- * Following this setup will lead to the same addresses each time.
+ *  1. Start local Ethereum node with `anvil`
+ *  2. Run `sh setup.sh` to deploy contracts
+ *      - Note that the contract deployment addresses are always the same if
+ *        deployed via the `setup.sh` script on a fresh anvil instance
  */
 
 const ADDRESS_RESERVE2 = "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6";
@@ -62,8 +55,6 @@ export default async function simulation(
     // ---------------------------------
     await (await reserve2Token.connect(owner).setMintBurner(reserve2.address)).wait();
     console.log("Reserve2Token's mintBurner set to reserve2 instance");
-
-
 }
 
 //------------------------------------------------------------------------------

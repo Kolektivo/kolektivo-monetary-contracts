@@ -8,3 +8,4 @@ broadcast/
 remap-imports.go
 reports
 *.code-workspace
+prod.env

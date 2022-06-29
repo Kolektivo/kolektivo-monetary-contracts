@@ -63,17 +63,6 @@ testGeoNFT: ## Run GeoNFT tests
 	@forge test -vvv --match-contract "GeoNFT"
 
 # -----------------------------------------------------------------------------
-# Deployment
-
-.PHONY: deployDev
-deployDev: ## Deploy all contracts to a locally running anvil node
-	@forge script scripts/Deployment.s.sol  \
-		--rpc-url $(RPC_URL)                \
-		--sender $(WALLET_DEPLOYER)         \
-		--private-key $(WALLET_DEPLOYER_PK) \
-		--broadcast
-
-# -----------------------------------------------------------------------------
 # Static Analyzers
 
 .PHONY: analyze-slither

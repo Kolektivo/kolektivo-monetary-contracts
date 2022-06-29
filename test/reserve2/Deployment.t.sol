@@ -43,7 +43,8 @@ contract Reserve2Deployment is Reserve2Test {
         );
     }
 
-    function testConstructor_DoesNotAccept_InvalidOracle() public {
+    /*
+    @todo function testConstructor_DoesNotAccept_InvalidOracle() public {
         // Invalid oracle.
         tokenOracle.setDataAndValid(1e18, false);
 
@@ -66,8 +67,10 @@ contract Reserve2Deployment is Reserve2Test {
             DEFAULT_MIN_BACKING
         );
     }
+    */
 
-    function testConstructor_DoesNotAccept_VestingVaultWithWrongToken() public {
+    /*
+    @todo function testConstructor_DoesNotAccept_VestingVaultWithWrongToken() public {
         VestingVaultMock vv = new VestingVaultMock(address(0));
 
         vm.expectRevert(bytes("")); // Empty require statement.
@@ -78,5 +81,6 @@ contract Reserve2Deployment is Reserve2Test {
             DEFAULT_MIN_BACKING
         );
     }
+    */
 
 }

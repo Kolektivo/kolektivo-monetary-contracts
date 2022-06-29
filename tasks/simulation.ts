@@ -1,14 +1,10 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
 
 /**
  * Setup:
- *
- *  1. Start local Ethereum node with `anvil`
- *  2. Run `sh setup.sh` to deploy contracts
- *      - Note that the contract deployment addresses are always the same if
- *        deployed via the `setup.sh` script on a fresh anvil instance
+ *  - Start an anvil node
  */
 
 const ADDRESS_RESERVE2 = "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6";
@@ -25,9 +21,18 @@ export default async function simulation(
     const ethers = hre.ethers;
     const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
 
+    // anvil's second default wallet.
     const owner = new ethers.Wallet("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", provider);
+    // anvil's third default wallet.
+    const oracleProvider = new ethers.Wallet("0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", provider);
 
-    const [deployer] = await ethers.getSigners();
+    // ---------------------------------
+    // SetUp
+    // ---------------------------------
+    // Read environment variables
+    execSync("source ./dev.env");
+    // Deploy base contracts
+    //execSync("sh ./tasks/deployBaseContracts.sh");
 
     // ---------------------------------
     // Create deployed contract objects
@@ -56,6 +61,9 @@ export default async function simulation(
     await (await reserve2Token.connect(owner).setMintBurner(reserve2.address)).wait();
     console.log("Reserve2Token's mintBurner set to reserve2 instance");
 }
+
+//------------------------------------------------------------------------------
+// Deploy Functions
 
 //------------------------------------------------------------------------------
 // ABI Functions

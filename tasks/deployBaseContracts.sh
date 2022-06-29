@@ -1,8 +1,4 @@
-
-# == Start anvil Node as background process ==
-#anvil --silent &
-
-# == Deploy Base Contracts ==
+# Script to deploy Kolektivo Base Contracts
 
 # - Reserve2 Token Oracle
 forge script scripts/DeployOracle.s.sol \

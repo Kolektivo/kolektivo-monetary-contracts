@@ -14,6 +14,13 @@ forge script scripts/DeployReserve2Token.s.sol \
     --private-key $WALLET_DEPLOYER_PK \
     --broadcast
 
+# - GeoNFT 1 Oracle
+forge script scripts/DeployOracle.s.sol \
+    --rpc-url $RPC_URL \
+    --sender $WALLET_DEPLOYER \
+    --private-key $WALLET_DEPLOYER_PK \
+    --broadcast
+
 # - GeoNFT
 forge script scripts/DeployGeoNFT.s.sol \
     --rpc-url $RPC_URL \
@@ -23,6 +30,13 @@ forge script scripts/DeployGeoNFT.s.sol \
 
 # - Treasury
 forge script scripts/DeployTreasury.s.sol \
+    --rpc-url $RPC_URL \
+    --sender $WALLET_DEPLOYER \
+    --private-key $WALLET_DEPLOYER_PK \
+    --broadcast
+
+# - Treasury Token Oracle
+forge script scripts/DeployOracle.s.sol \
     --rpc-url $RPC_URL \
     --sender $WALLET_DEPLOYER \
     --private-key $WALLET_DEPLOYER_PK \

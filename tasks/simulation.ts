@@ -15,21 +15,19 @@ import { Wallet } from "ethers";
  *  7. Execute simulation with `npx hardhat simulation`
  */
 
-/**
- * Information:
- * -----------
- *
- */
+const ADDRESS_RESERVE2 = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
 
-const ADDRESS_RESERVE2 = "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6";
-const ADDRESS_TREASURY = "0x0165878a594ca255338adfa4d48449f69242eb8f";
-const ADDRESS_GEONFT = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
+const ADDRESS_TREASURY = "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6";
+const ADDRESS_ORACLE_TREASURY_TOKEN = "0x610178da211fef7d417bc0e6fed39f05609ad788";
+
+const ADDRESS_GEONFT = "0x0165878a594ca255338adfa4d48449f69242eb8f";
+const ADDRESS_ORACLE_GEONFT_1 = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
 
 const ADDRESS_RESERVE2_TOKEN = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
 const ADDRESS_ORACLE_RESERVE2_TOKEN = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 
-const ADDRESS_ERC20 = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
-const ADDRESS_ORACLE_ERC20 = "0x610178da211fef7d417bc0e6fed39f05609ad788";
+const ADDRESS_ERC20 = "0x959922be3caee4b8cd9a407cc3ac1c251c2007b1";
+const ADDRESS_ORACLE_ERC20 = "0x9a676e781a523b5d0c0e43731313a708cb607508";
 
 export default async function simulation(
     params: any,
@@ -41,25 +39,37 @@ export default async function simulation(
     const [owner, oracleProvider, user] = setUpWallets(hre, provider);
 
     const [
-        reserve2, treasury, geoNft,
+        reserve2, treasury, oracleTreasuryToken, geoNft, oracleGeoNFT1,
         reserve2Token, oracleReserve2Token,
         erc20, oracleERC20
     ] = await setUpEnvironment(hre, provider, owner);
 
     // Setup oracleProvider as provider for all oracles
     await (await oracleReserve2Token.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleTreasuryToken.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleGeoNFT1.connect(owner).addProvider(oracleProvider.address)).wait();
     console.info("[INFO] Oracle provider set up");
 
     // Add owner to treasury whitelist
     await (await treasury.connect(owner).addToWhitelist(owner.address)).wait();
-    console.info("[INFO] Owner whitelisted for treasury un/bonding operations");
+    console.info("[INFO] Owner whitelisted for Treasury un/bonding operations");
 
     // Set price of erc20 in oracle
     // Note that the price is denominated in 18 decimal precision, i.e. ether
-    const priceERC20 = ethers.utils.parseUnits("1", "ether"); // 1 USD
+    let priceERC20 = ethers.utils.parseUnits("1", "ether"); // 1 USD
     await (await oracleERC20.connect(oracleProvider).pushReport(priceERC20)).wait();
-    console.info("[INFO] ERC20 price of 1 USD pushed to oracle");
+    console.info("[INFO] ERC20 price of 1 USD pushed to Oracle");
+
+    // Set price of Reserve2Token in oracle
+    let priceOfReserve2Token = ethers.utils.parseUnits("1", "ether"); // 1 USD
+    await (await oracleReserve2Token.connect(oracleProvider).pushReport(priceOfReserve2Token)).wait();
+    console.log("[INFO] Reserve2Token price of 1 USD pushed to Oracle");
+
+    // Set price of TreasuryToken in oracle
+    let priceOfTreasuryToken = ethers.utils.parseUnits("1", "ether"); // 1 USD
+    await (await oracleTreasuryToken.connect(oracleProvider).pushReport(priceOfTreasuryToken)).wait();
+    console.log("[INFO] TreasuryToken price of 1 USD pushed to Oracle");
 
     // Add erc20 as being supported by treasury and supported for un/bonding
     await (await treasury.connect(owner).supportAsset(erc20.address, oracleERC20.address)).wait();
@@ -75,30 +85,76 @@ export default async function simulation(
 
     // Approve erc20s from owner to treasury
     await (await erc20.connect(owner).approve(treasury.address, erc20OwnerBalance)).wait();
-    console.info("[INFO] Owner approved ERC20 for treasury");
+    console.info("[INFO] Owner approved ERC20 for Treasury");
 
     // Owner bonds erc20 into treasury -> owner receives elastic receipt tokens
     await (await treasury.connect(owner).bond(erc20.address, erc20OwnerBalance)).wait();
-    console.info("[INFO] Owner bonded ERC20 into treasury")
-    console.info("       -> Treasury.balanceOf(owner): " + await treasury.balanceOf(owner.address));
-    console.info("       -> ERC20.balanceOf(owner): " + await erc20.balanceOf(owner.address));
+    console.info("[INFO] Owner bonded ERC20 into Treasury")
+    let ownerBalanceOfTreasuryTokens = await treasury.balanceOf(owner.address);
+    console.info("       -> Treasury.balanceOf(owner): " + ownerBalanceOfTreasuryTokens);
+    console.info("       -> ERC20.balanceOf(owner)   : " + await erc20.balanceOf(owner.address));
     console.info("       -> ERC20.balanceOf(treasury): " + await erc20.balanceOf(treasury.address));
 
     // Change price of erc20 by +100%
+    priceERC20 = ethers.utils.parseUnits("2", "ether"); // 2 USD
+    // Note to first purge the old report of 1 USD. This needs to be done as we do not control
+    // the timestamp leading to the oracle taking both reports into consideration and reporting
+    // the average of the two reports as price, i.e. price would be (1 + 2) / 2 = 1.5 instead of 1.
+    await (await oracleERC20.connect(oracleProvider).purgeReports()).wait();
+    await (await oracleERC20.connect(oracleProvider).pushReport(priceERC20)).wait();
+    console.info("[INFO] Increased ERC20's price by +100% to 2 USD");
+    console.info("       -> This will double owner's Treasury's token balance on the next state mutating function");
+
     // Send previous balance of elastic receipt tokens from owner to user
-    // -> owner has 50% of elastic tokens, user has 50% of elastic tokens
+    await (await treasury.connect(owner).transfer(user.address, ownerBalanceOfTreasuryTokens)).wait();
+    console.info("[INFO] Send previous balance of Treasury tokens from owner to user");
+    ownerBalanceOfTreasuryTokens = await treasury.balanceOf(owner.address);
+    let userBalanceOfTreasuryTokens = await treasury.balanceOf(user.address);
+    console.info("       -> Treasury.balanceOf(owner): " + ownerBalanceOfTreasuryTokens);
+    console.info("       -> Treasury.balanceOf(user) : " + userBalanceOfTreasuryTokens);
+    //                   -> owner has 50% of elastic tokens, user has 50% of elastic tokens
+    console.info("       ---> Note that owner's Treasury token's balance doubled. Half send to user, half kept");
 
-    // Mint geoNFT to owner.
-    // Set price of geoNFT.
+    // Mint geoNFT to owner
+    const geoNFTERC721Id = { erc721: geoNft.address, id: 1 };
+    await (await geoNft.connect(owner).mint(owner.address, 0, 0, "First GeoNFT")).wait();
+    console.info("[INFO] Minted GeoNFT with ID 1 to owner");
+    // Set price of geoNFT
+    let priceGeoNFT1 = ethers.utils.parseUnits("100000", "ether"); // 100,000 USD
+    await (await oracleGeoNFT1.connect(oracleProvider).pushReport(priceGeoNFT1)).wait();
+    console.info("       -> Price of GeoNFT(1) set to 100,000 USD");
     // Support nft by reserve2, also support for un/bonding
+    await (await reserve2.connect(owner).supportERC721Id(geoNFTERC721Id, oracleGeoNFT1.address)).wait();
+    console.info("       -> GeoNFT(1) set as supported by Reserve2");
+    await (await reserve2.connect(owner).supportERC721IdForBonding(geoNFTERC721Id, true)).wait();
+    console.info("       -> GeoNFT(1) set as supported for bonding by Reserve2");
+    await (await reserve2.connect(owner).supportERC721IdForUnbonding(geoNFTERC721Id, true)).wait();
+    console.info("       -> GeoNFT(1) set as supported for unbonding by Reserve2");
 
-    // Bond nft from owner to reserve2
-    // -> owner receives reserve2Tokens
+    // Owner bonds nft into reserve2
+    console.info("[INFO] Bonding GeoNFT(1) from owner into Reserve2");
+    await (await geoNft.connect(owner).approve(reserve2.address, 1)).wait();
+    console.info("       -> GeoNFT(1) approved from owner for Reserve2");
+    await (await reserve2.connect(owner).bondERC721Id(geoNFTERC721Id)).wait();
+    console.info("       -> GeoNFT(1) bonding from owner into Reserve2");
+    //                   -> owner receives reserve2Tokens
+    let ownerBalanceReserve2Token = await reserve2Token.balanceOf(owner.address);
+    console.info("       ---> Reserve2Token.balanceOf(owner): " + ownerBalanceReserve2Token);
+    console.info("       ---> GeoNFT.ownerOf(1): Reserve2(" + await geoNft.ownerOf(1) + ")");
 
-    // Set price for elastic receipt token
-    // user approves reserve2 his elastic tokens
-    // owner bonds elastic tokens for user into reserve2
-    // -> both hold reserve2 tokens
+    // Owner bonds user's treasury tokens into reserve2
+    console.info("[INFO] Owner bonds user's all of user's Treasury tokens into Reserve2");
+    await (await treasury.connect(user).approve(reserve2.address, ethers.utils.parseUnits("1000000000", "ether"))).wait();
+    console.info("       -> User approves Reserve2 to spend Treasury tokens");
+    await (await reserve2.connect(owner).supportERC20(treasury.address, oracleTreasuryToken.address)).wait();
+    console.info("       -> Treasury token set as supported by Reserve2");
+    await (await reserve2.connect(owner).supportERC20ForBonding(treasury.address, true)).wait();
+    console.info("       -> Treasury token set as supported for bonding by Reserve2");
+    await (await reserve2.connect(owner).supportERC20ForUnbonding(treasury.address, true)).wait();
+    console.info("       -> Treasury token set as supported for unbonding by Reserve2");
+    await (await reserve2.connect(owner).bondERC20FromTo(treasury.address, user.address, user.address, ethers.utils.parseUnits("100", "ether"))).wait();
+    console.info("       -> Owner bonds user's Treasury tokens into Reserve2");
+    console.info("       ---> Reserve2Token.balanceOf(user): " + await reserve2Token.balanceOf(user.address));
 
     // owner incurs debt in reserve2
     // owner fails to incur too much debt
@@ -136,8 +192,12 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
 
     // Create deployed contract objects
     const reserve2 = new ethers.Contract(ADDRESS_RESERVE2, reserve2ABI(), provider);
+
     const treasury = new ethers.Contract(ADDRESS_TREASURY, treasuryABI(), provider);
+    const oracleTreasuryToken = new ethers.Contract(ADDRESS_ORACLE_TREASURY_TOKEN, oracleABI(), provider);
+
     const geoNft = new ethers.Contract(ADDRESS_GEONFT, geoNftABI(), provider);
+    const oracleGeoNFT1 = new ethers.Contract(ADDRESS_ORACLE_GEONFT_1, oracleABI(), provider);
 
     const reserve2Token = new ethers.Contract(ADDRESS_RESERVE2_TOKEN, reserve2TokenABI(), provider);
     const oracleReserve2Token = new ethers.Contract(ADDRESS_ORACLE_RESERVE2_TOKEN, oracleABI(), provider);
@@ -147,8 +207,12 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
 
     // Complete owner switch for each contract
     await (await reserve2.connect(owner).acceptOwnership()).wait();
+
     await (await treasury.connect(owner).acceptOwnership()).wait();
+    await (await oracleTreasuryToken.connect(owner).acceptOwnership()).wait();
+
     await (await geoNft.connect(owner).acceptOwnership()).wait();
+    await (await oracleGeoNFT1.connect(owner).acceptOwnership()).wait();
 
     await (await reserve2Token.connect(owner).acceptOwnership()).wait();
     await (await oracleReserve2Token.connect(owner).acceptOwnership()).wait();
@@ -161,7 +225,7 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
     console.info("[INFO] Reserve2Token's mintBurner set to reserve2 instance");
 
     return [
-        reserve2, treasury, geoNft, reserve2Token,
+        reserve2, treasury, oracleTreasuryToken, geoNft, oracleGeoNFT1, reserve2Token,
         oracleReserve2Token, erc20, oracleERC20
     ];
 }

@@ -55,10 +55,16 @@ let erc20, oracleERC20;
 let owner, oracleProvider, user;
 
 function getAssetAndOracle(asset: string) {
+    if (asset === "Treasury") {
+        return [treasury, oracleTreasuryToken];
+    }
+    if (asset === "Reserve2Token") {
+        return [reserve2Token, oracleReserve2Token];
+    }
     if (asset === "ERC20") {
         return [erc20, oracleERC20];
     }
-    // @todo Continue
+    console.info("[ERROR] Unknown asset: " + asset);
 }
 
 const instructions = {
@@ -70,6 +76,7 @@ const instructions = {
                 await (await treasury.connect(owner).supportAsset(asset.address, oracle.address)).wait();
                 await (await treasury.connect(owner).supportAssetForBonding(asset.address)).wait();
                 await (await treasury.connect(owner).supportAssetForUnbonding(asset.address)).wait();
+                console.info("[INFO] Added asset as being supported by Treasury");
             };
         },
         // Removes an ERC20 contract as being supported and supported for un/bonding
@@ -78,16 +85,35 @@ const instructions = {
                 await (await treasury.connect(owner).unsupportAssetForBonding(asset.address)).wait();
                 await (await treasury.connect(owner).unsupportAssetForUnbonding(asset.address)).wait();
                 await (await treasury.connect(owner).unsupportAsset(asset.address)).wait();
+                console.info("[INFO] Removed asset from being supported by Treasury");
             };
         },
+        // Bonds an amount of ERC20s from owner
         "bond": (asset, amount) => {
             return async () => {
                 await (await asset.connect(owner).approve(treasury.address, amount)).wait();
                 await (await treasury.connect(owner).bond(asset.address, amount)).wait();
+                console.info("[INFO] Bonded " + amount.toString() + " of assets into Treasury");
             };
         },
-        "unbond": "",
+        // Unbonds an amount of TreasuryTokens from owner
+        "unbond": (asset, amount) => {
+            return async () => {
+                await (await treasury.connect(owner).approve(asset.address, amount)).wait();
+                await (await treasury.connect(owner).unbond(asset.address, amount)).wait();
+                console.info("[INFO] Unbonded " + amount.toString() + " of TreasuryTokens from Reserve");
+            };
+        },
         // + Generic ERC20
+    },
+    "Oracle": {
+        "setPrice": (oracle, amount) => {
+            return async () => {
+                await (await oracle.connect(oracleProvider).purgeReports()).wait();
+                await (await oracle.connect(oracleProvider).pushReport(amount)).wait();
+                console.info("[INFO] Set price of asset to " + amount.toString());
+            };
+        },
     }
     // @todo Continue
 };
@@ -101,9 +127,6 @@ function getInstruction(
     if (contractIdentifier === "Treasury") {
         if (functionIdentifier === "support") {
             const [asset, oracle] = getAssetAndOracle(values[0]);
-
-            console.info(asset);
-            console.info(oracleTreasuryToken);
 
             return instructions["Treasury"]["support"](asset, oracle);
         }
@@ -120,7 +143,20 @@ function getInstruction(
         if (functionIdentifier === "unbond") {
 
         }
-        // @todo Continue
+        console.info("[ERROR] Unknown instruction for Treasury: " + functionIdentifier);
+        return;
+    }
+
+    // Oracle
+    if (contractIdentifier.startsWith("Oracle")) {
+        if (contractIdentifier.endsWith("ERC20)")) {
+            const [_asset, oracle] = getAssetAndOracle("ERC20");
+            const amount = ethers.utils.parseEther(values[0]);
+
+            return instructions["Oracle"]["setPrice"](oracle, amount);
+        }
+        console.info("[ERROR] Unknown Oracle identifier: " + contractIdentifier);
+        return;
     }
 }
 
@@ -161,11 +197,6 @@ export default async function simulation(
     setUpWallets(hre, provider);
     await setUpEnvironment(hre, provider, owner);
 
-    // Set price of ERC20
-    await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
-    let price = ethers.utils.parseUnits("1", "ether"); // 1 USD
-    await (await oracleERC20.connect(oracleProvider).pushReport(price)).wait();
-
     const file = "simulation.config";
     const funcs = parse(file);
 
@@ -177,12 +208,6 @@ export default async function simulation(
 
     return;
 
-    // Setup oracleProvider as provider for all oracles
-    await (await oracleReserve2Token.connect(owner).addProvider(oracleProvider.address)).wait();
-    await (await oracleTreasuryToken.connect(owner).addProvider(oracleProvider.address)).wait();
-    await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
-    await (await oracleGeoNFT1.connect(owner).addProvider(oracleProvider.address)).wait();
-    console.info("[INFO] Oracle provider set up");
 
     // Add owner to treasury whitelist
     await (await treasury.connect(owner).addToWhitelist(owner.address)).wait();
@@ -354,4 +379,11 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
     // Set reserve2 to mintBurner of reserve2Token
     await (await reserve2Token.connect(owner).setMintBurner(reserve2.address)).wait();
     console.info("[INFO] Reserve2Token's mintBurner set to reserve2 instance");
+
+    // Setup oracleProvider as provider for all oracles
+    await (await oracleReserve2Token.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleTreasuryToken.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleGeoNFT1.connect(owner).addProvider(oracleProvider.address)).wait();
+    console.info("[INFO] Oracle provider set up");
 }

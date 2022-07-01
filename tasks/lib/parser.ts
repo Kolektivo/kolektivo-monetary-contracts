@@ -7,7 +7,7 @@
  *
  * OracleIdentifier = Oracle(TreasuryToken)
  *                  | Oracle(GeoNFT1)
- *                  | Oracle(ReserveToken)
+ *                  | Oracle(Reserve2Token)
  *                  | Oracle(ERC20)
  *
  * TreasuryIdentifier      = Treasury
@@ -22,6 +22,7 @@
  * transfer     address_to      amount_in_ether
  * transferFrom address_from    address_to      amount_in_ether
  * approve      address_spender amount_in_ether
+ * balanceOf    address
  *
  * ### Oracle
  * - setPrice price_in_ether

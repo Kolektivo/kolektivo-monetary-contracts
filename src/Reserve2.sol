@@ -26,6 +26,8 @@ interface IERC20MintBurn is IERC20 {
     function burn(address from, uint amount) external;
 }
 
+// @todo Add deposit/withdraw test for Treasury/Reserve2 via executeTx.
+
 /**
  * @title Reserve2
  *

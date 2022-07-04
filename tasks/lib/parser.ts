@@ -1,3 +1,5 @@
+import * as fs from "fs";
+
 /**
  * # Config Grammar
  *
@@ -5,7 +7,7 @@
  *
  * ## ContractIdentifiers
  *
- * OracleIdentifier = Oracle(TreasuryToken)
+ * OracleIdentifier = Oracle(Treasury)
  *                  | Oracle(GeoNFT1)
  *                  | Oracle(Reserve2Token)
  *                  | Oracle(ERC20)
@@ -22,7 +24,7 @@
  * transfer     address_to      amount_in_ether
  * transferFrom address_from    address_to      amount_in_ether
  * approve      address_spender amount_in_ether
- * balanceOf    address
+ * balanceOf
  *
  * ### Oracle
  * - setPrice price_in_ether
@@ -37,8 +39,10 @@
  * ### Reserve2
  * - supportERC20    ERC20Contract
  * - unsupportERC20  ERC20Contract
- * - supportGeoNFT   id_uint
- * - unsupportGeoNFT id_uint
+ * - supportERC721   GeoNFT
+ * - unsupportERC721 GeoNFT
+ * - bondERC20       ERC20Contract amount_in_ether
+ * - @todo other un/bondings
  * - incurDebt       amount_in_ether
  * - payDebt         amount_in_ether
  * + Generic ERC20 Functions

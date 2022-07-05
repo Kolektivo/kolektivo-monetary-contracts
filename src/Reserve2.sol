@@ -937,7 +937,7 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
     /// @inheritdoc IReserve2
     function setMinBacking(uint minBacking_) external onlyOwner {
         require(minBacking_ != 0);
-        // @todo Disallow setting minBacking lower than current backing?
+        // Note that it is allowed to set minBacking higher than current backing.
 
         if (minBacking != minBacking_) {
             emit SetMinBacking(minBacking, minBacking_);

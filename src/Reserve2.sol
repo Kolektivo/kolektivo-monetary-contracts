@@ -239,7 +239,16 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
 
     /// @dev The percentage, denominated in bps, of token supply backed by
     ///      assets held in the reserve.
+    ///      Updated through the _updateBacking function.
     uint private _backing;
+
+    /// @dev The reserve assets valuation in USD with 18 decimal precision.
+    ///      Updated through the _updateBacking function.
+    uint private _reserveValuation;
+
+    /// @dev The reserve supply's valuation in USD with 18 decimals precision.
+    ///      Updated through the _updateBacking function.
+    uint private _supplyValuation;
 
     /// @inheritdoc IReserve2
     uint public minBacking;
@@ -283,20 +292,12 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
     }
 
     //--------------------------------------------------------------------------
-    // Public Mutating Functions
-
-    //----------------------------------
-    // Reserve Functions
+    // Public View Functions
 
     /// @inheritdoc IReserve2
-    function reserveStatus() external returns (uint, uint, uint) {
-        // @note _backing is cached, not re-computed.
-        // @todo Should reserveValuation and supplyValuation also be cached?
-        return (_reserveValuation(), _supplyValuation(), _backing);
+    function reserveStatus() external view returns (uint, uint, uint) {
+        return (_reserveValuation, _supplyValuation, _backing);
     }
-
-    //--------------------------------------------------------------------------
-    // Public View Functions
 
     /// @inheritdoc IReserve2
     function token() external view returns (address) {
@@ -1161,17 +1162,18 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
     // Reserve Functions
 
     function _updateBacking() private {
-        uint reserveValuation = _reserveValuation();
-        uint supplyValuation = _supplyValuation();
+        // Update valuations.
+        _updateReserveValuation();
+        _updateSupplyValuation();
 
         // Update backing percentage.
         // Note that denomination is in bps.
         uint newBacking =
-            reserveValuation >= supplyValuation
+            _reserveValuation >= _supplyValuation
                 // Fully backed reserve.
                 ? BPS
                 // Partially backed reserve.
-                : (reserveValuation * BPS) / supplyValuation;
+                : (_reserveValuation * BPS) / _supplyValuation;
 
         // Notify off-chain services.
         emit BackingUpdated(_backing, newBacking);
@@ -1180,13 +1182,12 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
         _backing = newBacking;
     }
 
-    function _supplyValuation() private returns (uint) {
-        // Calculate and return total valuation of tokens created.
-        return (_token.totalSupply() * _priceOfToken()) / 1e18;
+    function _updateSupplyValuation() private {
+        _supplyValuation = (_token.totalSupply() * _priceOfToken()) / 1e18;
     }
 
-    function _reserveValuation() private returns (uint) {
-        return _reserveERC20sValuation() + _reserveERC721IdsValuation();
+    function _updateReserveValuation() private {
+        _reserveValuation = _reserveERC20sValuation() + _reserveERC721IdsValuation();
     }
 
     function _reserveERC20sValuation() private returns (uint) {

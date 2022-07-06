@@ -444,14 +444,6 @@ interface IReserve2 {
     //---------------------------------
     // Reserve Management
 
-    /// @notice Returns the current Reserve's status.
-    /// @dev Note that this function does not mutate any state in the reserve.
-    ///      It is safe to see it as "view".
-    /// @return uint Reserve asset's valuation in USD with 18 decimal precision.
-    /// @return uint Token supply's valuation in USD with 18 decimal precision.
-    /// @return uint BPS of supply backed by reserve.
-    function reserveStatus() external returns (uint, uint, uint);
-
     /// @notice Sets the minimum backing requirement percentage, denominated
     ///         in bps, for the reserve.
     /// @dev Only callable by owner.
@@ -803,5 +795,11 @@ interface IReserve2 {
     ///         supply backed by the reserve.
     /// @dev Changeable by owner.
     function minBacking() external view returns (uint);
+
+    /// @notice Returns the last computed Reserve's status.
+    /// @return uint Reserve assets valuation in USD with 18 decimal precision.
+    /// @return uint Token supply's valuation in USD with 18 decimal precision.
+    /// @return uint BPS of supply backed by reserve.
+    function reserveStatus() external returns (uint, uint, uint);
 
 }

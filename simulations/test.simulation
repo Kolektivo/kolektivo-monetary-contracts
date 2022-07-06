@@ -14,9 +14,6 @@ ERC20 balanceOf
 
 # ✅ Treasury
 Treasury support ERC20
-Treasury unsupport ERC20
-# Note that Treasury needs to support ERC20 in order to be bondable
-Treasury support ERC20
 Treasury bond ERC20 10
 Treasury unbond ERC20 5
 
@@ -39,4 +36,7 @@ GeoNFT approve Reserve2
 Reserve2 bondERC721 GeoNFT1
 
 Reserve2 incurDebt 1
+
+Reserve2 status
+
 Reserve2 payDebt 1

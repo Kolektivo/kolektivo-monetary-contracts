@@ -15,7 +15,7 @@ import {
     reserve2TokenABI,
     reserve2ABI
 } from "./lib/abis";
-import { exit } from "process";
+import { config, exit } from "process";
 import { FunctionFragment } from "ethers/lib/utils";
 
 /**
@@ -27,9 +27,11 @@ import { FunctionFragment } from "ethers/lib/utils";
  *  4. Run `yarn` to install hardhat dependencies
  *  5. Run `source dev.env` to setup environment variables
  *  6. Start an anvil node with `anvil` in a new terminal session
- *  7. Adjust `simulation.config` file
+ *  7. Adjust the `file` constant below
  *  8. Execute simulation with `npx hardhat simulation`
  */
+
+const file = "simulations/incurring-debt.simulation";
 
 // Contract addresses
 const ADDRESS_RESERVE2 = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
@@ -81,25 +83,25 @@ const genericInstructionsERC20 = {
     "transfer": (token, sender, receiver, amount) => {
         return async () => {
             await (await token.connect(sender).transfer(receiver.address, amount)).wait();
-            console.info("[INFO] Send tokens");
+            console.info("Send tokens");
         };
     },
     "transferFrom": (token, sender, spender, receiver, amount) => {
         return async () => {
             await (await token.connect(sender).transerFrom(spender.address, receiver.address, amount)).wait();
-            console.info("[INFO] Send token from");
+            console.info("Send token from");
         };
     },
     "approve": (token, sender, spender, amount) => {
         return async () => {
             await (await token.connect(sender).approve(spender.address, amount)).wait();
-            console.info["[INFO] Approved tokens"];
+            console.info["Approved tokens"];
         };
     },
     "balanceOf": (token, who) => {
         return async () => {
             const balance = await token.balanceOf(who.address);
-            console.info("[INFO] BalanceOf: " + balance);
+            console.info("BalanceOf: " + balance);
         };
     },
 };
@@ -109,8 +111,8 @@ const instructions = {
         // Adds an ERC20 contract as being supported and supported for un/bonding
         "support": (asset, oracle) => {
             return async () => {
-                console.info("[INFO] Treasury: Adding support for asset");
-                console.info("       => Asset : " + asset.address);
+                console.info("Treasury: Adding support for asset");
+                console.info("=> Asset : " + asset.address);
                 await (await treasury.connect(owner).supportAsset(asset.address, oracle.address)).wait();
                 await (await treasury.connect(owner).supportAssetForBonding(asset.address)).wait();
                 await (await treasury.connect(owner).supportAssetForUnbonding(asset.address)).wait();
@@ -119,8 +121,8 @@ const instructions = {
         // Removes an ERC20 contract as being unsupported and unsupported for un/bonding
         "unsupport": (asset) => {
             return async () => {
-                console.info("[INFO] Treasury: Removing support for asset");
-                console.info("       => Asset : " + asset.address);
+                console.info("Treasury: Removing support for asset");
+                console.info("=> Asset : " + asset.address);
                 await (await treasury.connect(owner).unsupportAssetForBonding(asset.address)).wait();
                 await (await treasury.connect(owner).unsupportAssetForUnbonding(asset.address)).wait();
                 await (await treasury.connect(owner).unsupportAsset(asset.address)).wait();
@@ -130,10 +132,10 @@ const instructions = {
         // Needs token approval!
         "bond": (asset, amount) => {
             return async () => {
-                console.info("[INFO] Treasury: Bonding assets");
-                console.info("       => Bonder: " + owner.address);
-                console.info("       => Asset : " + asset.address);
-                console.info("       => Amount: " + amount);
+                console.info("Treasury: Bonding assets");
+                console.info("=> Bonder: " + owner.address);
+                console.info("=> Asset : " + asset.address);
+                console.info("=> Amount: " + amount);
                 await (await treasury.connect(owner).bond(asset.address, amount)).wait();
             };
         },
@@ -141,10 +143,10 @@ const instructions = {
         // Needs token approval!
         "unbond": (asset, amount) => {
             return async () => {
-                console.info("[INFO] Treasury: Unbonding assets");
-                console.info("       => Bonder: " + owner.address);
-                console.info("       => Asset : " + asset.address);
-                console.info("       => Amount: " + amount);
+                console.info("Treasury: Unbonding assets");
+                console.info("=> Bonder: " + owner.address);
+                console.info("=> Asset : " + asset.address);
+                console.info("=> Amount: " + amount);
                 await (await treasury.connect(owner).unbond(asset.address, amount)).wait();
             };
         },
@@ -154,9 +156,9 @@ const instructions = {
     "Oracle": {
         "setPrice": (oracle, amount) => {
             return async () => {
-                console.info("[INFO] Oracle: Setting price of asset");
-                console.info("       => Oracle: " + oracle.address);
-                console.info("       => Price : " + amount);
+                console.info("Oracle: Setting price of asset");
+                console.info("=> Oracle: " + oracle.address);
+                console.info("=> Price : " + amount);
                 await (await oracle.connect(oracleProvider).purgeReports()).wait();
                 await (await oracle.connect(oracleProvider).pushReport(amount)).wait();
             };
@@ -166,8 +168,8 @@ const instructions = {
     "Reserve2": {
         "supportERC20": (asset, oracle) => {
             return async () => {
-                console.info("[INFO] Reserve2: Adding support for ERC20 asset");
-                console.info("       => Asset: " + asset.address);
+                console.info("Reserve2: Adding support for ERC20 asset");
+                console.info("=> Asset: " + asset.address);
                 await (await reserve2.connect(owner).supportERC20(asset.address, oracle.address)).wait();
                 await (await reserve2.connect(owner).supportERC20ForBonding(asset.address, true)).wait();
                 await (await reserve2.connect(owner).supportERC20ForUnbonding(asset.address, true)).wait();
@@ -175,8 +177,8 @@ const instructions = {
         },
         "unsupportERC20": (asset) => {
             return async () => {
-                console.info("[INFO] Reserve2: Removing support for ERC20 asset");
-                console.info("       => Asset: " + asset.address);
+                console.info("Reserve2: Removing support for ERC20 asset");
+                console.info("=> Asset: " + asset.address);
                 await (await reserve2.connect(owner).supportERC20ForBonding(asset.address, false)).wait();
                 await (await reserve2.connect(owner).supportERC20ForUnbonding(asset.address, false)).wait();
                 await (await reserve2.connect(owner).unsupportERC20(asset.address)).wait();
@@ -184,8 +186,8 @@ const instructions = {
         },
         "supportERC721": (erc721Id, oracle) => {
             return async () => {
-                console.info("[INFO] Reserve2: Adding support for ERC721 NFT");
-                console.info("       => Asset: " + JSON.stringify(erc721Id));
+                console.info("Reserve2: Adding support for ERC721 NFT");
+                console.info("=> Asset: " + JSON.stringify(erc721Id));
                 await (await reserve2.connect(owner).supportERC721Id(erc721Id, oracle.address)).wait();
                 await (await reserve2.connect(owner).supportERC721IdForBonding(erc721Id, true)).wait();
                 await (await reserve2.connect(owner).supportERC721IdForUnbonding(erc721Id, true)).wait();
@@ -193,8 +195,8 @@ const instructions = {
         },
         "unsupportERC721": (erc721Id) => {
             return async () => {
-                console.info("[INFO] Reserve2: Removing support for ERC721 NFT");
-                console.info("       => Asset: " + JSON.stringify(erc721Id));
+                console.info("Reserve2: Removing support for ERC721 NFT");
+                console.info("=> Asset: " + JSON.stringify(erc721Id));
                 await (await reserve2.connect(owner).supportERC721IdForBonding(erc721Id, false)).wait();
                 await (await reserve2.connect(owner).supportERC721IdForUnbonding(erc721Id, false)).wait();
                 await (await reserve2.connect(owner).unsupportERC721Id(erc721Id)).wait();
@@ -202,27 +204,27 @@ const instructions = {
         },
         "bondERC20": (asset, amount) => {
             return async () => {
-                console.info("[INFO] Reserve2: Bonding ERC20 assets");
-                console.info("       => Bonder: " + owner.address);
-                console.info("       => Asset : " + asset.address);
-                console.info("       => Amount: " + amount);
+                console.info("Reserve2: Bonding ERC20 assets");
+                console.info("=> Bonder: " + owner.address);
+                console.info("=> Asset : " + asset.address);
+                console.info("=> Amount: " + amount);
                 await (await reserve2.connect(owner).bondERC20(asset.address, amount)).wait();
             };
         },
         "unbondERC20": (asset, amount) => {
             return async () => {
-                console.info("[INFO] Reserve2: Unbonding ERC20 assets");
-                console.info("       => Bonder: " + owner.address);
-                console.info("       => Asset : " + asset.address);
-                console.info("       => Amount: " + amount);
+                console.info("Reserve2: Unbonding ERC20 assets");
+                console.info("=> Bonder: " + owner.address);
+                console.info("=> Asset : " + asset.address);
+                console.info("=> Amount: " + amount);
                 await (await reserve2.connect(owner).unbondERC20(asset.address, amount)).wait();
             };
         },
         "bondERC721": (erc721Id) => {
             return async () => {
-                console.info("[INFO] Reserve2: Bonding ERC721 NFT");
-                console.info("       => Bonder: " + owner.address);
-                console.info("       => Asset : " + JSON.stringify(erc721Id));
+                console.info("Reserve2: Bonding ERC721 NFT");
+                console.info("=> Bonder: " + owner.address);
+                console.info("=> Asset : " + JSON.stringify(erc721Id));
                 await (await reserve2.connect(owner).bondERC721Id(erc721Id)).wait();
             };
         },
@@ -233,18 +235,27 @@ const instructions = {
         },
         "incurDebt": (amount) => {
             return async () => {
-                console.info("[INFO] Reserve2: Incurring debt");
-                console.info("       => Amount: " + amount);
+                console.info("Reserve2: Incurring debt");
+                console.info("=> Amount: " + amount);
                 await (await reserve2.connect(owner).incurDebt(amount)).wait();
             };
         },
         "payDebt": (amount) => {
             return async () => {
-                console.info("[INFO] Reserve2: Paying debt");
-                console.info("       => Amount: " + amount);
+                console.info("Reserve2: Paying debt");
+                console.info("=> Amount: " + amount);
                 await (await reserve2.connect(owner).payDebt(amount)).wait();
             };
         },
+        "status": () => {
+            return async () => {
+                const [reserve, supply, backing] = await reserve2.reserveStatus();
+                console.info("Reserve2: Current status");
+                console.info("=> Asset Valuation : " + reserve);
+                console.info("=> Supply Valuation: " + supply);
+                console.info("=> Backing         : " + backing);
+            }
+        }
     },
 
     "Reserve2Token": {
@@ -254,7 +265,7 @@ const instructions = {
     "GeoNFT": {
         "approve": (spender, id) => {
             return async () => {
-                console.info("[INFO] GeoNFT: Approving NFT");
+                console.info("GeoNFT: Approving NFT");
                 await (await geoNft.connect(owner).approve(spender.address, 1)).wait();
             };
         },
@@ -263,35 +274,35 @@ const instructions = {
     "ERC20": {
         "mint": (amount) => {
             return async () => {
-                console.info("[INFO] ERC20: Minting tokens");
-                console.info("       => Receiver: " + owner.address);
-                console.info("       => Amount  : " + amount);
+                console.info("ERC20: Minting tokens");
+                console.info("=> Receiver: " + owner.address);
+                console.info("=> Amount  : " + amount);
                 await (await erc20.connect(owner).mint(owner.address, amount)).wait();
             };
         },
         "burn": (amount) => {
             return async () => {
-                console.info("[INFO] ERC20: Burning tokens");
-                console.info("       => From  : " + owner.address);
-                console.info("       => Amount: " + amount);
+                console.info("ERC20: Burning tokens");
+                console.info("=> From  : " + owner.address);
+                console.info("=> Amount: " + amount);
                 await (await erc20.connect(owner).burn(owner.address, amount)).wait();
             };
         },
         "approve": (spender, amount) => {
             return async () => {
-                console.info("[INFO] ERC20: Approving tokens");
-                console.info("       => Owner  : " + owner.address);
-                console.info("       => Spender: " + spender.address);
-                console.info("       => Amount : " + amount);
+                console.info("ERC20: Approving tokens");
+                console.info("=> Owner  : " + owner.address);
+                console.info("=> Spender: " + spender.address);
+                console.info("=> Amount : " + amount);
                 await (await erc20.connect(owner).approve(spender.address, amount)).wait();
             };
         },
         "balanceOf": () => {
             return async () => {
                 const balance = await erc20.balanceOf(owner.address);
-                console.info("[INFO] ERC20: BalanceOf");
-                console.info("       => Owner : " + owner.address);
-                console.info("       => Amount: " + balance);
+                console.info("ERC20: BalanceOf");
+                console.info("=> Owner : " + owner.address);
+                console.info("=> Amount: " + balance);
             };
         },
     }
@@ -479,10 +490,14 @@ function parse(file: string) {
 
 export default async function simulation(
     params: any,
-    hre: HardhatRuntimeEnvironment
+    hre: HardhatRuntimeEnvironment,
+    //configFile: string
 ): Promise<void> {
     const ethers = hre.ethers;
     const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545");
+
+    console.info("============ SETUP ============");
+    console.info();
 
     // Setup state variables
     setUpWallets(hre, provider);
@@ -490,19 +505,16 @@ export default async function simulation(
 
     // Event listener
     reserve2.on("BackingUpdated", (oldBacking, newBacking) => {
-        console.info("       => [EVENT] Reserve2's backing updated:");
-        console.info("                  => oldBacking: " + oldBacking);
-        console.info("                  => newBacking: " + newBacking);
+        console.info("   => [EVENT] Reserve2's backing updated:");
+        console.info("              => oldBacking: " + oldBacking);
+        console.info("              => newBacking: " + newBacking);
     });
     treasury.on("Rebase", (_epoch, supply) => {
-        console.info("       => [EVENT] Treasury token rebased:");
-        console.info("                  => new Supply: " + supply);
+        console.info("   => [EVENT] Treasury token rebased:");
+        console.info("              => new Supply: " + supply);
     });
 
     console.info();
-    console.info("==> Setup DONE");
-    console.info();
-    // Print addresses
     console.info("========== ADDRESSES ==========");
     console.info();
     console.info("Monetray Contracts");
@@ -518,16 +530,13 @@ export default async function simulation(
     console.info("Token Contracts");
     console.info("  Reserve2Token : " + reserve2Token.address);
     console.info("  ERC20         : " + erc20.address);
-    console.info("  GeoNFT        : " + geoNft.address);
+    console.info("  GeoNFT ID 1   : " + geoNft.address);
     console.info();
     console.info("User");
     console.info("  Owner         : " + owner.address);
     console.info();
-    console.info("===============================");
-    console.info();
-    console.info("==> Starting Simulation");
+    console.info("========== SIMULATION =========");
 
-    const file = "simulation.config";
     const funcs = parse(file);
 
     for (let i = 0; i < funcs.length; i++) {
@@ -540,7 +549,8 @@ export default async function simulation(
     // Sleep again 2 seconds in case last tx emits an event
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    console.info("==> Simulation DONE");
+    console.info();
+    console.info("===============================");
 }
 
 function setUpWallets(hre: HardhatRuntimeEnvironment, provider: any): [Wallet, Wallet, Wallet] {
@@ -557,7 +567,7 @@ function setUpWallets(hre: HardhatRuntimeEnvironment, provider: any): [Wallet, W
 async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, owner: Wallet) {
     const ethers = hre.ethers;
 
-    console.info("[SETUP] Deploying all contracts. This takes a moment...");
+    console.info("Deploying all contracts. This takes a moment...");
 
     // Deploy base contracts
     execSync("sh ./tasks/deployBaseContracts.sh");
@@ -565,9 +575,9 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
     // Deploy ERC20 mock token with corresponding oracle
     execSync("sh ./tasks/deployTokenWithOracle.sh");
 
-    console.info("[SETUP] ...All contracts deployed");
+    console.info("...All contracts deployed");
 
-    console.info("[SETUP] Initiating owner switch...");
+    console.info("Initiating owner switch...");
     // Set deployed contract objects to state variables
     reserve2 = new ethers.Contract(ADDRESS_RESERVE2, reserve2ABI(), provider);
 
@@ -596,24 +606,24 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
     await (await oracleReserve2Token.connect(owner).acceptOwnership()).wait();
 
     await (await oracleERC20.connect(owner).acceptOwnership()).wait();
-    console.info("[SETUP] ...Owner switch completed");
+    console.info("...Owner switch completed");
 
     // Set reserve2 to mintBurner of reserve2Token
-    console.info("[SETUP] Setting Reserve2Token's mintBurner allowance to Reserve2");
+    console.info("Setting Reserve2Token's mintBurner allowance to Reserve2");
     await (await reserve2Token.connect(owner).setMintBurner(reserve2.address)).wait();
 
     // Setup oracleProvider as provider for all oracles
-    console.info("[SETUP] Setting up the Oracle providers");
+    console.info("Setting up the Oracle providers");
     await (await oracleReserve2Token.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleTreasuryToken.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleGeoNFT1.connect(owner).addProvider(oracleProvider.address)).wait();
 
     // Add owner to treasury whitelist
-    console.info("[SETUP] Setting up Treasury whitelist");
+    console.info("Setting up Treasury whitelist");
     await (await treasury.connect(owner).addToWhitelist(owner.address)).wait();
 
     // Mint geoNFT to owner
-    console.info("[SETUP] Minting first GeoNFT");
+    console.info("Minting first GeoNFT");
     await (await geoNft.connect(owner).mint(owner.address, 0, 0, "First GeoNFT")).wait();
 }

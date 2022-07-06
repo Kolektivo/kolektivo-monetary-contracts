@@ -4202,7 +4202,7 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "stateMutability": "nonpayable",
+            "stateMutability": "view",
             "type": "function"
         },
         {

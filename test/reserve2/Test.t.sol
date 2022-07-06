@@ -35,7 +35,6 @@ library Errors {
 
     bytes internal constant MinimumBackingLimitExceeded
         = abi.encodeWithSignature("Reserve2__MinimumBackingLimitExceeded()");
-
 }
 
 /**

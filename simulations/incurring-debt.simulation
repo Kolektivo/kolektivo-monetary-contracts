@@ -25,7 +25,7 @@ Oracle(Treasury) setPrice 1
 
 # === Token Preparation ===
 
-# Mint some ERC20 tokens. The values of these tokens is 1,000 * 2 USD = 2,000 USD
+# Mint some ERC20 tokens. The value of these tokens is 1,000 * 2 USD = 2,000 USD
 ERC20 mint 1000
 
 # Print the balance, just to make sure they were actually minted

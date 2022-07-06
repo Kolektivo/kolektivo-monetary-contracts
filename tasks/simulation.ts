@@ -31,7 +31,8 @@ import { FunctionFragment } from "ethers/lib/utils";
  *  8. Execute simulation with `npx hardhat simulation`
  */
 
-const file = "simulations/incurring-debt.simulation";
+//const file = "simulations/incurring-debt.simulation";
+const file = "simulations/treasury-rebasing.simulation";
 
 // Contract addresses
 const ADDRESS_RESERVE2 = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
@@ -150,7 +151,21 @@ const instructions = {
                 await (await treasury.connect(owner).unbond(asset.address, amount)).wait();
             };
         },
+        "rebase": () => {
+            return async () => {
+                console.info("Treasury: Rebasing manually");
+                await (await treasury.connect(owner).rebase()).wait();
+            };
+        },
         // @todo + Generic ERC20
+        "balanceOf": () => {
+            return async () => {
+                const balance = await treasury.balanceOf(owner.address);
+                console.info("Treasury: BalanceOf");
+                console.info("=> Owner : " + owner.address);
+                console.info("=> Amount: " + balance);
+            };
+        },
     },
 
     "Oracle": {
@@ -254,8 +269,8 @@ const instructions = {
                 console.info("=> Asset Valuation : " + reserve);
                 console.info("=> Supply Valuation: " + supply);
                 console.info("=> Backing         : " + backing);
-            }
-        }
+            };
+        },
     },
 
     "Reserve2Token": {
@@ -332,6 +347,12 @@ function getInstruction(
             const [asset, _oracle] = getAssetAndOracle(values[0]);
             const amount = ethers.utils.parseEther(values[1]);
             return instructions["Treasury"]["unbond"](asset, amount);
+        }
+        if (functionIdentifier === "rebase") {
+            return instructions["Treasury"]["rebase"]();
+        }
+        if (functionIdentifier === "balanceOf") {
+            return instructions["Treasury"]["balanceOf"]();
         }
         return () => {
             console.info("[ERROR] Unknown instruction for Treasury: " + functionIdentifier)

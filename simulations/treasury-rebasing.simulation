@@ -1,0 +1,54 @@
+# Simulation showing Treasury rebasing functionality
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# First initialize the Oracle with some prices and mint some tokens in order
+# to bond them. Afterwards, add the tokens as supported to the Treasury,
+# approve them to the Treasury and bond them.
+#
+# Afterwards, we change the token's price (and therefore the Treasury's valuation),
+# trigger rebases manually, and print the new token balances.
+
+# === Oracles ===
+
+# Set price of example ERC20 token as 2 USD (2e18)
+Oracle(ERC20) setPrice 2
+
+# === Token Preparation ===
+
+# Mint some ERC20 tokens. The value of these tokens is 1,000 * 2 USD = 2,000 USD
+ERC20 mint 1000
+
+# Print the balance, just to make sure they were actually minted
+ERC20 balanceOf
+
+# Approve ERC20 tokens to the Treasury
+ERC20 approve Treasury 1000
+
+# === Treasury Preparation ===
+
+# Support ERC20 token
+Treasury support ERC20
+
+# === Bonding ===
+
+# Bond ERC20 tokens into Treasury
+Treasury bond ERC20 1000
+
+# Print ERC20 and Treasury token balance
+ERC20 balanceOf
+Treasury balanceOf
+
+# Change the price of the token and manually trigger rebase
+Oracle(ERC20) setPrice 1
+Treasury rebase
+Treasury balanceOf
+
+# Change the price of the token and manually trigger rebase
+Oracle(ERC20) setPrice 3
+Treasury rebase
+Treasury balanceOf
+
+# Change the price of the token to initial price and manually trigger rebase
+Oracle(ERC20) setPrice 2
+Treasury rebase
+Treasury balanceOf

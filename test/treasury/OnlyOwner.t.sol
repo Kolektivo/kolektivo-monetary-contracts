@@ -48,6 +48,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Asset and Oracle Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
+        treasury.withdrawAsset(address(1), address(2), 1);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
         treasury.supportAsset(address(1), address(2));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
@@ -122,6 +125,31 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
     //----------------------------------
     // Asset and Oracle Management
+
+    function testWithdrawAsset_FailsIf_InvalidAmount() public {
+        vm.expectRevert(Errors.InvalidAmount);
+        treasury.withdrawAsset(address(1), address(1), 0);
+    }
+
+    function testWithdrawAsset_FailsIf_InvalidRecipient() public {
+        vm.expectRevert(Errors.InvalidRecipient);
+        treasury.withdrawAsset(address(1), address(0), 1);
+    }
+
+    function testWithdrawAsset_FailsIf_CodeIsZero() public {
+        vm.expectRevert(bytes("")); // Empty require statement
+        treasury.withdrawAsset(address(0), address(1), 1);
+    }
+
+    function testWithdrawAsset(address recipient, uint amount) public {
+        vm.assume(recipient != address(0) && recipient != address(treasury));
+        vm.assume(amount != 0);
+
+        ERC20Mock asset = new ERC20Mock("TOKEN", "TKN", uint8(18));
+        asset.mint(address(treasury), amount);
+
+        treasury.withdrawAsset(address(asset), recipient, amount);
+    }
 
     function testSupportAsset() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));

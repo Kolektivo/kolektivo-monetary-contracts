@@ -14,6 +14,12 @@ library Errors {
     bytes internal constant OnlyCallableByOwner
         = abi.encodeWithSignature("OnlyCallableByOwner()");
 
+    // Inherited from pmerkleplant/elastic-receipt-token.sol.
+    bytes internal constant InvalidAmount
+        = abi.encodeWithSignature("InvalidAmount()");
+    bytes internal constant InvalidRecipient
+        = abi.encodeWithSignature("InvalidRecipient()");
+
     function AssetIsNotBondable(address asset)
         internal
         pure

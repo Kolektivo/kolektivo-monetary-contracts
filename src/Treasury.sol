@@ -438,6 +438,38 @@ contract Treasury is ElasticReceiptToken,
     //----------------------------------
     // Asset and Oracle Management
 
+    /// @notice Withdraws some amount of given asset to some recipient.
+    /// @dev Note that a rebase is executed after the withdrawal!
+    ///      In case the asset was marked as supported, i.e. the asset's
+    ///      balance valuation taken into account for the total valuation
+    ///      calculation, the loss in USD valuation through the withdrawal
+    ///      of the asset amount is synched to each token holder.
+    ///      While this operation is non-dilutive, it could reduce the token
+    ///      balance of each holder.
+    /// @dev Only callable by owner.
+    /// @param asset The address of the asset.
+    /// @param recipient The recipient address.
+    /// @param amount The amount of the asset to withdraw.
+    function withdrawAsset(address asset, address recipient, uint amount)
+        external
+        validAmount(amount)
+        validRecipient(recipient)
+        onlyOwner
+    {
+        // Make sure that asset's code is non-empty.
+        // Note that solmate's safeTransferLib does not include this check.
+        require(asset.code.length != 0);
+
+        // Transfer asset amount to recipient.
+        // Fails if balance not sufficient.
+        ERC20(asset).safeTransfer(recipient, amount);
+
+        // Initiate rebase.
+        // Note that the possible loss in USD valuation is therefore synched to
+        // each token holder.
+        super.rebase();
+    }
+
     /// @notice Adds a new asset as being supported.
     /// @dev Only callable by owner.
     /// @param asset The address of the asset.

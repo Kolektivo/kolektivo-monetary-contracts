@@ -450,7 +450,26 @@ interface IReserve2 {
     /// @param minBacking The minimum backing requirement.
     function setMinBacking(uint minBacking) external;
 
+    /// @notice Withdraws given amount of ERC20 tokens to given recipient.
+    /// @dev Reverts in case the minimum backing requirement is exceeded.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param recipient The recipient address for the withdrawed ERC20 tokens.
+    /// @param amount The amount of the asset to withdraw.
+    function withdrawERC20(address erc20, address recipient, uint amount)
+        external;
+
+    /// @notice Withdraws given ERC721Id instance to given recipient.
+    /// @dev Reverts in case the minimum backing requirement is exceeded.
+    /// @dev Only callable by owner.
+    /// @param erc721Id The ERCC721Id instance.
+    /// @param recipient The recipient address for the withdrawed ERC721Id
+    ///                  instance.
+    function withdrawERC721Id(ERC721Id memory erc721Id, address recipient)
+        external;
+
     /// @notice Incurs debt by minting tokens to the caller.
+    /// @dev Reverts in case the minimum backing requirement is exceeded.
     /// @dev Only callable by owner.
     /// @param amount The amount of tokens to mint.
     function incurDebt(uint amount) external;

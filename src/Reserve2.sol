@@ -137,7 +137,7 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
         uint balance = ERC20(erc20).balanceOf(address(this));
         uint limit = bondingLimitPerERC20[erc20];
 
-        // Note that a limit of zero is interpreted as limit given.
+        // Note that a limit of zero is interpreted as no limit given.
         if (limit != 0 && balance + amount > limit) {
             revert Reserve2__ERC20BondingLimitExceeded();
         }
@@ -947,6 +947,39 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve2
+    function withdrawERC20(address erc20, address recipient, uint amount)
+        external
+        validAmount(amount)
+        validRecipient(recipient)
+        onlyOwner
+        onBeforeUpdateBacking(true)
+    {
+        // @todo Add Event!
+        // Make sure that erc20's code is non-empty.
+        // Note that solmate's safeTransferLib does not include this check.
+        require(erc20.code.length != 0);
+
+        // Transfer erc20 tokens to recipient.
+        // Fails if balance is not sufficient.
+        ERC20(erc20).safeTransfer(recipient, amount);
+    }
+
+    /// @inheritdoc IReserve2
+    function withdrawERC721Id(ERC721Id memory erc721Id, address recipient)
+        external
+        validRecipient(recipient)
+        onlyOwner
+        onBeforeUpdateBacking(true)
+    {
+        // @todo Add Event!
+        ERC721(erc721Id.erc721).safeTransferFrom(
+            address(this),
+            recipient,
+            erc721Id.id
+        );
+    }
+
+    /// @inheritdoc IReserve2
     function incurDebt(uint amount)
         external
         onlyOwner
@@ -1171,6 +1204,7 @@ contract Reserve2 is TSOwnable, IReserve2, IERC721Receiver {
         uint newBacking =
             _reserveValuation >= _supplyValuation
                 // Fully backed reserve.
+                // @todo Should we calculate backing for >100% too? Probably yes...?
                 ? BPS
                 // Partially backed reserve.
                 : (_reserveValuation * BPS) / _supplyValuation;

@@ -189,6 +189,12 @@ contract Reserve2OnlyOwner is Reserve2Test {
         reserve.setMinBacking(1e18);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.withdrawERC20(address(1), address(1), 1);
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
+        reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(1));
+
+        vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.incurDebt(1e18);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
@@ -836,6 +842,54 @@ contract Reserve2OnlyOwner is Reserve2Test {
     function testSetMinBacking_NotAcceptedIf_IsZero() public {
         vm.expectRevert(bytes("")); // Empty require statement
         reserve.setMinBacking(0);
+    }
+
+    function testWithdrawERC20_FailsIf_InvalidAmount() public {
+        vm.expectRevert(Errors.InvalidAmount);
+        reserve.withdrawERC20(address(1), address(1), 0);
+    }
+
+    function testWithdrawERC20_FailsIf_InvalidRecipient() public {
+        vm.expectRevert(Errors.InvalidRecipient);
+        reserve.withdrawERC20(address(1), address(0), 1);
+
+        vm.expectRevert(Errors.InvalidRecipient);
+        reserve.withdrawERC20(address(1), address(reserve), 1);
+    }
+
+    function testWithdrawERC20_FailsIf_CodeIsZero() public {
+        vm.expectRevert(bytes("")); // Empty require statement
+        reserve.withdrawERC20(address(0), address(1), 1);
+    }
+
+    function testWithdrawERC20(address recipient, uint amount) public {
+        vm.assume(recipient != address(0) && recipient != address(reserve));
+        vm.assume(amount != 0);
+
+        ERC20Mock erc20 = new ERC20Mock("TOKEN", "TKN", uint8(18));
+        erc20.mint(address(reserve), amount);
+
+        reserve.withdrawERC20(address(erc20), recipient, amount);
+        assertEq(erc20.balanceOf(address(reserve)), 0);
+        assertEq(erc20.balanceOf(address(recipient)), amount);
+    }
+
+    function testWithdrawERC721Id_FailsIf_InvalidRecipient() public {
+        vm.expectRevert(Errors.InvalidRecipient);
+        reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(0));
+
+        vm.expectRevert(Errors.InvalidRecipient);
+        reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(reserve));
+    }
+
+    function testWithdrawERC721Id(address recipient) public {
+        vm.assume(recipient != address(0) && recipient != address(reserve));
+
+        // Send DEFAULT_ERC721ID to reserve.
+        nft.safeTransferFrom(address(this), address(reserve), 1);
+
+        reserve.withdrawERC721Id(DEFAULT_ERC721ID, recipient);
+        assertEq(nft.ownerOf(1), recipient);
     }
 
     // Note that the onlyOwner functions `incurDebt` and `payDebt` are tested

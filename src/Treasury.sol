@@ -456,6 +456,7 @@ contract Treasury is ElasticReceiptToken,
         validRecipient(recipient)
         onlyOwner
     {
+        // @todo Add Event!
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(asset.code.length != 0);

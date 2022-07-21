@@ -134,6 +134,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
     function testWithdrawAsset_FailsIf_InvalidRecipient() public {
         vm.expectRevert(Errors.InvalidRecipient);
         treasury.withdrawAsset(address(1), address(0), 1);
+
+        vm.expectRevert(Errors.InvalidRecipient);
+        treasury.withdrawAsset(address(1), address(treasury), 1);
     }
 
     function testWithdrawAsset_FailsIf_CodeIsZero() public {
@@ -149,6 +152,8 @@ contract TreasuryOnlyOwner is TreasuryTest {
         asset.mint(address(treasury), amount);
 
         treasury.withdrawAsset(address(asset), recipient, amount);
+        assertEq(asset.balanceOf(address(treasury)), 0);
+        assertEq(asset.balanceOf(address(recipient)), amount);
     }
 
     function testSupportAsset() public {

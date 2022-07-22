@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./Test.t.sol";
 
-contract Reserve2FractionalReserveBanking is Reserve2Test {
+contract ReserveFractionalReserveBanking is ReserveTest {
 
     // Denomination is USD with 18 decimal precision.
     // Max price is defined as 1 billion USD.

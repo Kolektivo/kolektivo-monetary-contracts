@@ -7,16 +7,16 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {TSOwnable} from "solrocket/TSOwnable.sol";
 
 /**
- * @title Reserve2 Token
+ * @title Reserve Token
  *
- * @dev The Reserve2 ERC20 token is a vanilla ERC20 token with a mintBurner
+ * @dev The Reserve ERC20 token is a vanilla ERC20 token with a mintBurner
  *      role that is eligible to perform mint and burn operations.
  *
  *      The mintBurner role is managed by the contracts owner.
  *
  * @author byterocket
  */
-contract Reserve2Token is ERC20, TSOwnable {
+contract ReserveToken is ERC20, TSOwnable {
 
     //--------------------------------------------------------------------------
     // Errors

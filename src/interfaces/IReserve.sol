@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-interface IReserve2 {
+interface IReserve {
 
     /// @notice An ERC721Id defines one specific ERC721 NFT token.
     ///         It is composed of the ERC721 contract address and the token's
@@ -17,45 +17,45 @@ interface IReserve2 {
     // Errors
 
     /// @notice Given token recipient invalid.
-    error Reserve2__InvalidRecipient();
+    error Reserve__InvalidRecipient();
 
     /// @notice Given token amount invalid.
-    error Reserve2__InvalidAmount();
+    error Reserve__InvalidAmount();
 
     /// @notice Given ERC20 token address not supported.
-    error Reserve2__ERC20NotSupported();
+    error Reserve__ERC20NotSupported();
 
     /// @notice Given ERC721Id instance not supported.
-    error Reserve2__ERC721IdNotSupported();
+    error Reserve__ERC721IdNotSupported();
 
     /// @notice Given ERC20 token address not bondable.
-    error Reserve2__ERC20NotBondable();
+    error Reserve__ERC20NotBondable();
 
     /// @notice Given ERC721 instance not bondable.
-    error Reserve2__ERC721NotBondable();
+    error Reserve__ERC721NotBondable();
 
     /// @notice Given ERC20 token address not unbondable.
-    error Reserve2__ERC20NotUnbondable();
+    error Reserve__ERC20NotUnbondable();
 
     /// @notice Given ERC721 instance not unbondable.
-    error Reserve2__ERC721NotUnbondable();
+    error Reserve__ERC721NotUnbondable();
 
     /// @notice Bonding operation exceeded reserve's bonding limit for given
     ///         ERC20 token address.
-    error Reserve2__ERC20BondingLimitExceeded();
+    error Reserve__ERC20BondingLimitExceeded();
 
     /// @notice Unbonding operation exceeded reserve's unbonding limit for
     ///         given ERC20 token address.
-    error Reserve2__ERC20UnbondingLimitExceeded();
+    error Reserve__ERC20UnbondingLimitExceeded();
 
     /// @notice Reserve's balance for given ERC20 token address no sufficient.
-    error Reserve2__ERC20BalanceNotSufficient();
+    error Reserve__ERC20BalanceNotSufficient();
 
     /// @notice Reserve's minimum backing limit exceeded.
-    error Reserve2__MinimumBackingLimitExceeded();
+    error Reserve__MinimumBackingLimitExceeded();
 
     /// @notice Reserve received invalid oracle response.
-    error Reserve2__InvalidOracle();
+    error Reserve__InvalidOracle();
 
     //--------------------------------------------------------------------------
     // Events

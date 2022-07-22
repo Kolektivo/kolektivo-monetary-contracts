@@ -1,502 +1,1437 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
+// External Interfaces.
+import {IERC20} from "./interfaces/_external/IERC20.sol";
+import {IERC721Receiver} from "./interfaces/_external/IERC721Receiver.sol";
+
+// External Contracts.
 import {ERC20} from "solmate/tokens/ERC20.sol";
+import {ERC721} from "solmate/tokens/ERC721.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
+
+// External Libraries.
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
-import {TSOwnable} from "solrocket/TSOwnable.sol";
-import {Whitelisted} from "solrocket/Whitelisted.sol";
+// Internal Interfaces.
+import {IOracle} from "./interfaces/IOracle.sol";
+import {IVestingVault} from "./interfaces/IVestingVault.sol";
+import {IReserve} from "./interfaces/IReserve.sol";
 
-import {Treasury} from "./Treasury.sol";
-import {KOL} from "./KOL.sol";
+// Internal Libraries.
+import {Wad} from "./lib/Wad.sol";
+
+interface IERC20MintBurn is IERC20 {
+    function mint(address to, uint amount) external;
+    function burn(address from, uint amount) external;
+}
 
 /**
- * @notice Reserve
+ * @title Reserve
  *
- * @dev The Kolektivo reserve manages the KOL supply, a fractional receipt
- *      money based on the KTT token.
+ * @dev The Kolektivo reserve manages a fractional receipt money using ERC20
+ *      tokens and/or ERC721 NFTs as collateral.
  *
- *      Whitelisted addresses are eligible to deposit KTT tokens to receive
- *      newly minted KOL tokens or burn KOL tokens to withdraw KTT tokens from
- *      the reserve. The minting/burning has a *fixed exchange rate* of 1:1.
+ *      The contract is only usable by an owner. The owner is eligible to:
+ *      - Incur debt, i.e. minting tokens without bonding assets
+ *      - Pay debt, i.e. burn token without unbonding assets
+ *      - Un/bond ERC20 tokens and/or ERC721 NFTs
+ *      - and change settings
  *
- *      The reserve is owned by an address. This owner manages the whitelist
- *      mentioned above.
- *      Furthermore, the owner is eligible to incur debt, i.e. minting KOL
- *      tokens without depositing KTT tokens, up until the minimum backing
- *      requirement is reached. The owner can pay debt by burning KOL tokens.
+ *      Note:
+ *      - The term "supported" means that the reserve has a price oracle for the
+ *        asset (ERC20, ERC721Id) and takes the reserve's balance of this asset
+ *        into account for the backing ratio computation.
+ *      - The elastic token produced by the Kolektivo treasury does NOT have any
+ *        special treatment. It needs to be supported by adding a price oracle
+ *        like any other asset.
  *
- *      Functionality exists to set a discount zapper address that is eligible
- *      to mint KOL tokens with a discount.
+ *      Naming conventions:
+ *      - token : The token the reserve mints/burns, i.e. the fractional receipt
+ *                money.
+ *      - asset : ERC20 token or ERC721 NFT
  *
  * @author byterocket
  */
-contract Reserve is TSOwnable, Whitelisted {
+contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     using SafeTransferLib for ERC20;
-
-    //--------------------------------------------------------------------------
-    // Errors
-
-    /// @notice Supply can not be increased due to exceeding the reserve limit.
-    /// @param backingInBPS The backing of supply in bps.
-    /// @param minBackingInBPS The min amount of backing allowed, in bps.
-    error Reserve__SupplyExceedsReserveLimit(
-        uint backingInBPS,
-        uint minBackingInBPS
-    );
-
-    /// @notice Function is only callable by contract's discount Zapper.
-    error Reserve__OnlyCallableByDiscountZapper();
-
-    //--------------------------------------------------------------------------
-    // Events
-
-    /// @notice Event emitted after backing ratio got recalculated.
-    /// @param oldBackingInBPS The ratio backing before.
-    /// @param newBackingInBPS The ratio backing after.
-    event BackingInBPSChanged(uint oldBackingInBPS, uint newBackingInBPS);
-
-    //----------------------------------
-    // Owner Events
-
-    /// @notice Event emitted when the anticipated price floor changed.
-    /// @param oldPriceFloor The old anticipated price floor.
-    /// @param newPriceFloor The new anticipated price floor.
-    event PriceFloorChanged(uint oldPriceFloor, uint newPriceFloor);
-
-    /// @notice Event emitted when the anticipated price ceiling changed.
-    /// @param oldPriceCeiling The old anticipated price ceiling.
-    /// @param newPriceCeiling The new anticipated price ceiling.
-    event PriceCeilingChanged(uint oldPriceCeiling, uint newPriceCeiling);
-
-    /// @notice Event emitted when the min backing requirement changed.
-    /// @dev Denominated in bps.
-    /// @param oldMinBackingInBPS The old min backing requirement.
-    /// @param newMinBackingInBPS The new min backing requirement.
-    event MinBackingInBPSChanged(
-        uint oldMinBackingInBPS,
-        uint newMinBackingInBPS
-    );
-
-    /// @notice Event emitted when the discount Zapper's address changed.
-    /// @param from The old discount Zapper's address.
-    /// @param to The new discount Zapper's address.
-    event DiscountZapperChanged(address indexed from, address indexed to);
-
-    /// @notice Event emitted when new debt incurred.
-    /// @param who The address who incurred the debt.
-    /// @param ktts The debt amount of KTT tokens incurred.
-    event DebtIncurred(address indexed who, uint ktts);
-
-    /// @notice Event emitted when debt got repayed.
-    /// @param who The address who repayed debt.
-    /// @param ktts The debt amount of KTT tokens payed.
-    event DebtPayed(address indexed who, uint ktts);
 
     //--------------------------------------------------------------------------
     // Modifiers
 
-    /// @dev Modifier to enforce the reserve backing is updated after the
-    ///      function's execution.
-    modifier postambleUpdateBacking() {
-        _;
-
-        _updateBackingInBPS();
-    }
-
-    /// @dev Modifier to enforce the reserve backing is updated and the min
-    ///      backing requirement is satisfied after the function's execution.
-    modifier postambleUpdateBackingAndRequireMinBacking() {
-        _;
-
-        _updateBackingInBPS();
-
-        // Fail if supply exceeds reserve's backing limit.
-        if (_backingInBPS < minBackingInBPS) {
-            revert Reserve__SupplyExceedsReserveLimit(
-                _backingInBPS,
-                minBackingInBPS
-            );
-        }
-    }
-
-    /// @dev Modifier to guarantee function is only callable by discount zapper.
-    modifier onlyDiscountZapper() {
-        if (msg.sender != discountZapper) {
-            revert Reserve__OnlyCallableByDiscountZapper();
+    /// @dev Modifier to guarantee token recipient is valid.
+    modifier validRecipient(address to) {
+        if (to == address(0) || to == address(this)) {
+            revert Reserve__InvalidRecipient();
         }
         _;
+    }
+
+    /// @dev Modifier to guarantee token amount is valid.
+    modifier validAmount(uint amount) {
+        if (amount == 0) {
+            revert Reserve__InvalidAmount();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee function is only callable for supported
+    ///      ERC20 token.
+    modifier isSupportedERC20(address erc20) {
+        if (oraclePerERC20[erc20] == address(0)) {
+            revert Reserve__ERC20NotSupported();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee function is only callable for supported
+    ///      ERC721Id instances.
+    modifier isSupportedERC721Id(ERC721Id memory erc721) {
+        if (oraclePerERC721Id[_hashOfERC721Id(erc721)] == address(0)) {
+            revert Reserve__ERC721IdNotSupported();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee function is only callable with bondable
+    ///      ERC20 token.
+    modifier isBondableERC20(address erc20) {
+        if (!isERC20Bondable[erc20]) {
+            revert Reserve__ERC20NotBondable();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee function is only callable with bondable
+    ///      ERC721Id instances.
+    modifier isBondableERC721Id(ERC721Id memory erc721Id) {
+        if (!isERC721IdBondable[_hashOfERC721Id(erc721Id)]) {
+            revert Reserve__ERC721NotBondable();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee function is only callable with unbondable
+    ///      ERC20 token.
+    modifier isUnbondableERC20(address erc20) {
+        if (!isERC20Unbondable[erc20]) {
+            revert Reserve__ERC20NotUnbondable();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee function is only callable with unbondable
+    ///      ERC721Id instances.
+    modifier isUnbondableERC721Id(ERC721Id memory erc721Id) {
+        if (!isERC721IdUnbondable[_hashOfERC721Id(erc721Id)]) {
+            revert Reserve__ERC721NotUnbondable();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee an ERC20 token bonding with given amount
+    ///      does not exceed the bonding limit.
+    modifier isNotExceedingERC20BondingLimit(address erc20, uint amount) {
+        uint balance = ERC20(erc20).balanceOf(address(this));
+        uint limit = bondingLimitPerERC20[erc20];
+
+        // Note that a limit of zero is interpreted as no limit given.
+        if (limit != 0 && balance + amount > limit) {
+            revert Reserve__ERC20BondingLimitExceeded();
+        }
+
+        _;
+    }
+
+    /// @dev Modifier to update the internal backing ratio after a function
+    ///      execution.
+    /// @param requireMinBacking Whether the call should revert if the minimal
+    ///                          backing requirement is not met anymore.
+    modifier onBeforeUpdateBacking(bool requireMinBacking) {
+        _;
+
+        _updateBacking();
+
+        if (requireMinBacking && _backing < minBacking) {
+            revert Reserve__MinimumBackingLimitExceeded();
+        }
     }
 
     //--------------------------------------------------------------------------
-    // Constants
+    // Constants and Immutables
 
     /// @dev 10,000 bps are 100%.
     uint private constant BPS = 10_000;
 
-    /// @dev The min amount in bps of reserve to supply.
-    uint private constant MIN_BACKING_IN_BPS = 5_000; // 50%
-
-    // @todo Issue #18 "What should be the maximum discount allowed?"
-    // Need a decision about the value of the following constant.
-    // Note that this issue is also open in the DiscountZapper.
-
-    /// @dev The max discount allowed for the discountZapper implementation.
-    uint private constant MAX_DISCOUNT = 3_000; // 30%
+    /// @dev Needs to have 18 decimal precision.
+    IERC20MintBurn private immutable _token;
 
     //--------------------------------------------------------------------------
     // Storage
 
-    /// @dev The KOL token implementation.
-    KOL private immutable _kol;
+    //----------------------------------
+    // Token Storage
 
-    /// @dev The KTT token implementation.
-    ERC20 private immutable _ktt;
+    /// @inheritdoc IReserve
+    address public tokenOracle;
 
-    /// @dev The bps of supply backed by the reserve.
-    uint private _backingInBPS;
+    /// @inheritdoc IReserve
+    address public vestingVault;
 
-    /// @notice The min amount in bps of reserve to supply.
-    /// @dev Changeable by owner.
-    uint public minBackingInBPS;
+    //----------------------------------
+    // Asset Mappings
 
-    /// @notice The anticipated price ceiling for KOL.
-    /// @dev Denominated in USD with 18 decimal precision.
-    /// @dev Changeable by owner.
-    uint public priceCeiling;
+    /// @inheritdoc IReserve
+    address[] public supportedERC20s;
 
-    /// @notice The anticipated price floor for KOL.
-    /// @dev Denominated in USD with 18 decimal precision.
-    /// @dev Changeable by owner.
-    uint public priceFloor;
+    /// @inheritdoc IReserve
+    ERC721Id[] public supportedERC721Ids;
 
-    /// @notice The Zapper contract being eligible to deposit KTT tokens with
-    ///         a discount.
-    /// @dev Changeable by owner.
-    address public discountZapper;
+    /// @inheritdoc IReserve
+    mapping(address => address) public oraclePerERC20;
+
+    /// @inheritdoc IReserve
+    mapping(bytes32 => address) public oraclePerERC721Id;
+
+    //----------------------------------
+    // Un/Bonding Mappings
+
+    /// @inheritdoc IReserve
+    mapping(address => bool) public isERC20Bondable;
+
+    /// @inheritdoc IReserve
+    mapping(bytes32 => bool) public isERC721IdBondable;
+
+    /// @inheritdoc IReserve
+    mapping(address => bool) public isERC20Unbondable;
+
+    /// @inheritdoc IReserve
+    mapping(bytes32 => bool) public isERC721IdUnbondable;
+
+    /// @inheritdoc IReserve
+    mapping(address => uint) public bondingLimitPerERC20;
+
+    /// @inheritdoc IReserve
+    mapping(address => uint) public unbondingLimitPerERC20;
+
+    //----------------------------------
+    // Discount Mappings
+
+    /// @inheritdoc IReserve
+    mapping(address => uint) public discountPerERC20;
+
+    /// @inheritdoc IReserve
+    mapping(bytes32 => uint) public discountPerERC721Id;
+
+    //----------------------------------
+    // Vesting Mappings
+
+    /// @inheritdoc IReserve
+    mapping(address => uint) public vestingDurationPerERC20;
+
+    /// @inheritdoc IReserve
+    mapping(bytes32 => uint) public vestingDurationPerERC721Id;
+
+    //----------------------------------
+    // Reserve Management
+
+    /// @dev The percentage, denominated in bps, of token supply backed by
+    ///      assets held in the reserve.
+    ///      Updated through the _updateBacking function.
+    uint private _backing;
+
+    /// @dev The reserve assets valuation in USD with 18 decimal precision.
+    ///      Updated through the _updateBacking function.
+    uint private _reserveValuation;
+
+    /// @dev The reserve supply's valuation in USD with 18 decimals precision.
+    ///      Updated through the _updateBacking function.
+    uint private _supplyValuation;
+
+    /// @inheritdoc IReserve
+    uint public minBacking;
 
     //--------------------------------------------------------------------------
     // Constructor
 
     constructor(
-        address kol_,
-        address ktt_,
-        uint minBackingInBPS_
+        address token_,
+        address tokenOracle_,
+        address vestingVault_,
+        uint minBacking_
     ) {
-        require(kol_ != address(0));
-        require(ktt_ != address(0));
-        require(kol_.code.length != 0);
-        require(ktt_.code.length != 0);
-        require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
+        // Check token's validity.
+        require(token_.code.length != 0);
+
+        // @todo What about oracle and vesting vault checks in constructor.
+        // Check token oracle's validity.
+        //require(_oracleIsValid(tokenOracle_));
+
+        // Check vesting vault's validity.
+        //require(IVestingVault(vestingVault_).token() == token_);
 
         // Set storage.
-        _kol = KOL(kol_);
-        _ktt = ERC20(ktt_);
-        minBackingInBPS = minBackingInBPS_;
+        _token = IERC20MintBurn(token_);
+        tokenOracle = tokenOracle_;
+        vestingVault = vestingVault_;
+        minBacking = minBacking_;
 
-        // Set current backing to 100%.
-        _backingInBPS = BPS;
+        // Set current backing to 100%;
+        _backing = BPS;
+
+        // Give vesting vault infinite approval.
+        IERC20MintBurn(token_).approve(vestingVault_, type(uint).max);
+
+        // Notify off-chain services.
+        emit SetTokenOracle(address(0), tokenOracle_);
+        emit SetVestingVault(address(0), vestingVault_);
+        emit SetMinBacking(0, minBacking_);
+        emit BackingUpdated(0, BPS);
     }
 
     //--------------------------------------------------------------------------
-    // User Mutating Functions
+    // Public View Functions
 
-    /// @notice Deposits KTT tokens from msg.sender and mints corresponding KOL
-    ///         tokens to msg.sender.
-    /// @param ktts The amount of KTT tokens to deposit.
-    function deposit(uint ktts) external onlyWhitelisted {
-        _deposit(msg.sender, msg.sender, ktts);
+    /// @inheritdoc IReserve
+    function reserveStatus() external view returns (uint, uint, uint) {
+        return (_reserveValuation, _supplyValuation, _backing);
     }
 
-    /// @notice Deposits KTT tokens from msg.sender and mints corresponding KOL
-    ///         tokens to some address.
-    /// @param to The address to mint KOL tokens to.
-    /// @param ktts The amount of KTT tokens to deposit.
-    function depositFor(address to, uint ktts) external onlyWhitelisted {
-        _deposit(msg.sender, to, ktts);
+    /// @inheritdoc IReserve
+    function token() external view returns (address) {
+        return address(_token);
     }
 
-    /// @notice Deposits all KTT tokens from msg.sender and mints corresponding
-    ///         KOL tokens to msg.sender.
-    function depositAll() external onlyWhitelisted {
-        uint ktts = _ktt.balanceOf(msg.sender);
-
-        _deposit(msg.sender, msg.sender, ktts);
-    }
-
-    /// @notice Deposits all KTT tokens from msg.sender and mints corresponding
-    ///         KOL tokens to some address.
-    /// @param to The address to mint KOL tokens to.
-    function depositAllFor(address to) external onlyWhitelisted {
-        uint ktts = _ktt.balanceOf(msg.sender);
-
-        _deposit(msg.sender, to, ktts);
-    }
-
-    /// @notice Burns some KOL tokens from msg.sender and withdraws
-    ///         corresponding KTT tokens to msg.sender.
-    /// @param kols The amount of KOL tokens to burn.
-    function withdraw(uint kols) external onlyWhitelisted {
-        _withdraw(msg.sender, msg.sender, kols);
-    }
-
-    /// @notice Burns some KOL tokens from msg.sender and withdraws
-    ///         corresponding KTT tokens to some address.
-    /// @param to The address to withdraw KTT tokens to.
-    /// @param kols The amount of KOL tokens to burn.
-    function withdrawTo(address to, uint kols) external onlyWhitelisted {
-        return _withdraw(msg.sender, to, kols);
-    }
-
-    /// @notice Burns all KOL tokens from msg.sender and withdraws
-    ///         corresponding KTT tokens to msg.sender.
-    function withdrawAll() external onlyWhitelisted {
-        uint kols = _kol.balanceOf(msg.sender);
-
-        _withdraw(msg.sender, msg.sender, kols);
-    }
-
-    /// @notice Burns all KOL tokens from msg.sender and withdraws
-    ///         corresponding KTT tokens to some address.
-    /// @param to The address to withdraw KTT tokens to.
-    function withdrawAllTo(address to) external onlyWhitelisted {
-        uint kols = _kol.balanceOf(msg.sender);
-
-        _withdraw(msg.sender, to, kols);
-    }
-
-    //--------------------------------------------------------------------------
-    // onlyDiscountZapper Mutating Functions
-
-    /// @notice Deposits all KTT tokens from discount zapper and mints KOL
-    ///         tokens, with given discount in bps, to given address.
-    /// @dev Only callable by discount zapper.
-    /// @param to The address to mint KOL tokens to.
-    /// @param discount The discount to apply, denominated in bps.
-    function depositAllWithDiscountFor(address to, uint discount)
+    /// @inheritdoc IReserve
+    function hashOfERC721Id(ERC721Id memory erc721Id)
         external
-        postambleUpdateBackingAndRequireMinBacking
-        onlyDiscountZapper
+        pure
+        returns (bytes32)
     {
-        // Note that the zapper is not allowed to deposit for itself but only
-        // for users.
-        require(msg.sender != to);
-        require(discount <= MAX_DISCOUNT);
+        return _hashOfERC721Id(erc721Id);
+    }
 
-        uint ktts = _ktt.balanceOf(msg.sender);
+    /// @inheritdoc IReserve
+    function supportedERC20sSize() external view returns (uint) {
+        return supportedERC20s.length;
+    }
 
-        // Return early if deposit amount is zero.
-        if (ktts == 0) {
-            return;
-        }
+    /// @inheritdoc IReserve
+    function supportedERC721IdsSize() external view returns (uint) {
+        return supportedERC721Ids.length;
+    }
 
-        _ktt.safeTransferFrom(msg.sender, address(this), ktts);
-
-        // Mint KOL tokens to user. The number of KOL tokens is the normal
-        // conversion rate of 1:1 plus the discount as a percentage of the
-        // deposit.
-        _kol.mint(to, ktts + ((ktts * discount) / BPS));
+    /// @inheritdoc IERC721Receiver
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
     }
 
     //--------------------------------------------------------------------------
     // onlyOwner Functions
 
     //----------------------------------
-    // Price Floor/Ceiling Management
+    // Bond Functions
 
-    /// @notice Sets the KOL tokens anticipated price floor.
-    /// @dev Only callable by owner.
-    function setPriceFloor(uint priceFloor_) external onlyOwner {
-        require(priceFloor_ <= priceCeiling && priceFloor_ != 0);
+    //--------------
+    // Bond ERC20 Functions
 
-        // Return early if state does not change.
-        if (priceFloor == priceFloor_) {
-            return;
-        }
-
-        emit PriceFloorChanged(priceFloor, priceFloor_);
-        priceFloor = priceFloor_;
+    /// @inheritdoc IReserve
+    function bondERC20(address erc20, uint erc20Amount) external onlyOwner {
+        _bondERC20(erc20, msg.sender, msg.sender, erc20Amount);
     }
 
-    /// @notice Sets the KOL tokens anticipated price ceiling.
-    /// @dev Only callable by owner.
-    function setPriceCeiling(uint priceCeiling_) external onlyOwner {
-        require(priceCeiling_ >= priceFloor && priceCeiling_ != 0);
+    /// @inheritdoc IReserve
+    function bondERC20From(address erc20, address from, uint erc20Amount)
+        external onlyOwner
+    {
+        _bondERC20(erc20, from, msg.sender, erc20Amount);
+    }
 
-        // Return early if state does not change.
-        if (priceCeiling == priceCeiling_) {
-            return;
-        }
+    /// @inheritdoc IReserve
+    function bondERC20To(address erc20, address to, uint erc20Amount)
+        external onlyOwner
+    {
+        _bondERC20(erc20, msg.sender, to, erc20Amount);
+    }
 
-        emit PriceCeilingChanged(priceCeiling, priceCeiling_);
-        priceCeiling = priceCeiling_;
+    /// @inheritdoc IReserve
+    function bondERC20FromTo(
+        address erc20,
+        address from,
+        address to,
+        uint erc20Amount
+    ) external onlyOwner {
+        _bondERC20(erc20, from, to, erc20Amount);
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC20All(address erc20) external onlyOwner {
+        _bondERC20(
+            erc20,
+            msg.sender,
+            msg.sender,
+            ERC20(erc20).balanceOf(msg.sender)
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC20AllFrom(address erc20, address from) external onlyOwner {
+        _bondERC20(
+            erc20,
+            from,
+            msg.sender,
+            ERC20(erc20).balanceOf(from)
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC20AllTo(address erc20, address to) external onlyOwner {
+        _bondERC20(
+            erc20,
+            msg.sender,
+            to,
+            ERC20(erc20).balanceOf(msg.sender)
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC20AllFromTo(address erc20, address from, address to)
+        external onlyOwner
+    {
+        _bondERC20(
+            erc20,
+            from,
+            to,
+            ERC20(erc20).balanceOf(from)
+        );
+    }
+
+    //--------------
+    // Bond ERC721Id Functions
+
+    /// @inheritdoc IReserve
+    function bondERC721Id(ERC721Id memory erc721Id) external onlyOwner {
+        _bondERC721Id(erc721Id, msg.sender, msg.sender);
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC721IdFrom(ERC721Id memory erc721Id, address from)
+        external onlyOwner
+    {
+        _bondERC721Id(erc721Id, from, msg.sender);
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC721IdTo(ERC721Id memory erc721Id, address to)
+        external onlyOwner
+    {
+        _bondERC721Id(erc721Id, msg.sender, to);
+    }
+
+    /// @inheritdoc IReserve
+    function bondERC721IdFromTo(
+        ERC721Id memory erc721Id,
+        address from,
+        address to
+    ) external onlyOwner {
+        _bondERC721Id(erc721Id, from, to);
     }
 
     //----------------------------------
-    // Debt Management
+    // Unbond Functions
 
-    /// @notice Sets the minimum backing requirement for the reserve.
-    /// @dev Denomination is in bps.
-    /// @dev Only callable by owner.
-    function setMinBackingInBPS(uint minBackingInBPS_) external onlyOwner {
-        require(minBackingInBPS_ >= MIN_BACKING_IN_BPS);
+    //--------------
+    // Unbond ERC20 Functions
 
-        // Return early if state does not change.
-        if (minBackingInBPS == minBackingInBPS_) {
+    /// @inheritdoc IReserve
+    function unbondERC20(address erc20, uint tokenAmount) external onlyOwner {
+        _unbondERC20(erc20, msg.sender, msg.sender, tokenAmount);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20From(address erc20, address from, uint tokenAmount)
+        external onlyOwner
+    {
+        _unbondERC20(erc20, from, msg.sender, tokenAmount);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20To(address erc20, address to, uint tokenAmount)
+        external onlyOwner
+    {
+        _unbondERC20(erc20, msg.sender, to, tokenAmount);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20FromTo(
+        address erc20,
+        address from,
+        address to,
+        uint tokenAmount
+    )
+        external onlyOwner
+    {
+        _unbondERC20(erc20, from, to, tokenAmount);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20All(address erc20) external onlyOwner {
+        _unbondERC20(
+            erc20,
+            msg.sender,
+            msg.sender,
+            _token.balanceOf(address(msg.sender))
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20AllFrom(address erc20, address from)
+        external onlyOwner
+    {
+        _unbondERC20(
+            erc20,
+            from,
+            msg.sender,
+            _token.balanceOf(address(from))
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20AllTo(address erc20, address to) external onlyOwner {
+        _unbondERC20(
+            erc20,
+            msg.sender,
+            to,
+            _token.balanceOf(address(msg.sender))
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC20AllFromTo(address erc20, address from, address to)
+        external onlyOwner
+    {
+        _unbondERC20(
+            erc20,
+            from,
+            to,
+            _token.balanceOf(address(from))
+        );
+    }
+
+    //--------------
+    // Unbond ERC721Id Functions
+
+    /// @inheritdoc IReserve
+    function unbondERC721Id(ERC721Id memory erc721Id) external onlyOwner {
+        _unbondERC721Id(erc721Id, msg.sender, msg.sender);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC721IdFrom(ERC721Id memory erc721Id, address from)
+        external onlyOwner
+    {
+        _unbondERC721Id(erc721Id, from, msg.sender);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC721IdTo(ERC721Id memory erc721Id, address to)
+        external onlyOwner
+    {
+        _unbondERC721Id(erc721Id, msg.sender, to);
+    }
+
+    /// @inheritdoc IReserve
+    function unbondERC721IdFromTo(
+        ERC721Id memory erc721Id,
+        address from,
+        address to
+    )
+        external onlyOwner
+    {
+        _unbondERC721Id(erc721Id, from, to);
+    }
+
+    //----------------------------------
+    // Emergency Functions
+    // For more info see Issue #2.
+
+    /// @inheritdoc IReserve
+    function executeTx(address target, bytes memory data)
+        external
+        onlyOwner
+    {
+        bool success;
+        (success, /*returnData*/) = target.call(data);
+        require(success);
+    }
+
+    //----------------------------------
+    // Token Management
+
+    /// @inheritdoc IReserve
+    function setTokenOracle(address tokenOracle_) external onlyOwner {
+        if (tokenOracle != tokenOracle_) {
+            // Check oracle's validity.
+            require(_oracleIsValid(tokenOracle_));
+
+            emit SetTokenOracle(tokenOracle, tokenOracle_);
+            tokenOracle = tokenOracle_;
+        }
+    }
+
+    //----------------------------------
+    // Asset Management
+
+    /// @inheritdoc IReserve
+    function supportERC20(address erc20, address oracle) external onlyOwner {
+        // Make sure that erc20's code is non-empty.
+        // Note that solmate's SafeTransferLib does not include this check.
+        require(erc20.code.length != 0);
+
+        address oldOracle = oraclePerERC20[erc20];
+
+        // Do nothing if erc20 is already supported and oracles are the same.
+        if (oldOracle == oracle) {
             return;
         }
 
-        emit MinBackingInBPSChanged(minBackingInBPS, minBackingInBPS_);
-        minBackingInBPS = minBackingInBPS_;
-    }
+        // Revert is erc20 is already supported but oracles differ.
+        // Note that the updateOracleForERC20 function should be used for this.
+        require(oldOracle == address(0));
 
-    /// @notice Incurs an amount of debt by minting KOL tokens to msg.sender.
-    /// @dev Denomination is in KTT tokens.
-    /// @dev Enforces that reserve backing is not lower than min backing.
-    /// @dev Only callable by owner.
-    function incurDebt(uint ktts)
-        external
-        postambleUpdateBackingAndRequireMinBacking
-        onlyOwner
-    {
-        // Note to not create debt without any reserve backing.
-        require(_reserveAdjusted() != 0);
+        // Check oracle's validity.
+        require(_oracleIsValid(oracle));
+
+        // Add erc20 and oracle to mappings.
+        supportedERC20s.push(erc20);
+        oraclePerERC20[erc20] = oracle;
 
         // Notify off-chain services.
-        emit DebtIncurred(msg.sender, ktts);
-
-        // Note that the conversion rate of KOL:KTT is 1:1.
-        _kol.mint(msg.sender, ktts);
+        emit ERC20MarkedAsSupported(erc20);
+        emit SetERC20Oracle(erc20, address(0), oracle);
     }
 
-    /// @notice Pays an amount of debt by burning KOL tokens from msg.sender.
-    /// @dev Denomination is in KOL tokens.
-    /// @dev Only callable by owner.
-    function payDebt(uint kols)
+    /// @inheritdoc IReserve
+    function supportERC721Id(ERC721Id memory erc721Id, address oracle)
         external
+        onlyOwner
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        // Make sure that erc721Id's code is non-empty.
+        // @todo Does solmate check this?
+        require(erc721Id.erc721.code.length != 0);
+
+        address oldOracle = oraclePerERC721Id[erc721IdHash];
+
+        // Do nothing if erc721Id is already supported and oracles are the same.
+        if (oldOracle == oracle) {
+            return;
+        }
+
+        // Revert if erc721Id is already supported but oracles differ.
+        // Note that the updateOracleForERC721Id function should be used for this.
+        require(oldOracle == address(0));
+
+        // Check oracle's validity.
+        require(_oracleIsValid(oracle));
+
+        // Add erc721Id and oracle to mappings.
+        supportedERC721Ids.push(erc721Id);
+        oraclePerERC721Id[erc721IdHash] = oracle;
+
+        // Notify off-chain services.
+        emit ERC721IdMarkedAsSupported(erc721Id);
+        emit SetERC721IdOracle(erc721Id, address(0), oracle);
+    }
+
+    /// @inheritdoc IReserve
+    function unsupportERC20(address erc20) external onlyOwner {
+        // Do nothing if erc20 is already not supported.
+        // Note that we do not use the isSupportedERC20 modifier to be idempotent.
+        if (oraclePerERC20[erc20] == address(0)) {
+            return;
+        }
+
+        // Remove erc20's oracle and notify off-chain services.
+        emit SetERC20Oracle(erc20, oraclePerERC20[erc20], address(0));
+        delete oraclePerERC20[erc20];
+
+        // Remove erc20 from the supportedERC20s array.
+        uint len = supportedERC20s.length;
+        for (uint i; i < len; ) {
+            if (erc20 == supportedERC20s[i]) {
+                // It not last elem in array, copy last elem to this index.
+                if (i < len - 1) {
+                    supportedERC20s[i] = supportedERC20s[len - 1];
+                }
+                supportedERC20s.pop();
+
+                emit ERC20MarkedAsUnsupported(erc20);
+                break;
+            }
+
+            unchecked { ++i; }
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function unsupportERC721Id(ERC721Id memory erc721Id) external onlyOwner {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        // Do nothing if erc721 is already not supported.
+        // Note that we do not use the isSupportedERC721Id modifier to be idempotent.
+        if (oraclePerERC721Id[erc721IdHash] == address(0)) {
+            return;
+        }
+
+        // Remove erc721Id's oracle and notify off-chain services.
+        emit SetERC721IdOracle(erc721Id, oraclePerERC721Id[erc721IdHash], address(0));
+        delete oraclePerERC721Id[erc721IdHash];
+
+        // Remove erc721Id from the supportedERC721Ids array.
+        uint len = supportedERC721Ids.length;
+        for (uint i; i < len; ) {
+            if (erc721IdHash == _hashOfERC721Id(supportedERC721Ids[i])) {
+                // If not last elem in array, copy last elem to this index.
+                if (i < len - 1) {
+                    supportedERC721Ids[i] = supportedERC721Ids[len - 1];
+                }
+                supportedERC721Ids.pop();
+
+                emit ERC721IdMarkedAsUnsupported(erc721Id);
+                break;
+            }
+
+            unchecked { ++i; }
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function updateOracleForERC20(address erc20, address oracle)
+        external
+        onlyOwner
+        isSupportedERC20(erc20)
+    {
+        // Cache old oracle.
+        address oldOracle = oraclePerERC20[erc20];
+
+        // Do nothing if new oracle is same as old oracle.
+        if (oldOracle == oracle) {
+            return;
+        }
+
+        // Check oracle's validity.
+        require(_oracleIsValid(oracle));
+
+        // Update erc20's oracle and notify off-chain services.
+        oraclePerERC20[erc20] = oracle;
+        emit SetERC20Oracle(erc20, oldOracle, oracle);
+    }
+
+    /// @inheritdoc IReserve
+    function updateOracleForERC721Id(ERC721Id memory erc721Id, address oracle)
+        external
+        onlyOwner
+        isSupportedERC721Id(erc721Id)
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        // Cache old oracle.
+        address oldOracle = oraclePerERC721Id[erc721IdHash];
+
+        // Do nothing if new oracle is same as old oracle.
+        if (oldOracle == oracle) {
+            return;
+        }
+
+        // Check oracle's validity.
+        require(_oracleIsValid(oracle));
+
+        // Update erc721Id's oracle and notify off-chain services.
+        oraclePerERC721Id[erc721IdHash] = oracle;
+        emit SetERC721IdOracle(erc721Id, oldOracle, oracle);
+    }
+
+    //----------------------------------
+    // Un/Bonding Management
+
+    /// @inheritdoc IReserve
+    function supportERC20ForBonding(address erc20, bool support)
+        external
+        onlyOwner
+        isSupportedERC20(erc20)
+    {
+        bool oldSupport = isERC20Bondable[erc20];
+
+        if (support != oldSupport) {
+            isERC20Bondable[erc20] = support;
+            emit SetERC20BondingSupport(erc20, support);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function supportERC721IdForBonding(ERC721Id memory erc721Id, bool support)
+        external
+        onlyOwner
+        isSupportedERC721Id(erc721Id)
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        bool oldSupport = isERC721IdBondable[erc721IdHash];
+
+        if (support != oldSupport) {
+            isERC721IdBondable[erc721IdHash] = support;
+            emit SetERC721IdBondingSupport(erc721Id, support);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function supportERC20ForUnbonding(address erc20, bool support)
+        external
+        onlyOwner
+        isSupportedERC20(erc20)
+    {
+        bool oldSupport = isERC20Unbondable[erc20];
+
+        if (support != oldSupport) {
+            isERC20Unbondable[erc20] = support;
+            emit SetERC20UnbondingSupport(erc20, support);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function supportERC721IdForUnbonding(ERC721Id memory erc721Id, bool support)
+        external
+        onlyOwner
+        isSupportedERC721Id(erc721Id)
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        bool oldSupport = isERC721IdUnbondable[erc721IdHash];
+
+        if (support != oldSupport) {
+            isERC721IdUnbondable[erc721IdHash] = support;
+            emit SetERC721IdUnbondingSupport(erc721Id, support);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setERC20BondingLimit(address erc20, uint limit)
+        external
+        onlyOwner
+    {
+        uint oldLimit = bondingLimitPerERC20[erc20];
+
+        if (limit != oldLimit) {
+            emit SetERC20BondingLimit(erc20, oldLimit, limit);
+            bondingLimitPerERC20[erc20] = limit;
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setERC20UnbondingLimit(address erc20, uint limit)
+        external
+        onlyOwner
+    {
+        uint oldLimit = unbondingLimitPerERC20[erc20];
+
+        if (limit != oldLimit) {
+            emit SetERC20UnbondingLimit(erc20, oldLimit, limit);
+            unbondingLimitPerERC20[erc20] = limit;
+        }
+    }
+
+    //----------------------------------
+    // Discount Management
+
+    /// @inheritdoc IReserve
+    function setDiscountForERC20(address erc20, uint discount)
+        external
+        onlyOwner
+    {
+        uint oldDiscount = discountPerERC20[erc20];
+
+        if (discount != oldDiscount) {
+            emit SetERC20Discount(erc20, oldDiscount, discount);
+            discountPerERC20[erc20] = discount;
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setDiscountForERC721Id(ERC721Id memory erc721Id, uint discount)
+        external
+        onlyOwner
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        uint oldDiscount = discountPerERC721Id[erc721IdHash];
+
+        if (discount != oldDiscount) {
+            emit SetERC721IdDiscount(erc721Id, oldDiscount, discount);
+            discountPerERC721Id[erc721IdHash] = discount;
+        }
+    }
+
+    //----------------------------------
+    // Vesting Management
+
+    /// @inheritdoc IReserve
+    function setVestingVault(address vestingVault_) external onlyOwner {
+        if (vestingVault != vestingVault_) {
+            // Check new vesting vault's validity.
+            require(IVestingVault(vestingVault_).token() == address(_token));
+
+            // Remove old vesting vault's approval.
+            _token.approve(vestingVault, 0);
+
+            // Give new vesting vault infinite approval.
+            _token.approve(vestingVault_, type(uint).max);
+
+            emit SetVestingVault(vestingVault, vestingVault_);
+            vestingVault = vestingVault_;
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setVestingForERC20(address erc20, uint vestingDuration)
+        external
+        onlyOwner
+    {
+        uint oldVestingDuration = vestingDurationPerERC20[erc20];
+
+        if (vestingDuration != oldVestingDuration) {
+            emit SetERC20Vesting(erc20, oldVestingDuration, vestingDuration);
+            vestingDurationPerERC20[erc20] = vestingDuration;
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setVestingForERC721Id(
+        ERC721Id memory erc721Id,
+        uint vestingDuration
+    ) external onlyOwner {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        uint oldVestingDuration = vestingDurationPerERC721Id[erc721IdHash];
+
+        if (vestingDuration != oldVestingDuration) {
+            emit SetERC721IdVesting(
+                erc721Id,
+                oldVestingDuration,
+                vestingDuration
+            );
+            vestingDurationPerERC721Id[erc721IdHash] = vestingDuration;
+        }
+    }
+
+    //----------------------------------
+    // Reserve Management
+
+    /// @inheritdoc IReserve
+    function setMinBacking(uint minBacking_) external onlyOwner {
+        require(minBacking_ != 0);
+        // Note that it is allowed to set minBacking higher than current backing.
+
+        if (minBacking != minBacking_) {
+            emit SetMinBacking(minBacking, minBacking_);
+            minBacking = minBacking_;
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function withdrawERC20(address erc20, address recipient, uint amount)
+        external
+        validAmount(amount)
+        validRecipient(recipient)
+        onlyOwner
+        onBeforeUpdateBacking(true)
+    {
+        // @todo Add Event!
+        // Make sure that erc20's code is non-empty.
+        // Note that solmate's safeTransferLib does not include this check.
+        require(erc20.code.length != 0);
+
+        // Transfer erc20 tokens to recipient.
+        // Fails if balance is not sufficient.
+        ERC20(erc20).safeTransfer(recipient, amount);
+    }
+
+    /// @inheritdoc IReserve
+    function withdrawERC721Id(ERC721Id memory erc721Id, address recipient)
+        external
+        validRecipient(recipient)
+        onlyOwner
+        onBeforeUpdateBacking(true)
+    {
+        // @todo Add Event!
+        ERC721(erc721Id.erc721).safeTransferFrom(
+            address(this),
+            recipient,
+            erc721Id.id
+        );
+    }
+
+    /// @inheritdoc IReserve
+    function incurDebt(uint amount)
+        external
+        onlyOwner
+        onBeforeUpdateBacking(true)
+    {
+        // Mint tokens, i.e. create debt.
+        _token.mint(msg.sender, amount);
+
+        // Notify off-chain services.
+        emit DebtIncurred(amount);
+    }
+
+    /// @inheritdoc IReserve
+    function payDebt(uint amount)
+        external
+        onlyOwner
         // Note that min backing is not enforced. Otherwise it would be
-        // impossible to partially pay back debt after KTT supply contracted
-        // to below min backing requirement.
-        postambleUpdateBacking
-        onlyOwner
+        // impossible to partially repay debt after valuation contracted to
+        // below min backing requirement.
+        onBeforeUpdateBacking(false)
     {
+        // Burn tokens, i.e. repay debt.
+        _token.burn(msg.sender, amount);
+
         // Notify off-chain services.
-        emit DebtPayed(msg.sender, kols);
-
-        _kol.burn(msg.sender, kols);
-    }
-
-    //----------------------------------
-    // Whitelist Management
-
-    /// @notice Adds an address to the whitelist.
-    /// @dev Only callable by owner.
-    /// @param who The address to add to the whitelist.
-    function addToWhitelist(address who) external onlyOwner {
-        super._addToWhitelist(who);
-    }
-
-    /// @notice Removes an address from the whitelist.
-    /// @dev Only callable by owner.
-    /// @param who The address to remove from the whitelist.
-    function removeFromWhitelist(address who) external onlyOwner {
-        super._removeFromWhitelist(who);
-    }
-
-    //----------------------------------
-    // Discount Zapper Management
-
-    /// @notice Sets the discount Zapper's address.
-    /// @dev Only callable by owner.
-    /// @param who The new discount Zapper's address.
-    function setDiscountZapper(address who) external onlyOwner {
-        // Note to not require an address unequal to zero to be able to disable
-        // the discount functionality.
-
-        // Return early if state does not change.
-        if (who == discountZapper) {
-            return;
-        }
-
-        emit DiscountZapperChanged(discountZapper, who);
-        discountZapper = who;
-    }
-
-    //--------------------------------------------------------------------------
-    // Public View Functions
-
-    /// @notice Returns the KOL token address.
-    function kol() external view returns (address) {
-        return address(_kol);
-    }
-
-    /// @notice Returns the KTT token address, i.e. the token the reserve is
-    ///         composed off.
-    function ktt() external view returns (address) {
-        return address(_ktt);
-    }
-
-    /// @notice Returns the current reserve status.
-    /// @return uint Reserve denominated in USD with 18 decimal precision.
-    /// @return uint Supply denominated in USD with 18 decimal precision.
-    /// @return uint Bps of supply backed by reserve.
-    function reserveStatus() external view returns (uint, uint, uint) {
-        return (_reserveAdjusted(), _supply(), _backingInBPS);
+        emit DebtPayed(amount);
     }
 
     //--------------------------------------------------------------------------
     // Private Functions
 
-    /// @dev Handles user deposits.
-    function _deposit(address from, address to, uint ktts)
+    //----------------------------------
+    // Bond Functions
+
+    function _bondERC20(
+        address erc20,
+        address from,
+        address to,
+        uint erc20Amount
+    )
         private
-        postambleUpdateBacking
+        // Note that if an ERC20 is bondable, it is also supported.
+        // isSupportedERC20(erc20)
+        isBondableERC20(erc20)
+        isNotExceedingERC20BondingLimit(erc20, erc20Amount)
+        validRecipient(to)
+        validAmount(erc20Amount)
+        onBeforeUpdateBacking(true)
     {
-        _ktt.safeTransferFrom(from, address(this), ktts);
+        // Fetch amount of erc20 tokens.
+        ERC20(erc20).safeTransferFrom(from, address(this), erc20Amount);
 
-        // Note that the conversion rate of KOL:KTT is 1:1.
-        _kol.mint(to, ktts);
+        // Compute amount of tokens to mint.
+        uint amount = _computeMintAmountGivenERC20(erc20, erc20Amount);
+
+        // Mint tokens.
+        _commitTokenMintGivenERC20(erc20, to, amount);
+
+        // Notify off-chain services.
+        emit BondedERC20(erc20, erc20Amount, amount);
     }
 
-    /// @dev Handles user withdrawals.
-    function _withdraw(address from, address to, uint kols)
+    function _bondERC721Id(
+        ERC721Id memory erc721Id,
+        address from,
+        address to
+    )
         private
-        postambleUpdateBacking
+        // Note that if an ERC721Id is bondable, it is also supported.
+        // isSupportedERC721Id(erc721Id)
+        isBondableERC721Id(erc721Id)
+        validRecipient(to)
+        onBeforeUpdateBacking(true)
     {
-        // Note that the conversion rate of KOL:KTT is 1:1.
-        _ktt.safeTransfer(to, kols);
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        _kol.burn(from, kols);
+        // Fetch erc721Id.
+        ERC721(erc721Id.erc721).safeTransferFrom(
+            from,
+            address(this),
+            erc721Id.id
+        );
+
+        // Compute amount of tokens to mint.
+        uint amount = _computeMintAmountGivenERC721Id(erc721IdHash);
+
+        // Mint tokens.
+        _commitTokenMintGivenERC721Id(erc721IdHash, to, amount);
+
+        // Notify off-chain services.
+        emit BondedERC721(erc721Id, amount);
     }
 
-    /// @dev Updates the bps of supply that is backed by the reserve.
-    /// @dev Should NOT be called directly but rather used through the
-    ///      postambleUpdateBacking* modifiers.
-    function _updateBackingInBPS() private {
-        uint reserveAdjusted = _reserveAdjusted();
-        uint supply = _supply();
+    //----------------------------------
+    // Unbond Functions
 
-        uint newBackingInBPS =
-            reserveAdjusted >= supply
-                ? BPS                               // Fully backed
-                : (reserveAdjusted * BPS) / supply; // Partially backed
+    // @todo Note that unbonding does not have any vesting options.
 
-        emit BackingInBPSChanged(_backingInBPS, newBackingInBPS);
-        _backingInBPS = newBackingInBPS;
+    function _unbondERC20(
+        address erc20,
+        address from,
+        address to,
+        uint tokenAmount
+    )
+        private
+        // Note that if an ERC20 is unbondable, it is also supported.
+        // isSupportedERC20(erc20)
+        isUnbondableERC20(erc20)
+        validRecipient(to)
+        validAmount(tokenAmount)
+        onBeforeUpdateBacking(true)
+    {
+        // Calculate valuation of tokens to burn.
+        uint tokenValue = (tokenAmount * _priceOfToken()) / 1e18;
+
+        // Calculate the amount of erc20 tokens to withdraw.
+        uint erc20AmountWad = (tokenValue * 1e18) / _priceOfERC20(erc20);
+
+        // Convert erc20 amount from wad format.
+        uint erc20Amount = Wad.convertFromWad(erc20, erc20AmountWad);
+
+        // Revert if balance not sufficient.
+        uint balance = ERC20(erc20).balanceOf(address(this));
+        if (balance < erc20Amount) {
+            revert Reserve__ERC20BalanceNotSufficient();
+        }
+
+        // Revert if unbonding limit exceeded.
+        uint limit = unbondingLimitPerERC20[erc20];
+        if (balance - erc20Amount < limit) {
+            revert Reserve__ERC20UnbondingLimitExceeded();
+        }
+
+        // Notify off-chain services.
+        emit UnbondedERC20(erc20, erc20Amount, tokenAmount);
+
+        // Withdraw erc20s and burn tokens.
+        ERC20(erc20).safeTransfer(to, erc20Amount);
+        _token.burn(from, tokenAmount);
     }
 
-    /// @dev Returns the current reserve in USD denomination with 18 decimal
-    ///      precision.
-    function _reserveAdjusted() private view returns (uint) {
-        // Note that KTT is in 18 decimal precision and is assumed to always
-        // have an intrinsic value of 1 USD.
-        return _ktt.balanceOf(address(this));
+    function _unbondERC721Id(
+        ERC721Id memory erc721Id,
+        address from,
+        address to
+    )
+        private
+        // Note that if an ERC721Id is unbondable, it is also supported.
+        // isSupportedERC721Id(erc721Id)
+        isUnbondableERC721Id(erc721Id)
+        validRecipient(to)
+        onBeforeUpdateBacking(true)
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        // Query erc721Id's price oracle.
+        uint priceWad = _priceOfERC721Id(erc721IdHash);
+
+        // Calculate the amount of tokens to burn.
+        uint tokenAmount = (priceWad / _priceOfToken()) * 1e18;
+
+        // Notify off-chain services.
+        emit UnbondedERC721Id(erc721Id, tokenAmount);
+
+        // Burn tokens and withdraw ERC721Id.
+        // Note that the ERC721 transfer triggers a callback if the recipient
+        // is a contract. However, reentry should not be a problem as the
+        // transfer is the last operation executed.
+        _token.burn(from, tokenAmount);
+        ERC721(erc721Id.erc721).safeTransferFrom(
+            address(this),
+            to,
+            erc721Id.id
+        );
     }
 
-    /// @dev Returns the current supply in USD denomination with 18 decimal
-    ///      precision.
-    function _supply() private view returns (uint) {
-        return _kol.totalSupply();
+    function _computeMintAmountGivenERC20(address erc20, uint amount)
+        private
+        returns (uint)
+    {
+        // Convert erc20 amount to wad format.
+        uint amountWad = Wad.convertToWad(erc20, amount);
+
+        // Calculate the total value of erc20 tokens.
+        uint valuationWad = (amountWad * _priceOfERC20(erc20)) / 1e18;
+
+        // Calculate the number of tokens to mint (no discount applied yet).
+        uint toMint = (valuationWad * 1e18) / _priceOfToken();
+
+        // Apply discount.
+        toMint = _applyDiscountForERC20(erc20, toMint);
+
+        return toMint;
+    }
+
+    function _computeMintAmountGivenERC721Id(bytes32 erc721IdHash)
+        private
+        returns (uint)
+    {
+        // Note that erc721Ids price equals it's bonding valuation because the
+        // amount of tokens bonded is always 1.
+
+        // Calculate the number of tokens to mint (no discount applied yet).
+        uint toMint = (_priceOfERC721Id(erc721IdHash) * 1e18) / _priceOfToken();
+
+        // Apply discount.
+        toMint = _applyDiscountForERC721Id(erc721IdHash, toMint);
+
+        return toMint;
+    }
+
+    //----------------------------------
+    // Reserve Functions
+
+    function _updateBacking() private {
+        // Update valuations.
+        _updateReserveValuation();
+        _updateSupplyValuation();
+
+        // Update backing percentage.
+        // Note that denomination is in bps.
+        uint newBacking =
+            _reserveValuation >= _supplyValuation
+                // Fully backed reserve.
+                // @todo Should we calculate backing for >100% too? Probably yes...?
+                ? BPS
+                // Partially backed reserve.
+                : (_reserveValuation * BPS) / _supplyValuation;
+
+        // Notify off-chain services.
+        emit BackingUpdated(_backing, newBacking);
+
+        // Update storage.
+        _backing = newBacking;
+    }
+
+    function _updateSupplyValuation() private {
+        _supplyValuation = (_token.totalSupply() * _priceOfToken()) / 1e18;
+    }
+
+    function _updateReserveValuation() private {
+        _reserveValuation = _reserveERC20sValuation() + _reserveERC721IdsValuation();
+    }
+
+    function _reserveERC20sValuation() private returns (uint) {
+        // The total valuation of ERC20 assets in the reserve.
+        uint totalWad;
+
+        // Declare variables outside of loop to save gas.
+        address erc20;
+        uint balanceWad;
+
+        // Calculate the total valuation of ERC20 assets in the reserve.
+        uint len = supportedERC20s.length;
+        for (uint i; i < len; ) {
+            erc20 = supportedERC20s[i];
+
+            // Fetch erc20 balance in wad format.
+            balanceWad = Wad.convertToWad(
+                erc20,
+                ERC20(erc20).balanceOf(address(this))
+            );
+
+            // Continue/Break if erc20 balance is zero.
+            if (balanceWad == 0) {
+                if (i + 1 == len) {
+                    break;
+                } else {
+                    unchecked { ++i; }
+                    continue;
+                }
+            }
+
+            // Add asset's valuation to the total valuation.
+            totalWad += (balanceWad * _priceOfERC20(erc20)) / 1e18;
+
+            unchecked { ++i; }
+        }
+
+        return totalWad;
+    }
+
+    function _reserveERC721IdsValuation() private returns (uint) {
+        // The total valuation of ERC721 assets in the reserve.
+        uint totalWad;
+
+        // Declare variables outside of loop to save gas.
+        ERC721Id memory erc721Id;
+        bytes32 erc721IdHash;
+
+        uint len = supportedERC721Ids.length;
+        for (uint i; i < len; ) {
+            erc721Id = supportedERC721Ids[i];
+            erc721IdHash = _hashOfERC721Id(erc721Id);
+
+            // Continue/Break if reserve is not the owner of that erc721Id.
+            if (ERC721(erc721Id.erc721).ownerOf(erc721Id.id) != address(this)) {
+                if (i + 1 == len) {
+                    break;
+                } else {
+                    unchecked { ++i; }
+                    continue;
+                }
+            }
+
+            // Add erc721Id's price to the total valuation.
+            totalWad += _priceOfERC721Id(erc721IdHash);
+
+            unchecked { ++i; }
+        }
+
+        return totalWad;
+    }
+
+    //----------------------------------
+    // Oracle Functions
+
+    function _oracleIsValid(address oracle) private returns (bool) {
+        bool valid;
+        uint price;
+        (price, valid) = IOracle(oracle).getData();
+
+        return valid && price != 0;
+    }
+
+    function _priceOfToken() private returns (uint) {
+        // Note that the price is returned in 18 decimal precision.
+        uint price;
+        bool valid;
+        (price, valid) = IOracle(tokenOracle).getData();
+
+        if (!valid || price == 0) {
+            // Revert if oracle is invalid or price is zero.
+            revert Reserve__InvalidOracle();
+        }
+
+        return price;
+    }
+
+    function _priceOfERC20(address erc20) private returns (uint) {
+        // Note that the price is returned in 18 decimal precision.
+        uint price;
+        bool valid;
+        (price, valid) = IOracle(oraclePerERC20[erc20]).getData();
+
+        if (!valid || price == 0) {
+            // Revert if oracle is invalid or price is zero.
+            revert Reserve__InvalidOracle();
+        }
+
+        return price;
+    }
+
+    function _priceOfERC721Id(bytes32 erc721IdHash) private returns (uint) {
+        // Note that the price is returned in 18 decimal precision.
+        uint price;
+        bool valid;
+        (price, valid) = IOracle(oraclePerERC721Id[erc721IdHash]).getData();
+
+        if (!valid || price == 0) {
+            // Revert if oracle is invalid or price is zero.
+            revert Reserve__InvalidOracle();
+        }
+
+        return price;
+    }
+
+    //----------------------------------
+    // Minting Functions
+
+    function _commitTokenMintGivenERC20(
+        address erc20,
+        address to,
+        uint amount
+    ) private {
+        uint vestingDuration = vestingDurationPerERC20[erc20];
+
+        if (vestingDuration == 0) {
+            // No vesting, mint tokens directly to user.
+            _token.mint(to, amount);
+        } else {
+            // Vest token via vesting vault.
+            _token.mint(address(this), amount);
+
+            // Note that the tokens are fetched from address(this) to the
+            // vesting vault.
+            IVestingVault(vestingVault).depositFor(
+                to,
+                amount,
+                vestingDuration
+            );
+        }
+    }
+
+    function _commitTokenMintGivenERC721Id(
+        bytes32 erc721IdHash,
+        address to,
+        uint amount
+    ) private {
+        uint vestingDuration = vestingDurationPerERC721Id[erc721IdHash];
+
+        if (vestingDuration == 0) {
+            // No vesting, mint tokens directly to user.
+            _token.mint(to, amount);
+        } else {
+            // Vest token via vesting vault.
+            _token.mint(address(this), amount);
+
+            // Note that the tokens are fetched from address(this) to the
+            // vesting vault.
+            IVestingVault(vestingVault).depositFor(
+                to,
+                amount,
+                vestingDuration
+            );
+        }
+    }
+
+    //----------------------------------
+    // Discount Functions
+
+    function _applyDiscountForERC20(address erc20, uint amount)
+        private
+        view
+        returns (uint)
+    {
+        uint discount = discountPerERC20[erc20];
+
+        return discount == 0
+            ? amount
+            : amount + (amount * discount) / BPS;
+    }
+
+    function _applyDiscountForERC721Id(bytes32 erc721IdHash, uint amount)
+        private
+        view
+        returns (uint)
+    {
+        uint discount = discountPerERC721Id[erc721IdHash];
+
+        return discount == 0
+            ? amount
+            : amount + (amount * discount) / BPS;
+    }
+
+    //----------------------------------
+    // ERC721Id Helper Functions
+
+    function _hashOfERC721Id(ERC721Id memory erc721Id)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(erc721Id));
     }
 
 }

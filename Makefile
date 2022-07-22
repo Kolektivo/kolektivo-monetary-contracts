@@ -52,11 +52,7 @@ testKOL: ## Run KOL Token tests
 
 .PHONY: testReserve
 testReserve: ## Run Reserve tests
-	@forge test -vvv --match-contract "Reserve[^2]"
-
-.PHONY: testReserve2
-testReserve2: ## Run Reserve2 tests
-	@forge test -vvv --match-contract "Reserve2"
+	@forge test -vvv --match-contract "Reserve"
 
 .PHONY: testDiscountZapper
 testDiscountZapper: ## Run Discount Zapper tests

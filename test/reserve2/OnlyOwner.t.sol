@@ -884,6 +884,7 @@ contract Reserve2OnlyOwner is Reserve2Test {
 
     function testWithdrawERC721Id(address recipient) public {
         vm.assume(recipient != address(0) && recipient != address(reserve));
+        vm.assume(recipient != address(nft));
 
         // Send DEFAULT_ERC721ID to reserve.
         nft.safeTransferFrom(address(this), address(reserve), 1);

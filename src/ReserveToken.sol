@@ -22,13 +22,13 @@ contract ReserveToken is ERC20, TSOwnable {
     // Errors
 
     /// @notice Invalid token recipient.
-    error KOL__InvalidRecipient();
+    error ReserveToken__InvalidRecipient();
 
     /// @notice Invalid token amount.
-    error KOL__InvalidAmount();
+    error ReserveToken__InvalidAmount();
 
     /// @notice Function is only callable by mintBurner.
-    error KOL__NotMintBurner();
+    error ReserveToken__NotMintBurner();
 
     //--------------------------------------------------------------------------
     // Events
@@ -47,7 +47,7 @@ contract ReserveToken is ERC20, TSOwnable {
     /// @dev Modifier to guarantee token recipient is valid.
     modifier validRecipient(address to) {
         if (to == address(0) || to == address(this)) {
-            revert KOL__InvalidRecipient();
+            revert ReserveToken__InvalidRecipient();
         }
         _;
     }
@@ -55,7 +55,7 @@ contract ReserveToken is ERC20, TSOwnable {
     /// @dev Modifier to guarantee token amount is valid.
     modifier validAmount(uint amount) {
         if (amount == 0) {
-            revert KOL__InvalidAmount();
+            revert ReserveToken__InvalidAmount();
         }
         _;
     }
@@ -63,7 +63,7 @@ contract ReserveToken is ERC20, TSOwnable {
     /// @dev Modifier to guarantee function is only callable by mintBurner.
     modifier onlyMintBurner() {
         if (msg.sender != mintBurner) {
-            revert KOL__NotMintBurner();
+            revert ReserveToken__NotMintBurner();
         }
         _;
     }
@@ -89,13 +89,22 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Mints an amount of KOL tokens to some address.
     /// @dev Only callable by mintBurner address.
-    function mint(address to, uint amount) external onlyMintBurner {
+    function mint(address to, uint amount)
+        external
+        validRecipient(to)
+        validAmount(amount)
+        onlyMintBurner
+    {
         super._mint(to, amount);
     }
 
     /// @notice Burns an amount of KOL tokens from some address.
     /// @dev Only callable by mintBurner address.
-    function burn(address from, uint amount) external onlyMintBurner {
+    function burn(address from, uint amount)
+        external
+        validAmount(amount)
+        onlyMintBurner
+    {
         super._burn(from, amount);
     }
 

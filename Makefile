@@ -46,9 +46,9 @@ testTreasury: ## Run Treasury tests
 testElasticToken: ## Run Elastic Receipt Token tests
 	@forge test -vvv --match-contract "ElasticReceiptToken"
 
-.PHONY: testKOL
-testKOL: ## Run KOL Token tests
-	@forge test -vvv --match-contract "KOL"
+.PHONY: testReserveToken
+testReserveToken: ## Run ReserveToken tests
+	@forge test -vvv --match-contract "ReserveToken"
 
 .PHONY: testReserve
 testReserve: ## Run Reserve tests

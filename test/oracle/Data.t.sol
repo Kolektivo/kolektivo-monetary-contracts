@@ -32,16 +32,6 @@ contract OracleData is OracleTest {
         oracle.setMinimumProviders(2);
         pushValidReport(p1, 10);
 
-        // There are 2 report slots per provider. All 3 providers did not
-        // push 2 reports that are considered valid.
-        // Therefore, expect an event about missing reports for each provider.
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p1);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p2);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p3);
-
         // Expect oracle data to be invalid.
         uint result;
         bool valid;
@@ -59,14 +49,6 @@ contract OracleData is OracleTest {
         // Push two valid reports from same provider.
         pushValidReport(p1, payload1);
         pushValidReport(p1, payload2);
-
-        // There are 2 report slots per provider. 2 of the 3 providers did not
-        // push 2 reports that are considered valid.
-        // Therefore, expect an event about missing reports for the 2 providers.
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p2);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p3);
 
         // Compute average.
         uint average = (payload1 / 2) + (payload2 / 2)
@@ -93,16 +75,6 @@ contract OracleData is OracleTest {
         // It becomes invalid after reportExpirationTime seconds.
         vm.warp(block.timestamp + reportExpirationTime - 60 minutes + 1 seconds);
 
-        // There are 2 report slots per provider. All 3 providers did not
-        // push 2 reports that are considered valid.
-        // Therefore, expect an event about missing reports for each provider.
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p1);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p2);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p3);
-
         // Expect oracle data to only take the second report into account.
         uint result;
         bool valid;
@@ -122,16 +94,6 @@ contract OracleData is OracleTest {
         oracle.pushReport(20);
         vm.warp(block.timestamp + reportDelay - 1 seconds);
 
-        // There are 2 report slots per provider. All 3 providers did not
-        // push 2 reports that are considered valid.
-        // Therefore, expect an event about missing reports for each provider.
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p1);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p2);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p3);
-
         // Expect oracle data to only take the first report into account.
         uint result;
         bool valid;
@@ -145,16 +107,6 @@ contract OracleData is OracleTest {
 
         pushValidReport(p1, 10);
         pushValidReport(p2, 20);
-
-        // There are 2 report slots per provider. All 3 providers did not
-        // push 2 reports that are considered valid.
-        // Therefore, expect an event about missing reports for each provider.
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p1);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p2);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p3);
 
         // Expect oracle data to take the median of the two reports.
         uint result;
@@ -172,16 +124,6 @@ contract OracleData is OracleTest {
         pushValidReport(p1, 10);
         pushValidReport(p2, 20);
         pushValidReport(p3, 30);
-
-        // There are 2 report slots per provider. All 3 providers did not
-        // push 2 reports that are considered valid.
-        // Therefore, expect an event about missing reports for each provider.
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p1);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p2);
-        vm.expectEmit(true, true, true, true);
-        emit ReportTimestampOutOfRange(p3);
 
         // Expect oracle data to take the median of the three reports.
         uint result;

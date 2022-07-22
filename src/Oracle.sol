@@ -62,10 +62,6 @@ contract Oracle is TSOwnable, IOracle {
         address indexed provider
     );
 
-    /// @notice Emitted when a report's timestamp is out of range.
-    /// @param provider The addresss of the provider whos report was invalid.
-    event ReportTimestampOutOfRange(address indexed provider);
-
     /// @notice Emitted when a new provider is added.
     /// @param provider The address of the newly added provider.
     event ProviderAdded(address indexed provider);
@@ -192,7 +188,7 @@ contract Oracle is TSOwnable, IOracle {
 
     /// @notice Returns the oracle data and a boolean indicating if data is
     ///         valid.
-    function getData() external override(IOracle) returns (uint, bool) {
+    function getData() external view override(IOracle) returns (uint, bool) {
         // Return early if oracle is marked as invalid.
         if (!isValid) {
             return (0, false);
@@ -336,6 +332,7 @@ contract Oracle is TSOwnable, IOracle {
     ///      provider.
     function _getAverageReportPayload(address provider)
         private
+        view
         returns (uint, bool)
     {
         uint minValidTimestamp = block.timestamp - reportExpirationTime;
@@ -375,17 +372,14 @@ contract Oracle is TSOwnable, IOracle {
                 return (average, true);
             } else {
                 // Only recent report usable.
-                emit ReportTimestampOutOfRange(provider);
                 return (recentReportPayload, true);
             }
         } else {
             if (pastReportUsable) {
                 // Only past report usable.
-                emit ReportTimestampOutOfRange(provider);
                 return (pastReportPayload, true);
             } else {
                 // No report usable.
-                emit ReportTimestampOutOfRange(provider);
                 return (0, false);
             }
         }

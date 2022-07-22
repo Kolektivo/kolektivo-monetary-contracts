@@ -42,7 +42,6 @@ abstract contract OracleTest is Test {
                                uint timestamp);
     event ProviderReportsPurged(address indexed purger,
                                 address indexed provider);
-    event ReportTimestampOutOfRange(address indexed provider);
     event ProviderAdded(address indexed provider);
     event ProviderRemoved(address indexed provider);
     event MinimumProvidersChanged(uint oldMinimumProviders,

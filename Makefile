@@ -42,6 +42,10 @@ testOracle: ## Run Oracle tests
 testTreasury: ## Run Treasury tests
 	@forge test -vvv --match-contract "Treasury"
 
+.PHONY: testElasticToken
+testElasticToken: ## Run Elastic Receipt Token tests
+	@forge test -vvv --match-contract "ElasticReceiptToken"
+
 .PHONY: testKOL
 testKOL: ## Run KOL Token tests
 	@forge test -vvv --match-contract "KOL"

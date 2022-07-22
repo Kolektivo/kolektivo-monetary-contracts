@@ -44,7 +44,6 @@ To start the simulation, run `npx hardhat simulation`.
 ## Dependencies
 
 - [byterocket's solrocket](https://github.com/byterocket/solrocket)
-- [merkleplant's ElasticReceiptToken](https://github.com/pmerkleplant/elastic-receipt-token)
 - [Rari Capital's solmate](https://github.com/rari-capital/solmate)
 
 ## Safety

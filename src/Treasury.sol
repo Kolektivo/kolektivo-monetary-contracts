@@ -7,9 +7,6 @@ import {IERC721Receiver} from "./interfaces/_external/IERC721Receiver.sol";
 
 // External Contracts.
 import {ERC20} from "solmate/tokens/ERC20.sol";
-import {
-    ElasticReceiptToken
-} from "elastic-receipt-token/ElasticReceiptToken.sol";
 import {TSOwnable} from "solrocket/TSOwnable.sol";
 import {Whitelisted} from "solrocket/Whitelisted.sol";
 
@@ -18,6 +15,11 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 // Internal Interfaces.
 import {IOracle} from "./interfaces/IOracle.sol";
+
+// Internal Contracts.
+import {
+    ElasticReceiptToken
+} from "./ElasticReceiptToken.sol";
 
 // Internal Libraries.
 import {Wad} from "./lib/Wad.sol";

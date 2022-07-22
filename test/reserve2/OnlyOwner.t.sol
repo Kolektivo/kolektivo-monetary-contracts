@@ -882,15 +882,28 @@ contract Reserve2OnlyOwner is Reserve2Test {
         reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(reserve));
     }
 
-    function testWithdrawERC721Id(address recipient) public {
-        vm.assume(recipient != address(0) && recipient != address(reserve));
-        vm.assume(recipient != address(nft));
+    function testWithdrawERC721Id(bool toEOA) public {
+        address recipient;
 
-        // Send DEFAULT_ERC721ID to reserve.
-        nft.safeTransferFrom(address(this), address(reserve), 1);
+        if (toEOA) {
+            // Withdraw to EOA.
+            recipient = address(1);
 
-        reserve.withdrawERC721Id(DEFAULT_ERC721ID, recipient);
-        assertEq(nft.ownerOf(1), recipient);
+            // Send DEFAULT_ERC721ID to reserve.
+            nft.safeTransferFrom(address(this), address(reserve), 1);
+
+            reserve.withdrawERC721Id(DEFAULT_ERC721ID, recipient);
+            assertEq(nft.ownerOf(1), recipient);
+        } else {
+            // Withdraw to contract that implements onERC721Receiver.
+            recipient = address(this);
+
+            // Send DEFAULT_ERC721ID to reserve.
+            nft.safeTransferFrom(address(this), address(reserve), 1);
+
+            reserve.withdrawERC721Id(DEFAULT_ERC721ID, recipient);
+            assertEq(nft.ownerOf(1), recipient);
+        }
     }
 
     // Note that the onlyOwner functions `incurDebt` and `payDebt` are tested

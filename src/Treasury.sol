@@ -286,7 +286,7 @@ contract Treasury is ElasticReceiptToken,
     //--------------------------------------------------------------------------
     // Public View Functions
 
-    /// @notice Returns the total valuations of assets, denominated in USD, held
+    /// @notice Returns the total valuation of assets, denominated in USD, held
     ///         in the treasury.
     /// @return The USD value of assets held in the treasury.
     function totalValuation() external view returns (uint) {
@@ -338,7 +338,7 @@ contract Treasury is ElasticReceiptToken,
                 }
             }
 
-            // Multiply the price with the asset's balance and add the
+            // Multiply the asset's price with the asset's balance and add the
             // asset's valuation to the total valuation.
             assetBalanceWad = Wad.convertToWad(asset, assetBalance);
             totalWad += (assetBalanceWad * _queryPrice(asset)) / 1e18;
@@ -443,12 +443,12 @@ contract Treasury is ElasticReceiptToken,
         // Note that the updateAssetOracle function should be used for this.
         require(oldOracle == address(0));
 
-        // Check that oracle delivers valid data.
+        // Query oracle.
         uint priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
-        // Do not accept invalid oracle or price of zero.
+        // Do not accept invalid oracle response or price of zero.
         if (!valid || priceWad == 0) {
             revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
@@ -509,12 +509,12 @@ contract Treasury is ElasticReceiptToken,
             return;
         }
 
-        // Check if oracle delivers valid data.
+        // Query new oracle.
         uint priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
-        // Do not accept invalid oracle or price of zero.
+        // Do not accept invalid oracle response or price of zero.
         if (!valid || priceWad == 0) {
             revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }

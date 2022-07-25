@@ -177,9 +177,6 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Check that asset's oracle is correct.
         assertEq(treasury.oraclePerAsset(asset), address(oracle));
 
-        // Check that asset's last price was updated.
-        assertEq(treasury.lastPricePerAsset(asset), 1);
-
         // Check that function is idempotent.
         try treasury.supportedAssets(1) {
             revert();
@@ -254,9 +251,6 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Check that asset's oracle was removed.
         assertEq(treasury.oraclePerAsset(asset), address(0));
 
-        // Check that asset's last price was removed.
-        assertEq(treasury.lastPricePerAsset(asset), 0);
-
         // Check that asset is not supported anymore.
         try treasury.supportedAssets(0) {
             revert();
@@ -286,9 +280,6 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Check that asset's oracle was updated.
         assertEq(treasury.oraclePerAsset(asset), address(oracle2));
-
-        // Check that asset's last price was updated.
-        assertEq(treasury.lastPricePerAsset(asset), 2);
     }
 
     function testUpdateAssetOracleDoesNotAcceptInvalidOracle() public {

@@ -819,6 +819,6 @@ interface IReserve {
     /// @return uint Reserve assets valuation in USD with 18 decimal precision.
     /// @return uint Token supply's valuation in USD with 18 decimal precision.
     /// @return uint BPS of supply backed by reserve.
-    function reserveStatus() external returns (uint, uint, uint);
+    function reserveStatus() external view returns (uint, uint, uint);
 
 }

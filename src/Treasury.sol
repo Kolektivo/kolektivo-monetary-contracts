@@ -210,12 +210,6 @@ contract Treasury is ElasticReceiptToken,
     /// @dev Changeable by owner.
     mapping(address => bool) public isSupportedForUnbonding;
 
-    /// @notice A mapping of supported assets to its last reported price.
-    /// @dev The last reported price is used in case the latest oracle fetch
-    ///      is invalid.
-    /// @dev Note that the price uses 18 decimal precision.
-    mapping(address => uint) public lastPricePerAsset;
-
     //--------------------------------------------------------------------------
     // Constructor
 
@@ -241,25 +235,12 @@ contract Treasury is ElasticReceiptToken,
         validAmount(amount)
         onlyWhitelisted
     {
-        address oracle = oraclePerAsset[asset];
-        assert(oracle != address(0));
-
-        // Get the current price of the asset.
-        uint priceWad;
-        bool valid;
-        (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
-
-        // Do not use a cached price for bonding.
-        if (!valid) {
-            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
-        }
-
         // Convert amount to wad.
         uint amountWad = Wad.convertToWad(asset, amount);
 
         // Calculate the amount of KTTs to mint.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        uint mintWad = (amountWad * priceWad) / 1e18;
+        uint mintWad = (amountWad * _queryPrice(asset)) / 1e18;
 
         // Mint the KTTs to msg.sender and fetch the asset from msg.sender.
         super._mint(msg.sender, mintWad);
@@ -283,19 +264,6 @@ contract Treasury is ElasticReceiptToken,
         validAmount(kttWad)
         onlyWhitelisted
     {
-        address oracle = oraclePerAsset[asset];
-        assert(oracle != address(0));
-
-        // Get the current price of the asset.
-        uint priceWad;
-        bool valid;
-        (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
-
-        // Do not use a cached price for unbonding.
-        if (!valid) {
-            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
-        }
-
         // Burn KTTs from msg.sender.
         // Note to update the KTT amount which could have changed due to
         // rebasing.
@@ -303,7 +271,7 @@ contract Treasury is ElasticReceiptToken,
 
         // Calculate the amount of assets to withdraw for burned amount of KTTs.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        uint withdrawableWad = (kttWad * 1e18) / priceWad;
+        uint withdrawableWad = (kttWad * 1e18) / _queryPrice(asset);
 
         // Adjust to decimal precision of the asset.
         uint withdrawable = Wad.convertFromWad(asset, withdrawableWad);
@@ -318,10 +286,10 @@ contract Treasury is ElasticReceiptToken,
     //--------------------------------------------------------------------------
     // Public View Functions
 
-    /// @notice Returns the total valuations of assets, denominated in USD, held
+    /// @notice Returns the total valuation of assets, denominated in USD, held
     ///         in the treasury.
     /// @return The USD value of assets held in the treasury.
-    function totalValuation() external returns (uint) {
+    function totalValuation() external view returns (uint) {
         return _supplyTarget();
     }
 
@@ -343,16 +311,14 @@ contract Treasury is ElasticReceiptToken,
     /// @dev Has to be in same decimal precision as token, i.e. 18.
     function _supplyTarget()
         internal
+        view
         override(ElasticReceiptToken)
         returns (uint)
     {
         // Declare variables outside of loop to save gas.
         address asset;
-        address oracle;
         uint assetBalance;
         uint assetBalanceWad;
-        uint priceWad;
-        bool valid;
 
         // The total valuation of assets in the treasury.
         uint totalWad;
@@ -362,11 +328,7 @@ contract Treasury is ElasticReceiptToken,
             asset = supportedAssets[i];
             assetBalance = ERC20(asset).balanceOf(address(this));
 
-            oracle = oraclePerAsset[asset];
-            (priceWad, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
-
             // Continue/Break early if there is no asset balance.
-            // Note to query oracle anyway to update last price.
             if (assetBalance == 0) {
                 if (i + 1 == len) {
                     break;
@@ -376,22 +338,10 @@ contract Treasury is ElasticReceiptToken,
                 }
             }
 
-            if (valid) {
-                // If the new price is valid, multiply the price with the
-                // asset's balance and add the asset's valuation to the total
-                // valuation.
-                assetBalanceWad = Wad.convertToWad(asset, assetBalance);
-                totalWad += (assetBalanceWad * priceWad) / 1e18;
-            } else {
-                // If the new price is invalid, multiply the last cached price
-                // with the asset's balance and add the asset's valuation to
-                // the total valuation.
-                priceWad = lastPricePerAsset[asset];
-                assert(priceWad != 0);
-
-                assetBalanceWad = Wad.convertToWad(asset, assetBalance);
-                totalWad += (assetBalanceWad * priceWad) / 1e18;
-            }
+            // Multiply the asset's price with the asset's balance and add the
+            // asset's valuation to the total valuation.
+            assetBalanceWad = Wad.convertToWad(asset, assetBalance);
+            totalWad += (assetBalanceWad * _queryPrice(asset)) / 1e18;
 
             unchecked { ++i; }
         }
@@ -493,13 +443,13 @@ contract Treasury is ElasticReceiptToken,
         // Note that the updateAssetOracle function should be used for this.
         require(oldOracle == address(0));
 
-        // Check if oracle delivers valid data and, if so, update the asset's
-        // last price.
+        // Query oracle.
+        uint priceWad;
         bool valid;
-        (/*price*/, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
+        (priceWad, valid) = IOracle(oracle).getData();
 
-        // Do not accept invalid oracle.
-        if (!valid) {
+        // Do not accept invalid oracle response or price of zero.
+        if (!valid || priceWad == 0) {
             revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
@@ -523,9 +473,6 @@ contract Treasury is ElasticReceiptToken,
 
         // Remove asset's oracle.
         delete oraclePerAsset[asset];
-
-        // Remove asset's last price.
-        delete lastPricePerAsset[asset];
 
         // Remove asset from supportedAssets array.
         uint len = supportedAssets.length;
@@ -562,13 +509,13 @@ contract Treasury is ElasticReceiptToken,
             return;
         }
 
-        // Check if oracle delivers valid data and, if so, update the asset's
-        // last price.
+        // Query new oracle.
+        uint priceWad;
         bool valid;
-        (/*price*/, valid) = _queryOracleAndUpdateLastPrice(asset, oracle);
+        (priceWad, valid) = IOracle(oracle).getData();
 
-        // Do not accept invalid oracle.
-        if (!valid) {
+        // Do not accept invalid oracle response or price of zero.
+        if (!valid || priceWad == 0) {
             revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
@@ -659,33 +606,23 @@ contract Treasury is ElasticReceiptToken,
     //--------------------------------------------------------------------------
     // Private Functions
 
-    /// @dev Query's the given oracle and updates the asset's last price.
-    ///      Returns the current price and true if oracle is valid, 0 and false
-    ///      otherwise.
-    function _queryOracleAndUpdateLastPrice(address asset, address oracle)
-        private
-        returns (uint, bool)
-    {
-        // Note that the price is returned in 18 decimal precision.
+    /// @dev Query's the price for given asset from the asset's oracle.
+    ///      Reverts in case the oracle or delivered price is invalid.
+    function _queryPrice(address asset) private view returns (uint) {
+        address oracle = oraclePerAsset[asset];
+        assert(oracle != address(0));
+
+        // Note that price is returned in 18 decimal precision.
         uint priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
-        // Return (0, false) if oracle is invalid or price is zero.
+        // Revert if oracle is invalid or price is zero.
         if (!valid || priceWad == 0) {
-            return (0, false);
+            revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
-        // Cache new price and emit event.
-        emit AssetPriceUpdated(
-            asset,
-            oracle,
-            lastPricePerAsset[asset],
-            priceWad
-        );
-        lastPricePerAsset[asset] = priceWad;
-
-        return (priceWad, true);
+        return priceWad;
     }
 
 }

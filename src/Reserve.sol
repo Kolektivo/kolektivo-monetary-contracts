@@ -150,9 +150,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     modifier onBeforeUpdateBacking(bool requireMinBacking) {
         _;
 
-        _updateBacking();
+        uint backing;
+        ( , , backing) = _reserveStatus();
 
-        if (requireMinBacking && _backing < minBacking) {
+        if (requireMinBacking && backing < minBacking) {
             revert Reserve__MinimumBackingLimitExceeded();
         }
     }
@@ -235,19 +236,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Reserve Management
 
-    /// @dev The percentage, denominated in bps, of token supply backed by
-    ///      assets held in the reserve.
-    ///      Updated through the _updateBacking function.
-    uint private _backing;
-
-    /// @dev The reserve assets valuation in USD with 18 decimal precision.
-    ///      Updated through the _updateBacking function.
-    uint private _reserveValuation;
-
-    /// @dev The reserve supply's valuation in USD with 18 decimals precision.
-    ///      Updated through the _updateBacking function.
-    uint private _supplyValuation;
-
     /// @inheritdoc IReserve
     uint public minBacking;
 
@@ -276,9 +264,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         vestingVault = vestingVault_;
         minBacking = minBacking_;
 
-        // Set current backing to 100%;
-        _backing = BPS;
-
         // Give vesting vault infinite approval.
         IERC20MintBurn(token_).approve(vestingVault_, type(uint).max);
 
@@ -294,7 +279,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function reserveStatus() external view returns (uint, uint, uint) {
-        return (_reserveValuation, _supplyValuation, _backing);
+        return _reserveStatus();
     }
 
     /// @inheritdoc IReserve
@@ -1192,37 +1177,27 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Reserve Functions
 
-    function _updateBacking() private {
-        // Update valuations.
-        _updateReserveValuation();
-        _updateSupplyValuation();
+    function _reserveStatus() private view returns (uint, uint, uint) {
+        uint reserveValuation = _reserveValuation();
+        uint supplyValuation = _supplyValuation();
 
-        // Update backing percentage.
-        // Note that denomination is in bps.
-        uint newBacking =
-            _reserveValuation >= _supplyValuation
-                // Fully backed reserve.
-                // @todo Should we calculate backing for >100% too? Probably yes...?
+        uint backing =
+            reserveValuation >= supplyValuation
                 ? BPS
-                // Partially backed reserve.
-                : (_reserveValuation * BPS) / _supplyValuation;
+                : (reserveValuation * BPS) / supplyValuation;
 
-        // Notify off-chain services.
-        emit BackingUpdated(_backing, newBacking);
-
-        // Update storage.
-        _backing = newBacking;
+        return (reserveValuation, supplyValuation, backing);
     }
 
-    function _updateSupplyValuation() private {
-        _supplyValuation = (_token.totalSupply() * _priceOfToken()) / 1e18;
+    function _supplyValuation() private view returns (uint) {
+        return (_token.totalSupply() * _priceOfToken()) / 1e18;
     }
 
-    function _updateReserveValuation() private {
-        _reserveValuation = _reserveERC20sValuation() + _reserveERC721IdsValuation();
+    function _reserveValuation() private view returns (uint) {
+        return _reserveERC20sValuation() + _reserveERC721IdsValuation();
     }
 
-    function _reserveERC20sValuation() private returns (uint) {
+    function _reserveERC20sValuation() private view returns (uint) {
         // The total valuation of ERC20 assets in the reserve.
         uint totalWad;
 
@@ -1260,7 +1235,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return totalWad;
     }
 
-    function _reserveERC721IdsValuation() private returns (uint) {
+    function _reserveERC721IdsValuation() private view returns (uint) {
         // The total valuation of ERC721 assets in the reserve.
         uint totalWad;
 
@@ -1295,7 +1270,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Oracle Functions
 
-    function _oracleIsValid(address oracle) private returns (bool) {
+    function _oracleIsValid(address oracle) private view returns (bool) {
         bool valid;
         uint price;
         (price, valid) = IOracle(oracle).getData();
@@ -1303,7 +1278,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return valid && price != 0;
     }
 
-    function _priceOfToken() private returns (uint) {
+    function _priceOfToken() private view returns (uint) {
         // Note that the price is returned in 18 decimal precision.
         uint price;
         bool valid;
@@ -1317,7 +1292,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return price;
     }
 
-    function _priceOfERC20(address erc20) private returns (uint) {
+    function _priceOfERC20(address erc20) private view returns (uint) {
         // Note that the price is returned in 18 decimal precision.
         uint price;
         bool valid;
@@ -1331,7 +1306,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return price;
     }
 
-    function _priceOfERC721Id(bytes32 erc721IdHash) private returns (uint) {
+    function _priceOfERC721Id(bytes32 erc721IdHash)
+        private
+        view
+        returns (uint)
+    {
         // Note that the price is returned in 18 decimal precision.
         uint price;
         bool valid;

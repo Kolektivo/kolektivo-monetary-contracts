@@ -258,21 +258,25 @@ interface IReserve {
         address indexed newVestingVault
     );
 
-    /// @notice Event emitted when ERC20 token's vesting duration set.
+    /// @notice Event emitted when ERC20 token's bonding vesting duration set.
     /// @param erc20 The ERC20 token's address.
-    /// @param oldVestingDuration The ERC20 token's old vesting duration.
-    /// @param newVestingDuration The ERC20 token's new vesting duration.
-    event SetERC20Vesting(
+    /// @param oldVestingDuration The ERC20 token's old bonding vesting
+    ///                           duration.
+    /// @param newVestingDuration The ERC20 token's new bonding vesting
+    ///                           duration.
+    event SetERC20BondingVesting(
         address indexed erc20,
         uint oldVestingDuration,
         uint newVestingDuration
     );
 
-    /// @notice Event emitted when ERC721Id instance's vesting duration set.
+    /// @notice Event emitted when ERC721Id instance's bonding vesting duration set.
     /// @param erc721Id The ERC721Id instance.
-    /// @param oldVestingDuration The ERC721Id instance's old vesting duration.
-    /// @param newVestingDuration The ERC721Id instance's new vesting duration.
-    event SetERC721IdVesting(
+    /// @param oldVestingDuration The ERC721Id instance's old bonding vesting
+    ///                           duration.
+    /// @param newVestingDuration The ERC721Id instance's new bonding vesting
+    ///                           duration.
+    event SetERC721IdBondingVesting(
         ERC721Id indexed erc721Id,
         uint oldVestingDuration,
         uint newVestingDuration
@@ -434,17 +438,19 @@ interface IReserve {
     /// @param vestingVault The vesting vault address of type IVestingVault.
     function setVestingVault(address vestingVault) external;
 
-    /// @notice Sets the vesting duration for given ERC20 token.
+    /// @notice Sets the bonding vesting duration for given ERC20 token.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    /// @param vestingDuration The vesting duration for the ERC20 token.
-    function setVestingForERC20(address erc20, uint vestingDuration) external;
+    /// @param vestingDuration The bonding vesting duration for the ERC20 token.
+    function setBondingVestingForERC20(address erc20, uint vestingDuration)
+        external;
 
-    /// @notice Sets the vesting duration for given ERC721Id instance.
+    /// @notice Sets the bonding vesting duration for given ERC721Id instance.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
-    /// @param vestingDuration The vesting duration for the ERC721Id instance.
-    function setVestingForERC721Id(
+    /// @param vestingDuration The bonding vesting duration for the ERC721Id
+    ///        instance.
+    function setBondingVestingForERC721Id(
         ERC721Id memory erc721Id,
         uint vestingDuration
     ) external;
@@ -798,19 +804,20 @@ interface IReserve {
     //----------------------------------
     // Vesting View Mappings
 
-    /// @notice Returns the vesting duration for given ERC20 token address.
+    /// @notice Returns the bonding vesting duration for given ERC20 token
+    ///         address.
     /// @param erc20 The ERC20 token address.
-    /// @return The vesting duration for given ERC20 token address.
-    function vestingDurationPerERC20(address erc20)
+    /// @return The bonding vesting duration for given ERC20 token address.
+    function bondingVestingDurationPerERC20(address erc20)
         external
         view
         returns (uint);
 
-    /// @notice Returns the vesting duration for the ERC721Id instance,
+    /// @notice Returns the bonding vesting duration for the ERC721Id instance,
     ///         identified through given hash.
     /// @param erc721IdHash The ERC721Id instance's hash.
-    /// @return The vesting duration for given ERC721Id instance.
-    function vestingDurationPerERC721Id(bytes32 erc721IdHash)
+    /// @return The bonding vesting duration for given ERC721Id instance.
+    function bondingVestingDurationPerERC721Id(bytes32 erc721IdHash)
         external
         view
         returns (uint);

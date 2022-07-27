@@ -227,13 +227,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Vesting Mappings
 
-    // @todo Rename to bondingVestingDuration...?
     /// @inheritdoc IReserve
-    mapping(address => uint) public vestingDurationPerERC20;
+    mapping(address => uint) public bondingVestingDurationPerERC20;
 
-    // @todo Rename to bondingVestingDuration...?
     /// @inheritdoc IReserve
-    mapping(bytes32 => uint) public vestingDurationPerERC721Id;
+    mapping(bytes32 => uint) public bondingVestingDurationPerERC721Id;
 
     //----------------------------------
     // Reserve Management
@@ -938,34 +936,34 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function setVestingForERC20(address erc20, uint vestingDuration)
+    function setBondingVestingForERC20(address erc20, uint vestingDuration)
         external
         onlyOwner
     {
-        uint oldVestingDuration = vestingDurationPerERC20[erc20];
+        uint oldVestingDuration = bondingVestingDurationPerERC20[erc20];
 
         if (vestingDuration != oldVestingDuration) {
-            emit SetERC20Vesting(erc20, oldVestingDuration, vestingDuration);
-            vestingDurationPerERC20[erc20] = vestingDuration;
+            emit SetERC20BondingVesting(erc20, oldVestingDuration, vestingDuration);
+            bondingVestingDurationPerERC20[erc20] = vestingDuration;
         }
     }
 
     /// @inheritdoc IReserve
-    function setVestingForERC721Id(
+    function setBondingVestingForERC721Id(
         ERC721Id memory erc721Id,
         uint vestingDuration
     ) external onlyOwner {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        uint oldVestingDuration = vestingDurationPerERC721Id[erc721IdHash];
+        uint oldVestingDuration = bondingVestingDurationPerERC721Id[erc721IdHash];
 
         if (vestingDuration != oldVestingDuration) {
-            emit SetERC721IdVesting(
+            emit SetERC721IdBondingVesting(
                 erc721Id,
                 oldVestingDuration,
                 vestingDuration
             );
-            vestingDurationPerERC721Id[erc721IdHash] = vestingDuration;
+            bondingVestingDurationPerERC721Id[erc721IdHash] = vestingDuration;
         }
     }
 
@@ -1387,7 +1385,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address to,
         uint amount
     ) private {
-        uint vestingDuration = vestingDurationPerERC20[erc20];
+        uint vestingDuration = bondingVestingDurationPerERC20[erc20];
 
         if (vestingDuration == 0) {
             // No vesting, mint tokens directly to user.
@@ -1411,7 +1409,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address to,
         uint amount
     ) private {
-        uint vestingDuration = vestingDurationPerERC721Id[erc721IdHash];
+        uint vestingDuration = bondingVestingDurationPerERC721Id[erc721IdHash];
 
         if (vestingDuration == 0) {
             // No vesting, mint tokens directly to user.

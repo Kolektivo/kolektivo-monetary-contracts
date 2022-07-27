@@ -26,24 +26,6 @@ interface IERC20MintBurn is IERC20 {
     function burn(address from, uint amount) external;
 }
 
-// @todo Renaming
-// unbondERCXXX               -> redeem
-//  IReserve                     ⛔️
-//  Tests                        ⛔️
-//  Reserve                      ⛔️
-// un/support                 -> register (add note that deposit before is possible, but not registered)
-//  IReserve                     ✅️⛔
-//  Tests                        ️️⛔️
-//  Reserve                      ⛔️
-// un/supportXXXForUn/Bonding -> de/list
-//  IReserve                     ⛔️
-//  Tests                        ⛔️
-//  Reserve                      ⛔️
-// setDiscountForXX           -> setXXXBondDiscount
-//  IReserve                     ⛔️
-//  Tests                        ⛔️
-//  Reserve                      ⛔️
-
 /**
  * @title Reserve
  *
@@ -53,8 +35,8 @@ interface IERC20MintBurn is IERC20 {
  *      The contract is only usable by an owner. The owner is eligible to:
  *      - Incur debt, i.e. minting tokens without bonding assets
  *      - Pay debt, i.e. burn token without unbonding assets
- *      - Un/bond ERC20 tokens and/or ERC721 NFTs
- *      - and change settings
+ *      - Bond and redeem ERC20 tokens and/or ERC721 NFTs
+ *      - Change asset configurations
  *
  *      Note:
  *      - The term "registered" means that the reserve has a price oracle for the
@@ -787,68 +769,92 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Un/Bonding Management
 
-    // @todo Make delistERCXXXFor{Bonding, Redemption}?
-    // @todo And maybe rename to (de)listERCXXXAs{Bondable, Redeemable}?
-    // ^^^^^ In whole un/bonding management part.
-
     /// @inheritdoc IReserve
-    function listERC20ForBonding(address erc20, bool listed)
+    function listERC20AsBondable(address erc20)
         external
         onlyOwner
         isRegisteredERC20(erc20)
     {
-        bool oldListed = isERC20Bondable[erc20];
-
-        if (listed != oldListed) {
-            isERC20Bondable[erc20] = listed;
-            emit SetERC20BondingSupport(erc20, listed);
-        }
+        isERC20Bondable[erc20] = true;
+        emit ERC20ListedAsBondable(erc20);
     }
 
     /// @inheritdoc IReserve
-    function listERC721IdForBonding(ERC721Id memory erc721Id, bool listed)
+    function delistERC20AsBondable(address erc20)
+        external
+        onlyOwner
+        isRegisteredERC20(erc20)
+    {
+        isERC20Bondable[erc20] = false;
+        emit ERC20DelistedAsBondable(erc20);
+    }
+
+    /// @inheritdoc IReserve
+    function listERC721IdAsBondable(ERC721Id memory erc721Id)
         external
         onlyOwner
         isRegisteredERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        bool oldListed = isERC721IdBondable[erc721IdHash];
-
-        if (listed != oldListed) {
-            isERC721IdBondable[erc721IdHash] = listed;
-            emit SetERC721IdBondingSupport(erc721Id, listed);
-        }
+        isERC721IdBondable[erc721IdHash] = true;
+        emit ERC721IdListedAsBondable(erc721Id);
     }
 
     /// @inheritdoc IReserve
-    function listERC20ForRedemption(address erc20, bool listed)
-        external
-        onlyOwner
-        isRegisteredERC20(erc20)
-    {
-        bool oldListed = isERC20Redeemable[erc20];
-
-        if (listed != oldListed) {
-            isERC20Redeemable[erc20] = listed;
-            emit SetERC20RedemptionSupport(erc20, listed);
-        }
-    }
-
-    /// @inheritdoc IReserve
-    function listERC721IdForRedemption(ERC721Id memory erc721Id, bool listed)
+    function delistERC721IdAsBondable(ERC721Id memory erc721Id)
         external
         onlyOwner
         isRegisteredERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        bool oldListed = isERC721IdRedeemable[erc721IdHash];
+        isERC721IdBondable[erc721IdHash] = false;
+        emit ERC721IdDelistedAsBondable(erc721Id);
+    }
 
-        if (listed != oldListed) {
-            isERC721IdRedeemable[erc721IdHash] = listed;
-            emit SetERC721IdUnbondingSupport(erc721Id, listed);
-        }
+    /// @inheritdoc IReserve
+    function listERC20AsRedeemable(address erc20)
+        external
+        onlyOwner
+        isRegisteredERC20(erc20)
+    {
+        isERC20Redeemable[erc20] = true;
+        emit ERC20ListedAsRedeemable(erc20);
+    }
+
+    /// @inheritdoc IReserve
+    function delistERC20AsRedeemable(address erc20)
+        external
+        onlyOwner
+        isRedeemableERC20(erc20)
+    {
+        isERC20Redeemable[erc20] = false;
+        emit ERC20DelistedAsRedeemable(erc20);
+    }
+
+    /// @inheritdoc IReserve
+    function listERC721IdAsRedeemable(ERC721Id memory erc721Id)
+        external
+        onlyOwner
+        isRegisteredERC721Id(erc721Id)
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        isERC721IdRedeemable[erc721IdHash] = true;
+        emit ERC721IdListedAsRedeemable(erc721Id);
+    }
+
+    /// @inheritdoc IReserve
+    function delistERC721IdAsRedeemable(ERC721Id memory erc721Id)
+        external
+        onlyOwner
+        isRegisteredERC721Id(erc721Id)
+    {
+        bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
+
+        isERC721IdRedeemable[erc721IdHash] = false;
+        emit ERC721IdDelistedAsRedeemable(erc721Id);
     }
 
     /// @inheritdoc IReserve
@@ -1106,8 +1112,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     //----------------------------------
     // Unbond Functions
-
-    // @todo Note that unbonding does not have any vesting options.
 
     function _redeemERC20(
         address erc20,

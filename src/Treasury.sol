@@ -40,10 +40,11 @@ import {Wad} from "./lib/Wad.sol";
  *
  * @author byterocket
  */
-contract Treasury is ElasticReceiptToken,
-                     TSOwnable,
-                     Whitelisted,
-                     IERC721Receiver
+contract Treasury is
+    ElasticReceiptToken,
+    TSOwnable,
+    Whitelisted,
+    IERC721Receiver
 {
     using SafeTransferLib for ERC20;
 

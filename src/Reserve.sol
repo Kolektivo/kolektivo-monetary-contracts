@@ -26,6 +26,24 @@ interface IERC20MintBurn is IERC20 {
     function burn(address from, uint amount) external;
 }
 
+// @todo Renaming
+// unbondERCXXX               -> redeem
+//  IReserve                     ⛔️
+//  Tests                        ⛔️
+//  Reserve                      ⛔️
+// un/support                 -> register (add note that deposit before is possible, but not registered)
+//  IReserve                     ✅️⛔
+//  Tests                        ️️⛔️
+//  Reserve                      ⛔️
+// un/supportXXXForUn/Bonding -> de/list
+//  IReserve                     ⛔️
+//  Tests                        ⛔️
+//  Reserve                      ⛔️
+// setDiscountForXX           -> setXXXBondDiscount
+//  IReserve                     ⛔️
+//  Tests                        ⛔️
+//  Reserve                      ⛔️
+
 /**
  * @title Reserve
  *
@@ -39,7 +57,7 @@ interface IERC20MintBurn is IERC20 {
  *      - and change settings
  *
  *      Note:
- *      - The term "supported" means that the reserve has a price oracle for the
+ *      - The term "registered" means that the reserve has a price oracle for the
  *        asset (ERC20, ERC721Id) and takes the reserve's balance of this asset
  *        into account for the backing ratio computation.
  *      - The elastic token produced by the Kolektivo treasury does NOT have any
@@ -75,20 +93,20 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         _;
     }
 
-    /// @dev Modifier to guarantee function is only callable for supported
+    /// @dev Modifier to guarantee function is only callable with registered
     ///      ERC20 token.
-    modifier isSupportedERC20(address erc20) {
+    modifier isRegisteredERC20(address erc20) {
         if (oraclePerERC20[erc20] == address(0)) {
-            revert Reserve__ERC20NotSupported();
+            revert Reserve__ERC20NotRegistered();
         }
         _;
     }
 
-    /// @dev Modifier to guarantee function is only callable for supported
+    /// @dev Modifier to guarantee function is only callable with registered
     ///      ERC721Id instances.
-    modifier isSupportedERC721Id(ERC721Id memory erc721) {
+    modifier isRegisteredERC721Id(ERC721Id memory erc721) {
         if (oraclePerERC721Id[_hashOfERC721Id(erc721)] == address(0)) {
-            revert Reserve__ERC721IdNotSupported();
+            revert Reserve__ERC721IdNotRegistered();
         }
         _;
     }
@@ -111,20 +129,20 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         _;
     }
 
-    /// @dev Modifier to guarantee function is only callable with unbondable
+    /// @dev Modifier to guarantee function is only callable with redeemable
     ///      ERC20 token.
-    modifier isUnbondableERC20(address erc20) {
-        if (!isERC20Unbondable[erc20]) {
-            revert Reserve__ERC20NotUnbondable();
+    modifier isRedeemableERC20(address erc20) {
+        if (!isERC20Redeemable[erc20]) {
+            revert Reserve__ERC20NotRedeemable();
         }
         _;
     }
 
-    /// @dev Modifier to guarantee function is only callable with unbondable
+    /// @dev Modifier to guarantee function is only callable with redeemable
     ///      ERC721Id instances.
-    modifier isUnbondableERC721Id(ERC721Id memory erc721Id) {
-        if (!isERC721IdUnbondable[_hashOfERC721Id(erc721Id)]) {
-            revert Reserve__ERC721NotUnbondable();
+    modifier isRedeemableERC721Id(ERC721Id memory erc721Id) {
+        if (!isERC721IdRedeemable[_hashOfERC721Id(erc721Id)]) {
+            revert Reserve__ERC721NotRedeemable();
         }
         _;
     }
@@ -146,7 +164,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @dev Modifier to update the internal backing ratio after a function
     ///      execution.
     /// @param requireMinBacking Whether the call should revert if the minimal
-    ///                          backing requirement is not met anymore.
+    ///                          backing requirement is not met.
     modifier onBeforeUpdateBacking(bool requireMinBacking) {
         _;
 
@@ -183,10 +201,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Asset Mappings
 
     /// @inheritdoc IReserve
-    address[] public supportedERC20s;
+    address[] public registeredERC20s;
 
     /// @inheritdoc IReserve
-    ERC721Id[] public supportedERC721Ids;
+    ERC721Id[] public registeredERC721Ids;
 
     /// @inheritdoc IReserve
     mapping(address => address) public oraclePerERC20;
@@ -204,32 +222,34 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(bytes32 => bool) public isERC721IdBondable;
 
     /// @inheritdoc IReserve
-    mapping(address => bool) public isERC20Unbondable;
+    mapping(address => bool) public isERC20Redeemable;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => bool) public isERC721IdUnbondable;
+    mapping(bytes32 => bool) public isERC721IdRedeemable;
 
     /// @inheritdoc IReserve
     mapping(address => uint) public bondingLimitPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public unbondingLimitPerERC20;
+    mapping(address => uint) public redeemLimitPerERC20;
 
     //----------------------------------
     // Discount Mappings
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public discountPerERC20;
+    mapping(address => uint) public bondingDiscountPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => uint) public discountPerERC721Id;
+    mapping(bytes32 => uint) public bondingDiscountPerERC721Id;
 
     //----------------------------------
     // Vesting Mappings
 
+    // @todo Rename to bondingVestingDuration...?
     /// @inheritdoc IReserve
     mapping(address => uint) public vestingDurationPerERC20;
 
+    // @todo Rename to bondingVestingDuration...?
     /// @inheritdoc IReserve
     mapping(bytes32 => uint) public vestingDurationPerERC721Id;
 
@@ -297,13 +317,13 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function supportedERC20sSize() external view returns (uint) {
-        return supportedERC20s.length;
+    function registeredERC20sSize() external view returns (uint) {
+        return registeredERC20s.length;
     }
 
     /// @inheritdoc IReserve
-    function supportedERC721IdsSize() external view returns (uint) {
-        return supportedERC721Ids.length;
+    function registeredERC721IdsSize() external view returns (uint) {
+        return registeredERC721Ids.length;
     }
 
     /// @inheritdoc IERC721Receiver
@@ -332,14 +352,16 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function bondERC20From(address erc20, address from, uint erc20Amount)
-        external onlyOwner
+        external
+        onlyOwner
     {
         _bondERC20(erc20, from, msg.sender, erc20Amount);
     }
 
     /// @inheritdoc IReserve
     function bondERC20To(address erc20, address to, uint erc20Amount)
-        external onlyOwner
+        external
+        onlyOwner
     {
         _bondERC20(erc20, msg.sender, to, erc20Amount);
     }
@@ -350,7 +372,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address from,
         address to,
         uint erc20Amount
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+    {
         _bondERC20(erc20, from, to, erc20Amount);
     }
 
@@ -386,7 +411,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function bondERC20AllFromTo(address erc20, address from, address to)
-        external onlyOwner
+        external
+        onlyOwner
     {
         _bondERC20(
             erc20,
@@ -406,14 +432,16 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function bondERC721IdFrom(ERC721Id memory erc721Id, address from)
-        external onlyOwner
+        external
+        onlyOwner
     {
         _bondERC721Id(erc721Id, from, msg.sender);
     }
 
     /// @inheritdoc IReserve
     function bondERC721IdTo(ERC721Id memory erc721Id, address to)
-        external onlyOwner
+        external
+        onlyOwner
     {
         _bondERC721Id(erc721Id, msg.sender, to);
     }
@@ -423,7 +451,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         ERC721Id memory erc721Id,
         address from,
         address to
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+    {
         _bondERC721Id(erc721Id, from, to);
     }
 
@@ -434,39 +465,42 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Unbond ERC20 Functions
 
     /// @inheritdoc IReserve
-    function unbondERC20(address erc20, uint tokenAmount) external onlyOwner {
-        _unbondERC20(erc20, msg.sender, msg.sender, tokenAmount);
+    function redeemERC20(address erc20, uint tokenAmount) external onlyOwner {
+        _redeemERC20(erc20, msg.sender, msg.sender, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20From(address erc20, address from, uint tokenAmount)
-        external onlyOwner
+    function redeemERC20From(address erc20, address from, uint tokenAmount)
+        external
+        onlyOwner
     {
-        _unbondERC20(erc20, from, msg.sender, tokenAmount);
+        _redeemERC20(erc20, from, msg.sender, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20To(address erc20, address to, uint tokenAmount)
-        external onlyOwner
+    function redeemERC20To(address erc20, address to, uint tokenAmount)
+        external
+        onlyOwner
     {
-        _unbondERC20(erc20, msg.sender, to, tokenAmount);
+        _redeemERC20(erc20, msg.sender, to, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20FromTo(
+    function redeemERC20FromTo(
         address erc20,
         address from,
         address to,
         uint tokenAmount
     )
-        external onlyOwner
+        external
+        onlyOwner
     {
-        _unbondERC20(erc20, from, to, tokenAmount);
+        _redeemERC20(erc20, from, to, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20All(address erc20) external onlyOwner {
-        _unbondERC20(
+    function redeemERC20All(address erc20) external onlyOwner {
+        _redeemERC20(
             erc20,
             msg.sender,
             msg.sender,
@@ -475,10 +509,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20AllFrom(address erc20, address from)
-        external onlyOwner
+    function redeemERC20AllFrom(address erc20, address from)
+        external
+        onlyOwner
     {
-        _unbondERC20(
+        _redeemERC20(
             erc20,
             from,
             msg.sender,
@@ -487,8 +522,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20AllTo(address erc20, address to) external onlyOwner {
-        _unbondERC20(
+    function redeemERC20AllTo(address erc20, address to) external onlyOwner {
+        _redeemERC20(
             erc20,
             msg.sender,
             to,
@@ -497,10 +532,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function unbondERC20AllFromTo(address erc20, address from, address to)
-        external onlyOwner
+    function redeemERC20AllFromTo(address erc20, address from, address to)
+        external
+        onlyOwner
     {
-        _unbondERC20(
+        _redeemERC20(
             erc20,
             from,
             to,
@@ -512,33 +548,36 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Unbond ERC721Id Functions
 
     /// @inheritdoc IReserve
-    function unbondERC721Id(ERC721Id memory erc721Id) external onlyOwner {
-        _unbondERC721Id(erc721Id, msg.sender, msg.sender);
+    function redeemERC721Id(ERC721Id memory erc721Id) external onlyOwner {
+        _redeemERC721Id(erc721Id, msg.sender, msg.sender);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC721IdFrom(ERC721Id memory erc721Id, address from)
-        external onlyOwner
+    function redeemERC721IdFrom(ERC721Id memory erc721Id, address from)
+        external
+        onlyOwner
     {
-        _unbondERC721Id(erc721Id, from, msg.sender);
+        _redeemERC721Id(erc721Id, from, msg.sender);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC721IdTo(ERC721Id memory erc721Id, address to)
-        external onlyOwner
+    function redeemERC721IdTo(ERC721Id memory erc721Id, address to)
+        external
+        onlyOwner
     {
-        _unbondERC721Id(erc721Id, msg.sender, to);
+        _redeemERC721Id(erc721Id, msg.sender, to);
     }
 
     /// @inheritdoc IReserve
-    function unbondERC721IdFromTo(
+    function redeemERC721IdFromTo(
         ERC721Id memory erc721Id,
         address from,
         address to
     )
-        external onlyOwner
+        external
+        onlyOwner
     {
-        _unbondERC721Id(erc721Id, from, to);
+        _redeemERC721Id(erc721Id, from, to);
     }
 
     //----------------------------------
@@ -573,19 +612,19 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Asset Management
 
     /// @inheritdoc IReserve
-    function supportERC20(address erc20, address oracle) external onlyOwner {
+    function registerERC20(address erc20, address oracle) external onlyOwner {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's SafeTransferLib does not include this check.
         require(erc20.code.length != 0);
 
         address oldOracle = oraclePerERC20[erc20];
 
-        // Do nothing if erc20 is already supported and oracles are the same.
+        // Do nothing if erc20 is already registered and oracles are the same.
         if (oldOracle == oracle) {
             return;
         }
 
-        // Revert is erc20 is already supported but oracles differ.
+        // Revert if erc20 is already registered but oracles differ.
         // Note that the updateOracleForERC20 function should be used for this.
         require(oldOracle == address(0));
 
@@ -593,16 +632,16 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         require(_oracleIsValid(oracle));
 
         // Add erc20 and oracle to mappings.
-        supportedERC20s.push(erc20);
+        registeredERC20s.push(erc20);
         oraclePerERC20[erc20] = oracle;
 
         // Notify off-chain services.
-        emit ERC20MarkedAsSupported(erc20);
+        emit ERC20Registered(erc20);
         emit SetERC20Oracle(erc20, address(0), oracle);
     }
 
     /// @inheritdoc IReserve
-    function supportERC721Id(ERC721Id memory erc721Id, address oracle)
+    function registerERC721Id(ERC721Id memory erc721Id, address oracle)
         external
         onlyOwner
     {
@@ -614,12 +653,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
         address oldOracle = oraclePerERC721Id[erc721IdHash];
 
-        // Do nothing if erc721Id is already supported and oracles are the same.
+        // Do nothing if erc721Id is already registered and oracles are the same.
         if (oldOracle == oracle) {
             return;
         }
 
-        // Revert if erc721Id is already supported but oracles differ.
+        // Revert if erc721Id is already registered but oracles differ.
         // Note that the updateOracleForERC721Id function should be used for this.
         require(oldOracle == address(0));
 
@@ -627,18 +666,19 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         require(_oracleIsValid(oracle));
 
         // Add erc721Id and oracle to mappings.
-        supportedERC721Ids.push(erc721Id);
+        registeredERC721Ids.push(erc721Id);
         oraclePerERC721Id[erc721IdHash] = oracle;
 
         // Notify off-chain services.
-        emit ERC721IdMarkedAsSupported(erc721Id);
+        emit ERC721IdRegistered(erc721Id);
         emit SetERC721IdOracle(erc721Id, address(0), oracle);
     }
 
     /// @inheritdoc IReserve
-    function unsupportERC20(address erc20) external onlyOwner {
-        // Do nothing if erc20 is already not supported.
-        // Note that we do not use the isSupportedERC20 modifier to be idempotent.
+    function deregisterERC20(address erc20) external onlyOwner {
+        // Do nothing if erc20 is already deregistered.
+        // Note that we do not use the isRegisteredERC20 modifier to be
+        // idempotent.
         if (oraclePerERC20[erc20] == address(0)) {
             return;
         }
@@ -647,17 +687,17 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         emit SetERC20Oracle(erc20, oraclePerERC20[erc20], address(0));
         delete oraclePerERC20[erc20];
 
-        // Remove erc20 from the supportedERC20s array.
-        uint len = supportedERC20s.length;
+        // Remove erc20 from the registeredERC20s array.
+        uint len = registeredERC20s.length;
         for (uint i; i < len; ) {
-            if (erc20 == supportedERC20s[i]) {
+            if (erc20 == registeredERC20s[i]) {
                 // It not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
-                    supportedERC20s[i] = supportedERC20s[len - 1];
+                    registeredERC20s[i] = registeredERC20s[len - 1];
                 }
-                supportedERC20s.pop();
+                registeredERC20s.pop();
 
-                emit ERC20MarkedAsUnsupported(erc20);
+                emit ERC20Deregistered(erc20);
                 break;
             }
 
@@ -666,11 +706,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function unsupportERC721Id(ERC721Id memory erc721Id) external onlyOwner {
+    function deregisterERC721Id(ERC721Id memory erc721Id) external onlyOwner {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        // Do nothing if erc721 is already not supported.
-        // Note that we do not use the isSupportedERC721Id modifier to be idempotent.
+        // Do nothing if erc721 is already not deregistered.
+        // Note that we do not use the isRegisteredERC721Id modifier to be
+        // idempotent.
         if (oraclePerERC721Id[erc721IdHash] == address(0)) {
             return;
         }
@@ -679,17 +720,17 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         emit SetERC721IdOracle(erc721Id, oraclePerERC721Id[erc721IdHash], address(0));
         delete oraclePerERC721Id[erc721IdHash];
 
-        // Remove erc721Id from the supportedERC721Ids array.
-        uint len = supportedERC721Ids.length;
+        // Remove erc721Id from the registeredERC721Ids array.
+        uint len = registeredERC721Ids.length;
         for (uint i; i < len; ) {
-            if (erc721IdHash == _hashOfERC721Id(supportedERC721Ids[i])) {
+            if (erc721IdHash == _hashOfERC721Id(registeredERC721Ids[i])) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
-                    supportedERC721Ids[i] = supportedERC721Ids[len - 1];
+                    registeredERC721Ids[i] = registeredERC721Ids[len - 1];
                 }
-                supportedERC721Ids.pop();
+                registeredERC721Ids.pop();
 
-                emit ERC721IdMarkedAsUnsupported(erc721Id);
+                emit ERC721IdDeregistered(erc721Id);
                 break;
             }
 
@@ -701,7 +742,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     function updateOracleForERC20(address erc20, address oracle)
         external
         onlyOwner
-        isSupportedERC20(erc20)
+        isRegisteredERC20(erc20)
     {
         // Cache old oracle.
         address oldOracle = oraclePerERC20[erc20];
@@ -723,7 +764,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     function updateOracleForERC721Id(ERC721Id memory erc721Id, address oracle)
         external
         onlyOwner
-        isSupportedERC721Id(erc721Id)
+        isRegisteredERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
@@ -746,63 +787,67 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Un/Bonding Management
 
+    // @todo Make delistERCXXXFor{Bonding, Redemption}?
+    // @todo And maybe rename to (de)listERCXXXAs{Bondable, Redeemable}?
+    // ^^^^^ In whole un/bonding management part.
+
     /// @inheritdoc IReserve
-    function supportERC20ForBonding(address erc20, bool support)
+    function listERC20ForBonding(address erc20, bool listed)
         external
         onlyOwner
-        isSupportedERC20(erc20)
+        isRegisteredERC20(erc20)
     {
-        bool oldSupport = isERC20Bondable[erc20];
+        bool oldListed = isERC20Bondable[erc20];
 
-        if (support != oldSupport) {
-            isERC20Bondable[erc20] = support;
-            emit SetERC20BondingSupport(erc20, support);
+        if (listed != oldListed) {
+            isERC20Bondable[erc20] = listed;
+            emit SetERC20BondingSupport(erc20, listed);
         }
     }
 
     /// @inheritdoc IReserve
-    function supportERC721IdForBonding(ERC721Id memory erc721Id, bool support)
+    function listERC721IdForBonding(ERC721Id memory erc721Id, bool listed)
         external
         onlyOwner
-        isSupportedERC721Id(erc721Id)
+        isRegisteredERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        bool oldSupport = isERC721IdBondable[erc721IdHash];
+        bool oldListed = isERC721IdBondable[erc721IdHash];
 
-        if (support != oldSupport) {
-            isERC721IdBondable[erc721IdHash] = support;
-            emit SetERC721IdBondingSupport(erc721Id, support);
+        if (listed != oldListed) {
+            isERC721IdBondable[erc721IdHash] = listed;
+            emit SetERC721IdBondingSupport(erc721Id, listed);
         }
     }
 
     /// @inheritdoc IReserve
-    function supportERC20ForUnbonding(address erc20, bool support)
+    function listERC20ForRedemption(address erc20, bool listed)
         external
         onlyOwner
-        isSupportedERC20(erc20)
+        isRegisteredERC20(erc20)
     {
-        bool oldSupport = isERC20Unbondable[erc20];
+        bool oldListed = isERC20Redeemable[erc20];
 
-        if (support != oldSupport) {
-            isERC20Unbondable[erc20] = support;
-            emit SetERC20UnbondingSupport(erc20, support);
+        if (listed != oldListed) {
+            isERC20Redeemable[erc20] = listed;
+            emit SetERC20RedemptionSupport(erc20, listed);
         }
     }
 
     /// @inheritdoc IReserve
-    function supportERC721IdForUnbonding(ERC721Id memory erc721Id, bool support)
+    function listERC721IdForRedemption(ERC721Id memory erc721Id, bool listed)
         external
         onlyOwner
-        isSupportedERC721Id(erc721Id)
+        isRegisteredERC721Id(erc721Id)
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        bool oldSupport = isERC721IdUnbondable[erc721IdHash];
+        bool oldListed = isERC721IdRedeemable[erc721IdHash];
 
-        if (support != oldSupport) {
-            isERC721IdUnbondable[erc721IdHash] = support;
-            emit SetERC721IdUnbondingSupport(erc721Id, support);
+        if (listed != oldListed) {
+            isERC721IdRedeemable[erc721IdHash] = listed;
+            emit SetERC721IdUnbondingSupport(erc721Id, listed);
         }
     }
 
@@ -820,15 +865,15 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function setERC20UnbondingLimit(address erc20, uint limit)
+    function setERC20RedeemLimit(address erc20, uint limit)
         external
         onlyOwner
     {
-        uint oldLimit = unbondingLimitPerERC20[erc20];
+        uint oldLimit = redeemLimitPerERC20[erc20];
 
         if (limit != oldLimit) {
-            emit SetERC20UnbondingLimit(erc20, oldLimit, limit);
-            unbondingLimitPerERC20[erc20] = limit;
+            emit SetERC20RedeemLimit(erc20, oldLimit, limit);
+            redeemLimitPerERC20[erc20] = limit;
         }
     }
 
@@ -836,30 +881,33 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Discount Management
 
     /// @inheritdoc IReserve
-    function setDiscountForERC20(address erc20, uint discount)
+    function setBondingDiscountForERC20(address erc20, uint discount)
         external
         onlyOwner
     {
-        uint oldDiscount = discountPerERC20[erc20];
+        uint oldDiscount = bondingDiscountPerERC20[erc20];
 
         if (discount != oldDiscount) {
-            emit SetERC20Discount(erc20, oldDiscount, discount);
-            discountPerERC20[erc20] = discount;
+            emit SetERC20BondingDiscount(erc20, oldDiscount, discount);
+            bondingDiscountPerERC20[erc20] = discount;
         }
     }
 
     /// @inheritdoc IReserve
-    function setDiscountForERC721Id(ERC721Id memory erc721Id, uint discount)
+    function setBondingDiscountForERC721Id(
+        ERC721Id memory erc721Id,
+        uint discount
+    )
         external
         onlyOwner
     {
         bytes32 erc721IdHash = _hashOfERC721Id(erc721Id);
 
-        uint oldDiscount = discountPerERC721Id[erc721IdHash];
+        uint oldDiscount = bondingDiscountPerERC721Id[erc721IdHash];
 
         if (discount != oldDiscount) {
-            emit SetERC721IdDiscount(erc721Id, oldDiscount, discount);
-            discountPerERC721Id[erc721IdHash] = discount;
+            emit SetERC721IdBondingDiscount(erc721Id, oldDiscount, discount);
+            bondingDiscountPerERC721Id[erc721IdHash] = discount;
         }
     }
 
@@ -1004,8 +1052,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint erc20Amount
     )
         private
-        // Note that if an ERC20 is bondable, it is also supported.
-        // isSupportedERC20(erc20)
+        // Note that if an ERC20 is bondable, it is also registered.
+        // isRegisteredERC20(erc20)
         isBondableERC20(erc20)
         isNotExceedingERC20BondingLimit(erc20, erc20Amount)
         validRecipient(to)
@@ -1031,8 +1079,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address to
     )
         private
-        // Note that if an ERC721Id is bondable, it is also supported.
-        // isSupportedERC721Id(erc721Id)
+        // Note that if an ERC721Id is bondable, it is also registered.
+        // isRegisteredERC721Id(erc721Id)
         isBondableERC721Id(erc721Id)
         validRecipient(to)
         onBeforeUpdateBacking(true)
@@ -1061,16 +1109,16 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     // @todo Note that unbonding does not have any vesting options.
 
-    function _unbondERC20(
+    function _redeemERC20(
         address erc20,
         address from,
         address to,
         uint tokenAmount
     )
         private
-        // Note that if an ERC20 is unbondable, it is also supported.
-        // isSupportedERC20(erc20)
-        isUnbondableERC20(erc20)
+        // Note that if an ERC20 is redeemable, it is also registered.
+        // isRegisteredERC20(erc20)
+        isRedeemableERC20(erc20)
         validRecipient(to)
         validAmount(tokenAmount)
         onBeforeUpdateBacking(true)
@@ -1090,29 +1138,29 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             revert Reserve__ERC20BalanceNotSufficient();
         }
 
-        // Revert if unbonding limit exceeded.
-        uint limit = unbondingLimitPerERC20[erc20];
+        // Revert if redeem limit exceeded.
+        uint limit = redeemLimitPerERC20[erc20];
         if (balance - erc20Amount < limit) {
-            revert Reserve__ERC20UnbondingLimitExceeded();
+            revert Reserve__ERC20RedeemLimitExceeded();
         }
 
         // Notify off-chain services.
-        emit UnbondedERC20(erc20, erc20Amount, tokenAmount);
+        emit RedeemedERC20(erc20, erc20Amount, tokenAmount);
 
         // Withdraw erc20s and burn tokens.
         ERC20(erc20).safeTransfer(to, erc20Amount);
         _token.burn(from, tokenAmount);
     }
 
-    function _unbondERC721Id(
+    function _redeemERC721Id(
         ERC721Id memory erc721Id,
         address from,
         address to
     )
         private
-        // Note that if an ERC721Id is unbondable, it is also supported.
-        // isSupportedERC721Id(erc721Id)
-        isUnbondableERC721Id(erc721Id)
+        // Note that if an ERC721Id is redeemable, it is also registered.
+        // isRegisteredERC721Id(erc721Id)
+        isRedeemableERC721Id(erc721Id)
         validRecipient(to)
         onBeforeUpdateBacking(true)
     {
@@ -1125,7 +1173,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint tokenAmount = (priceWad / _priceOfToken()) * 1e18;
 
         // Notify off-chain services.
-        emit UnbondedERC721Id(erc721Id, tokenAmount);
+        emit RedeemedERC721Id(erc721Id, tokenAmount);
 
         // Burn tokens and withdraw ERC721Id.
         // Note that the ERC721 transfer triggers a callback if the recipient
@@ -1153,7 +1201,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint toMint = (valuationWad * 1e18) / _priceOfToken();
 
         // Apply discount.
-        toMint = _applyDiscountForERC20(erc20, toMint);
+        toMint = _applyBondingDiscountForERC20(erc20, toMint);
 
         return toMint;
     }
@@ -1169,7 +1217,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint toMint = (_priceOfERC721Id(erc721IdHash) * 1e18) / _priceOfToken();
 
         // Apply discount.
-        toMint = _applyDiscountForERC721Id(erc721IdHash, toMint);
+        toMint = _applyBondingDiscountForERC721Id(erc721IdHash, toMint);
 
         return toMint;
     }
@@ -1198,17 +1246,18 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     function _reserveERC20sValuation() private view returns (uint) {
-        // The total valuation of ERC20 assets in the reserve.
+        // The total valuation of registered ERC20 assets in the reserve.
         uint totalWad;
 
         // Declare variables outside of loop to save gas.
         address erc20;
         uint balanceWad;
 
-        // Calculate the total valuation of ERC20 assets in the reserve.
-        uint len = supportedERC20s.length;
+        // Calculate the total valuation of registered ERC20 assets in the
+        // reserve.
+        uint len = registeredERC20s.length;
         for (uint i; i < len; ) {
-            erc20 = supportedERC20s[i];
+            erc20 = registeredERC20s[i];
 
             // Fetch erc20 balance in wad format.
             balanceWad = Wad.convertToWad(
@@ -1236,16 +1285,18 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     function _reserveERC721IdsValuation() private view returns (uint) {
-        // The total valuation of ERC721 assets in the reserve.
+        // The total valuation of registered ERC721 assets in the reserve.
         uint totalWad;
 
         // Declare variables outside of loop to save gas.
         ERC721Id memory erc721Id;
         bytes32 erc721IdHash;
 
-        uint len = supportedERC721Ids.length;
+        // Calculate the total valuation of registered ERC721 assets in the
+        // reserve.
+        uint len = registeredERC721Ids.length;
         for (uint i; i < len; ) {
-            erc721Id = supportedERC721Ids[i];
+            erc721Id = registeredERC721Ids[i];
             erc721IdHash = _hashOfERC721Id(erc721Id);
 
             // Continue/Break if reserve is not the owner of that erc721Id.
@@ -1378,24 +1429,24 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Discount Functions
 
-    function _applyDiscountForERC20(address erc20, uint amount)
+    function _applyBondingDiscountForERC20(address erc20, uint amount)
         private
         view
         returns (uint)
     {
-        uint discount = discountPerERC20[erc20];
+        uint discount = bondingDiscountPerERC20[erc20];
 
         return discount == 0
             ? amount
             : amount + (amount * discount) / BPS;
     }
 
-    function _applyDiscountForERC721Id(bytes32 erc721IdHash, uint amount)
+    function _applyBondingDiscountForERC721Id(bytes32 erc721IdHash, uint amount)
         private
         view
         returns (uint)
     {
-        uint discount = discountPerERC721Id[erc721IdHash];
+        uint discount = bondingDiscountPerERC721Id[erc721IdHash];
 
         return discount == 0
             ? amount

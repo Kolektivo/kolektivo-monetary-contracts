@@ -58,8 +58,8 @@ contract TreasuryBonding is TreasuryTest {
         oracle.setDataAndValid(price, true);
 
         // Let treasury support token for bonding.
-        treasury.supportAsset(address(token), address(oracle));
-        treasury.supportAssetForBonding(address(token));
+        treasury.registerAsset(address(token), address(oracle));
+        treasury.listAssetAsBondable(address(token));
 
         // Add user to whitelist and mint them tokens.
         treasury.addToWhitelist(user);
@@ -112,7 +112,7 @@ contract TreasuryBonding is TreasuryTest {
         treasury.bond(address(token), amount);
     }
 
-    function testFailUnbondingDisabledIfOracleInvalid(address user, uint amount)
+    function testFailRedeemDisabledIfOracleInvalid(address user, uint amount)
         public
         validUser(user, true)
         validAmount(amount, true)
@@ -121,8 +121,8 @@ contract TreasuryBonding is TreasuryTest {
         OracleMock oracle;
         (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
-        // Mark token as unbondable.
-        treasury.supportAssetForUnbonding(address(token));
+        // Mark token as redeemable.
+        treasury.listAssetAsRedeemable(address(token));
 
         // Bond tokens.
         vm.prank(user);
@@ -133,10 +133,10 @@ contract TreasuryBonding is TreasuryTest {
 
         // Fails with StalePriceDelivered.
         vm.prank(user);
-        treasury.unbond(address(token), amount);
+        treasury.redeem(address(token), amount);
     }
 
-    function testFailUnbondingDisabledIfOraclePriceIsZero(address user, uint amount)
+    function testFailRedeemDisabledIfOraclePriceIsZero(address user, uint amount)
         public
         validUser(user, true)
         validAmount(amount, true)
@@ -145,8 +145,8 @@ contract TreasuryBonding is TreasuryTest {
         OracleMock oracle;
         (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
-        // Mark token as unbondable.
-        treasury.supportAssetForUnbonding(address(token));
+        // Mark token as redeemable.
+        treasury.listAssetAsRedeemable(address(token));
 
         // Bond tokens.
         vm.prank(user);
@@ -157,13 +157,13 @@ contract TreasuryBonding is TreasuryTest {
 
         // Fails with StalePriceDelivered.
         vm.prank(user);
-        treasury.unbond(address(token), amount);
+        treasury.redeem(address(token), amount);
     }
 
     //----------------------------------
     // Bonding
 
-    function testFailCanNotUnbondToZero(address user, uint amount)
+    function testFailCanNotRedeemToZero(address user, uint amount)
         public
         validUser(user, true)
         validAmount(amount, true)
@@ -172,20 +172,20 @@ contract TreasuryBonding is TreasuryTest {
         OracleMock oracle;
         (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
-        // Mark token as unbondable.
-        treasury.supportAssetForUnbonding(address(token));
+        // Mark token as redeemable.
+        treasury.listAssetAsRedeemable(address(token));
 
         // Bond tokens.
         vm.prank(user);
         treasury.bond(address(token), amount);
 
-        // Unbond all tokens.
+        // Redeem all tokens.
         vm.prank(user);
         // Fails with a Division by 0 in ElasticReceiptToken.
-        treasury.unbond(address(token), amount);
+        treasury.redeem(address(token), amount);
     }
 
-    function testBondingAndUnbonding(address user, uint amount)
+    function testBondingAndRedeeming(address user, uint amount)
         public
         validUser(user, false)
         validAmount(amount, false)
@@ -194,8 +194,8 @@ contract TreasuryBonding is TreasuryTest {
         OracleMock oracle;
         (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
 
-        // Mark token as unbondable.
-        treasury.supportAssetForUnbonding(address(token));
+        // Mark token as redeemable.
+        treasury.listAssetAsRedeemable(address(token));
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
@@ -225,10 +225,10 @@ contract TreasuryBonding is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetsUnbonded(user, address(token), tokensUnbonded);
+        emit AssetsRedeemed(user, address(token), tokensUnbonded);
 
         vm.prank(user);
-        treasury.unbond(address(token), tokensUnbonded);
+        treasury.redeem(address(token), tokensUnbonded);
 
         // Check that user received the tokens unbonded.
         assertEq(token.balanceOf(user), tokensUnbonded);
@@ -241,7 +241,10 @@ contract TreasuryBonding is TreasuryTest {
         assertEq(treasury.totalSupply(), amount - tokensUnbonded);
     }
 
-    function testBondingAndUnbondingWithNonWadAssets(address user, bool unbondT1)
+    function testBondingAndRedeemingWithNonWadAssets(
+        address user,
+        bool redeemT1
+    )
         public
         validUser(user, false)
     {
@@ -293,19 +296,19 @@ contract TreasuryBonding is TreasuryTest {
         assertEq(treasury.totalSupply(), 1e18 + (2e18 * 2));
 
         //----------------------------------
-        // Unbonding
+        // Redeeming
         // Note that we cannot unbond all tokens.
-        // Therefore only unbond one of the two tokens.
+        // Therefore only redeem one of the two tokens.
 
-        if (unbondT1) {
-            // Mark t1 as unbondable.
-            treasury.supportAssetForUnbonding(address(t1));
+        if (redeemT1) {
+            // List t1 as redeemable.
+            treasury.listAssetAsRedeemable(address(t1));
 
-            // User unbonds t1.
+            // User redeem t1.
             vm.prank(user);
-            treasury.unbond(address(t1), 1e18);
+            treasury.redeem(address(t1), 1e18);
 
-            // Check that user received the t1 unbonded.
+            // Check that user received the t1 redeemed.
             assertEq(t1.balanceOf(user), 1e20);
             // Check that user's KTT tokens got burned.
             assertEq(treasury.balanceOf(user), 2e18 * 2);
@@ -315,14 +318,14 @@ contract TreasuryBonding is TreasuryTest {
             // Check that KTT's total supply equals the treasury's valuation.
             assertEq(treasury.totalSupply(), 2e18 * 2);
         } else {
-            // Mark t2 as unbondable.
-            treasury.supportAssetForUnbonding(address(t2));
+            // Mark t2 as redeemable.
+            treasury.listAssetAsRedeemable(address(t2));
 
-            // User unbonds t2.
+            // User redeem t2.
             vm.prank(user);
-            treasury.unbond(address(t2), 2e18 * 2);
+            treasury.redeem(address(t2), 2e18 * 2);
 
-            // Check that user received the t1 unbonded.
+            // Check that user received the t1 redeemed.
             assertEq(t2.balanceOf(user), 2e9);
             // Check that user's KTT tokens got burned.
             assertEq(treasury.balanceOf(user), 1e18);

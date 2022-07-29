@@ -23,7 +23,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
 
         vm.startPrank(caller);
 
@@ -51,10 +51,10 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.withdrawAsset(address(1), address(2), 1);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.supportAsset(address(1), address(2));
+        treasury.registerAsset(address(1), address(2));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.unsupportAsset(address(1));
+        treasury.deregisterAsset(address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         treasury.updateAssetOracle(asset, address(oracle));
@@ -63,16 +63,16 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Un/Bonding Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.supportAssetForBonding(asset);
+        treasury.listAssetAsBondable(asset);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.unsupportAssetForBonding(asset);
+        treasury.delistAssetAsBondable(asset);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.supportAssetForUnbonding(asset);
+        treasury.listAssetAsRedeemable(asset);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.unsupportAssetForUnbonding(asset);
+        treasury.delistAssetAsRedeemable(asset);
     }
 
     //----------------------------------
@@ -156,7 +156,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         assertEq(asset.balanceOf(address(recipient)), amount);
     }
 
-    function testSupportAsset() public {
+    function testRegisterAsset() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
@@ -164,28 +164,28 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetMarkedAsSupported(asset, address(oracle));
+        emit AssetRegistered(asset, address(oracle));
 
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
 
         // Function should be idempotent.
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
 
         // Check that asset is supported.
-        assertEq(treasury.supportedAssets(0), asset);
+        assertEq(treasury.registeredAssets(0), asset);
 
         // Check that asset's oracle is correct.
         assertEq(treasury.oraclePerAsset(asset), address(oracle));
 
         // Check that function is idempotent.
-        try treasury.supportedAssets(1) {
+        try treasury.registeredAssets(1) {
             revert();
         } catch {
             // Fails due to IndexOutOfBounds.
         }
     }
 
-    function testSupportAssetCanNotUpdateOracle() public {
+    function testRegisterAssetCanNotUpdateOracle() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle1 = new OracleMock();
@@ -194,9 +194,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(1, true);
 
-        treasury.supportAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1));
 
-        try treasury.supportAsset(asset, address(oracle2)) {
+        try treasury.registerAsset(asset, address(oracle2)) {
             revert();
         } catch {
             // Fails due to not being able to update oracle through the
@@ -204,7 +204,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         }
     }
 
-    function testSupportAssetDoesNotAcceptInvalidOracle() public {
+    function testRegisterAssetDoesNotAcceptInvalidOracle() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
@@ -215,10 +215,10 @@ contract TreasuryOnlyOwner is TreasuryTest {
         vm.expectRevert(
             Errors.StalePriceDeliveredByOracle(asset, address(oracle))
         );
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
     }
 
-    function testSupportAssetDoesNotAcceptOraclePriceOfZero() public {
+    function testRegisterAssetDoesNotAcceptOraclePriceOfZero() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
@@ -229,30 +229,30 @@ contract TreasuryOnlyOwner is TreasuryTest {
         vm.expectRevert(
             Errors.StalePriceDeliveredByOracle(asset, address(oracle))
         );
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
     }
 
-    function testUnsupportAsset() public {
+    function testDeregisterAsset() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetMarkedAsUnsupported(asset);
+        emit AssetDeregistered(asset);
 
-        treasury.unsupportAsset(asset);
+        treasury.deregisterAsset(asset);
 
         // Function should be idempotent.
-        treasury.unsupportAsset(asset);
+        treasury.deregisterAsset(asset);
 
         // Check that asset's oracle was removed.
         assertEq(treasury.oraclePerAsset(asset), address(0));
 
         // Check that asset is not supported anymore.
-        try treasury.supportedAssets(0) {
+        try treasury.registeredAssets(0) {
             revert();
         } catch {
             // Fails due to IndexOutOfBounds.
@@ -264,7 +264,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1));
 
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(2, true);
@@ -288,7 +288,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1));
 
         // Create second oracle being invalid but data non-zero.
         OracleMock oracle2 = new OracleMock();
@@ -307,7 +307,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1));
 
         // Create second oracle being vali but data zero.
         OracleMock oracle2 = new OracleMock();
@@ -324,112 +324,112 @@ contract TreasuryOnlyOwner is TreasuryTest {
     //----------------------------------
     // Un/Bonding Management
 
-    function testSupportAssetForBonding() public {
+    function testListAssetAsBondable() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
+
+        // Check that asset is not listed as bondable.
+        assertTrue(!treasury.isAssetBondable(asset));
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit AssetListedAsBondable(asset);
+
+        treasury.listAssetAsBondable(asset);
+
+        // Function should be idempotent.
+        treasury.listAssetAsBondable(asset);
+
+        // Check that asset is listed as bondable.
+        assertTrue(treasury.isAssetBondable(asset));
+    }
+
+    function testDelistAssetAsBondable() public {
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
+        OracleMock oracle = new OracleMock();
+        oracle.setDataAndValid(1, true);
+        treasury.registerAsset(asset, address(oracle));
+        treasury.listAssetAsBondable(asset);
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit AssetDelistedAsBondable(asset);
+
+        treasury.delistAssetAsBondable(asset);
+
+        // Function should be idempotent.
+        treasury.delistAssetAsBondable(asset);
 
         // Check that asset is not supported for bonding.
-        assertTrue(!treasury.isSupportedForBonding(asset));
-
-        // Expect event emission.
-        vm.expectEmit(true, true, true, true);
-        emit AssetMarkedAsSupportedForBonding(asset);
-
-        treasury.supportAssetForBonding(asset);
-
-        // Function should be idempotent.
-        treasury.supportAssetForBonding(asset);
-
-        // Check that asset is supported for bonding.
-        assertTrue(treasury.isSupportedForBonding(asset));
+        assertTrue(!treasury.isAssetBondable(asset));
     }
 
-    function testUnsupportAssetForBonding() public {
-        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
-
-        OracleMock oracle = new OracleMock();
-        oracle.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle));
-        treasury.supportAssetForBonding(asset);
-
-        // Expect event emission.
-        vm.expectEmit(true, true, true, true);
-        emit AssetMarkedAsUnsupportedForBonding(asset);
-
-        treasury.unsupportAssetForBonding(asset);
-
-        // Function should be idempotent.
-        treasury.unsupportAssetForBonding(asset);
-
-        // Check that asset is not supported for bonding.
-        assertTrue(!treasury.isSupportedForBonding(asset));
-    }
-
-    function testFailSupportAssetForBondingWhileAssetNotSupported() public {
+    function testFailListAssetAsBondableWhileAssetNotRegistered() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
 
-        // Fails with AssetIsNotSupported.
-        treasury.supportAssetForBonding(asset);
+        // Fails with AssetIsNotRegistered.
+        treasury.listAssetAsBondable(asset);
     }
 
-    function testSupportAssetForUnbonding() public {
+    function testListAssetAsRedeemable() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle));
 
-        // Check that asset is not supported for unbonding.
-        assertTrue(!treasury.isSupportedForUnbonding(asset));
+        // Check that asset is not listes as redeemable.
+        assertTrue(!treasury.isAssetRedeemable(asset));
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetMarkedAsSupportedForUnbonding(asset);
+        emit AssetListedAsRedeemable(asset);
 
-        treasury.supportAssetForUnbonding(asset);
+        treasury.listAssetAsRedeemable(asset);
 
         // Function should be idempotent.
-        treasury.supportAssetForUnbonding(asset);
+        treasury.listAssetAsRedeemable(asset);
 
         // Check that asset is supported for unbonding.
-        assertTrue(treasury.isSupportedForUnbonding(asset));
+        assertTrue(treasury.isAssetRedeemable(asset));
     }
 
-    function testUnsupportAssetForUnbonding() public {
+    function testDelistAssetAsRedeemable() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.supportAsset(asset, address(oracle));
-        treasury.supportAssetForUnbonding(asset);
+        treasury.registerAsset(asset, address(oracle));
+        treasury.listAssetAsRedeemable(asset);
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetMarkedAsUnsupportedForUnbonding(asset);
+        emit AssetDelistedAsRedeemable(asset);
 
-        treasury.unsupportAssetForUnbonding(asset);
+        treasury.delistAssetAsRedeemable(asset);
 
         // Function should be idempotent.
-        treasury.unsupportAssetForUnbonding(asset);
+        treasury.delistAssetAsRedeemable(asset);
 
         // Check that asset is not supported for unbonding.
-        assertTrue(!treasury.isSupportedForUnbonding(asset));
+        assertTrue(!treasury.isAssetRedeemable(asset));
     }
 
-    function testFailSupportAssetForUnbondingWhileAssetNotSupported() public {
+    function testFailListAssetAsRedeemableWhileAssetNotRegistered() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
 
-        // Fails with AssetIsNotSupported.
-        treasury.supportAssetForUnbonding(asset);
+        // Fails with AssetIsNotRegistered.
+        treasury.listAssetAsRedeemable(asset);
     }
 
 }

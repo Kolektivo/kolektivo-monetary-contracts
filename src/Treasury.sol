@@ -27,7 +27,7 @@ import {Wad} from "./lib/Wad.sol";
 /**
  * @title Treasury
  *
- * @dev A treasury in which whitelisted addresses can un/bond assets.
+ * @dev A treasury in which whitelisted addresses can bond and redeem assets.
  *      The treasury token (KTT) is continously synced to the treasury's total
  *      value in USD of assets held. This is made possible by inheriting from
  *      the ElasticReceiptToken.
@@ -55,13 +55,13 @@ contract Treasury is
     /// @param asset The address of the asset.
     error Treasury__AssetIsNotBondable(address asset);
 
-    /// @notice Function is only callable for unbondable assets.
+    /// @notice Function is only callable for redeemable assets.
     /// @param asset The address of the asset.
-    error Treasury__AssetIsNotUnbondable(address asset);
+    error Treasury__AssetIsNotRedeemable(address asset);
 
-    /// @notice Function is only callable for supported assets.
+    /// @notice Function is only callable for registered assets.
     /// @param asset The address of the asset.
-    error Treasury__AssetIsNotSupported(address asset);
+    error Treasury__AssetIsNotRegistered(address asset);
 
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param asset The address of the asset.
@@ -92,14 +92,14 @@ contract Treasury is
     //--------------
     // Asset and Oracle Management
 
-    /// @notice Event emitted when an asset is marked as supported.
+    /// @notice Event emitted when an asset is registered
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    event AssetMarkedAsSupported(address indexed asset, address indexed oracle);
+    event AssetRegistered(address indexed asset, address indexed oracle);
 
-    /// @notice Event emitted when an asset is marked as unsupported.
+    /// @notice Event emitted when an asset is deregistered.
     /// @param asset The address of the asset.
-    event AssetMarkedAsUnsupported(address indexed asset);
+    event AssetDeregistered(address indexed asset);
 
     /// @notice Event emitted when an asset's oracle is updated.
     /// @param asset The address of the asset.
@@ -114,30 +114,26 @@ contract Treasury is
     //--------------
     // Un/Bonding Management
 
-    /// @notice Event emitted when an asset is marked as supported for bonding
-    ///         operations.
+    /// @notice Event emitted when an asset is listed as bondable.
     /// @param asset The address of the asset.
-    event AssetMarkedAsSupportedForBonding(address indexed asset);
+    event AssetListedAsBondable(address indexed asset);
 
-    /// @notice Event emitted when an asset is marked as supported for unbonding
-    ///         operations.
+    /// @notice Event emitted when an asset is listed as redeemable.
     /// @param asset The address of the asset.
-    event AssetMarkedAsSupportedForUnbonding(address indexed asset);
+    event AssetListedAsRedeemable(address indexed asset);
 
-    /// @notice Event emitted when an asset is marked as unsupported for
-    ///         bonding operations.
+    /// @notice Event emitted when an asset is delisted as bondable.
     /// @param asset The address of the asset.
-    event AssetMarkedAsUnsupportedForBonding(address indexed asset);
+    event AssetDelistedAsBondable(address indexed asset);
 
-    /// @notice Event emitted when an asset is marked as unsupported for
-    ///         unbonding operations.
+    /// @notice Event emitted when an asset is delisted as redeemable.
     /// @param asset The address of the asset.
-    event AssetMarkedAsUnsupportedForUnbonding(address indexed asset);
+    event AssetDelistedAsRedeemable(address indexed asset);
 
     //----------------------------------
     // User Events
 
-    /// @notice Event emitted when assets are bonded by some user.
+    /// @notice Event emitted when assets are bonded.
     /// @param who The address of the user.
     /// @param asset The address of the asset.
     /// @param kttsMinted The number of KTTs minted.
@@ -147,11 +143,11 @@ contract Treasury is
         uint kttsMinted
     );
 
-    /// @notice Event emitted when assets are unbonded by some user.
+    /// @notice Event emitted when assets are redeemed.
     /// @param who The address of the user.
     /// @param asset The address of the asset.
     /// @param kttsBurned The number of KTTs burned.
-    event AssetsUnbonded(
+    event AssetsRedeemed(
         address indexed who,
         address indexed asset,
         uint kttsBurned
@@ -160,11 +156,11 @@ contract Treasury is
     //--------------------------------------------------------------------------
     // Modifiers
 
-    /// @notice Modifier to guarantee function is only callable for supported
+    /// @notice Modifier to guarantee function is only callable with registered
     ///         assets.
-    modifier isSupported(address asset) {
+    modifier isRegistered(address asset) {
         if (oraclePerAsset[asset] == address(0)) {
-            revert Treasury__AssetIsNotSupported(asset);
+            revert Treasury__AssetIsNotRegistered(asset);
         }
         _;
     }
@@ -172,17 +168,17 @@ contract Treasury is
     /// @notice Modifier to guarantee function is only callable with bondable
     ///         assets.
     modifier isBondable(address asset) {
-        if (!isSupportedForBonding[asset]) {
+        if (!isAssetBondable[asset]) {
             revert Treasury__AssetIsNotBondable(asset);
         }
         _;
     }
 
-    /// @notice Modifier to guarantee function is only callable with unbondable
+    /// @notice Modifier to guarantee function is only callable with redeemable
     ///         assets.
-    modifier isUnbondable(address asset) {
-        if (!isSupportedForUnbonding[asset]) {
-            revert Treasury__AssetIsNotUnbondable(asset);
+    modifier isRedeemable(address asset) {
+        if (!isAssetRedeemable[asset]) {
+            revert Treasury__AssetIsNotRedeemable(asset);
         }
         _;
     }
@@ -190,26 +186,26 @@ contract Treasury is
     //--------------------------------------------------------------------------
     // Storage
 
-    /// @notice The assets supported by the treasury, i.e. the assets taking
+    /// @notice The assets registered by the treasury, i.e. the assets taking
     ///         into account for the treasury's valuation.
-    /// @dev Each supported asset always has to have a corresponding oracle
+    /// @dev Each registered asset always has to have a corresponding oracle
     ///      in the oraclePerAsset mapping!
     /// @dev Changeable by owner.
     /// @dev Addresses are of type ERC20.
-    address[] public supportedAssets;
+    address[] public registeredAssets;
 
     /// @notice The mapping of oracles providing the price for an asset.
     /// @dev Changeable by owner.
     /// @dev Address in supportedAssets => address of type IOracle.
     mapping(address => address) public oraclePerAsset;
 
-    /// @notice The assets supported for bond operations.
+    /// @notice Mapping of bondable assets.
     /// @dev Changeable by owner.
-    mapping(address => bool) public isSupportedForBonding;
+    mapping(address => bool) public isAssetBondable;
 
-    /// @notice The assets supported for unbond operations.
+    /// @notice Mapping of redeemable assets.
     /// @dev Changeable by owner.
-    mapping(address => bool) public isSupportedForUnbonding;
+    mapping(address => bool) public isAssetRedeemable;
 
     //--------------------------------------------------------------------------
     // Constructor
@@ -251,17 +247,17 @@ contract Treasury is
         emit AssetsBonded(msg.sender, asset, mintWad);
     }
 
-    /// @notice Unbonds an amount of KTTs in exchange for an amount of one
+    /// @notice Redeems an amount of KTTs in exchange for an amount of one
     ///         asset.
     /// @dev Only callable if address is whitelisted.
-    /// @dev Only callable for unbondable assets.
+    /// @dev Only callable for redeemable assets.
     /// @param asset The asset to unbond.
     /// @param kttWad The amount of KTT tokens to burn.
-    function unbond(address asset, uint kttWad)
+    function redeem(address asset, uint kttWad)
         external
         // Note that if an asset is unbondable, it is also supported.
         // isSupported(asset)
-        isUnbondable(asset)
+        isRedeemable(asset)
         validAmount(kttWad)
         onlyWhitelisted
     {
@@ -281,7 +277,7 @@ contract Treasury is
         ERC20(asset).safeTransfer(msg.sender, withdrawable);
 
         // Notify off-chain services.
-        emit AssetsUnbonded(msg.sender, asset, kttWad);
+        emit AssetsRedeemed(msg.sender, asset, kttWad);
     }
 
     //--------------------------------------------------------------------------
@@ -324,9 +320,9 @@ contract Treasury is
         // The total valuation of assets in the treasury.
         uint totalWad;
 
-        uint len = supportedAssets.length;
+        uint len = registeredAssets.length;
         for (uint i; i < len; ) {
-            asset = supportedAssets[i];
+            asset = registeredAssets[i];
             assetBalance = ERC20(asset).balanceOf(address(this));
 
             // Continue/Break early if there is no asset balance.
@@ -424,23 +420,23 @@ contract Treasury is
         super.rebase();
     }
 
-    /// @notice Adds a new asset as being supported.
+    /// @notice Registers a new asset.
     /// @dev Only callable by owner.
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    function supportAsset(address asset, address oracle) external onlyOwner {
+    function registerAsset(address asset, address oracle) external onlyOwner {
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(asset.code.length != 0);
 
         address oldOracle = oraclePerAsset[asset];
 
-        // Do nothing if asset is already supported and oracles are the same.
+        // Do nothing if asset is already registered and oracles are the same.
         if (oldOracle == oracle) {
             return;
         }
 
-        // Revert if asset is already supported but oracles differ.
+        // Revert if asset is already registered but oracles differ.
         // Note that the updateAssetOracle function should be used for this.
         require(oldOracle == address(0));
 
@@ -454,18 +450,18 @@ contract Treasury is
             revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
-        // Add asset and oracle to mappings.
-        supportedAssets.push(asset);
+        // Add asset and oracle to storage.
+        registeredAssets.push(asset);
         oraclePerAsset[asset] = oracle;
 
         // Notify off-chain services.
-        emit AssetMarkedAsSupported(asset, oracle);
+        emit AssetRegistered(asset, oracle);
     }
 
-    /// @notice Removes an asset from being supported.
+    /// @notice Deregisters an asset.
     /// @dev Only callable by owner.
     /// @param asset The address of the asset.
-    function unsupportAsset(address asset) external onlyOwner {
+    function deregisterAsset(address asset) external onlyOwner {
         // Do nothing if asset is already not supported.
         // Note that we do not use the isSupported modifier to be idempotent.
         if (oraclePerAsset[asset] == address(0)) {
@@ -475,17 +471,17 @@ contract Treasury is
         // Remove asset's oracle.
         delete oraclePerAsset[asset];
 
-        // Remove asset from supportedAssets array.
-        uint len = supportedAssets.length;
+        // Remove asset from registeredAssets array.
+        uint len = registeredAssets.length;
         for (uint i; i < len; ) {
-            if (asset == supportedAssets[i]) {
+            if (asset == registeredAssets[i]) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
-                    supportedAssets[i] = supportedAssets[len - 1];
+                    registeredAssets[i] = registeredAssets[len - 1];
                 }
-                supportedAssets.pop();
+                registeredAssets.pop();
 
-                emit AssetMarkedAsUnsupported(asset);
+                emit AssetDeregistered(asset);
                 break;
             }
 
@@ -499,7 +495,7 @@ contract Treasury is
     /// @param oracle The new asset's oracle.
     function updateAssetOracle(address asset, address oracle)
         external
-        isSupported(asset)
+        isRegistered(asset)
         onlyOwner
     {
         // Cache old oracle.
@@ -528,80 +524,80 @@ contract Treasury is
     //----------------------------------
     // Un/Bonding Management
 
-    /// @notice Marks an asset as bondable.
+    /// @notice Lists an asset as bondable.
     /// @dev Only callable by owner.
-    /// @param asset The asset to mark as bondable.
-    function supportAssetForBonding(address asset)
+    /// @param asset The asset to list as bondable.
+    function listAssetAsBondable(address asset)
         external
-        isSupported(asset)
+        isRegistered(asset)
         onlyOwner
     {
-        // Do nothing if asset is already supported for bonding.
-        if (isSupportedForBonding[asset]) {
+        // Do nothing if asset is already listed as bondable.
+        if (isAssetBondable[asset]) {
             return;
         }
 
-        // Mark asset as being supported for bonding and notify off-chain
+        // Mark asset as being listed as bondable and notify off-chain
         // services.
-        isSupportedForBonding[asset] = true;
-        emit AssetMarkedAsSupportedForBonding(asset);
+        isAssetBondable[asset] = true;
+        emit AssetListedAsBondable(asset);
     }
 
-    /// @notice Marks an asset as non-bondable.
+    /// @notice Delists an asset as bondable.
     /// @dev Only callable by owner.
-    /// @param asset The asset to mark as non-bondable.
-    function unsupportAssetForBonding(address asset)
+    /// @param asset The asset to delist as bondable.
+    function delistAssetAsBondable(address asset)
         external
-        isSupported(asset)
+        isRegistered(asset)
         onlyOwner
     {
-        // Do nothing if asset is already unsupported for bonding.
-        if (!isSupportedForBonding[asset]) {
+        // Do nothing if asset is already delisted as bondable.
+        if (!isAssetBondable[asset]) {
             return;
         }
 
-        // Mark asset as being unsupported for bonding and notify off-chain
+        // Mark asset as being delisted as bondable and notify off-chain
         // services.
-        isSupportedForBonding[asset] = false;
-        emit AssetMarkedAsUnsupportedForBonding(asset);
+        isAssetBondable[asset] = false;
+        emit AssetDelistedAsBondable(asset);
     }
 
-    /// @notice Marks an asset as unbondable.
+    /// @notice Lists an asset as redeemable.
     /// @dev Only callable by owner.
-    /// @param asset The asset to mark as unbondable.
-    function supportAssetForUnbonding(address asset)
+    /// @param asset The asset to list as redeemable.
+    function listAssetAsRedeemable(address asset)
         external
-        isSupported(asset)
+        isRegistered(asset)
         onlyOwner
     {
-        // Do nothing if asset is already supported for unbonding.
-        if (isSupportedForUnbonding[asset]) {
+        // Do nothing if asset is already listed as redeemable.
+        if (isAssetRedeemable[asset]) {
             return;
         }
 
-        // Mark asset as being supported for unbonding and notify off-chain
+        // Mark asset as being listed as redeemable and notify off-chain
         // services.
-        isSupportedForUnbonding[asset] = true;
-        emit AssetMarkedAsSupportedForUnbonding(asset);
+        isAssetRedeemable[asset] = true;
+        emit AssetListedAsRedeemable(asset);
     }
 
-    /// @notice Marks an asset as non-unbondable.
+    /// @notice Delists an asset as redeemable
     /// @dev Only callable by owner.
-    /// @param asset The asset to mark as non-unbondable.
-    function unsupportAssetForUnbonding(address asset)
+    /// @param asset The asset to delist as redeemable.
+    function delistAssetAsRedeemable(address asset)
         external
-        isSupported(asset)
+        isRegistered(asset)
         onlyOwner
     {
-        // Do nothing if asset is already unsupported for unbonding.
-        if (!isSupportedForUnbonding[asset]) {
+        // Do nothing if asset is already delisted as redeemable.
+        if (!isAssetRedeemable[asset]) {
             return;
         }
 
-        // Mark asset as being unsupported for unbonding and notify off-chain
+        // Mark asset as being delisted as redeemable and notify off-chain
         // services.
-        isSupportedForUnbonding[asset] = false;
-        emit AssetMarkedAsUnsupportedForUnbonding(asset);
+        isAssetRedeemable[asset] = false;
+        emit AssetDelistedAsRedeemable(asset);
     }
 
     //--------------------------------------------------------------------------

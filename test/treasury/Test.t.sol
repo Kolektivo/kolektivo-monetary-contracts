@@ -31,24 +31,24 @@ library Errors {
         );
     }
 
-    function AssetIsNotUnbondable(address asset)
+    function AssetIsNotRedeemable(address asset)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "Treasury__AssetIsNotUnbondable(address)",
+            "Treasury__AssetIsNotRedeemable(address)",
             asset
         );
     }
 
-    function AssetIsNotSupported(address asset)
+    function AssetIsNotRegistered(address asset)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "Treasury__AssetIsNotSupported(address)",
+            "Treasury__AssetIsNotRegistered(address)",
             asset
         );
     }
@@ -78,22 +78,27 @@ abstract contract TreasuryTest is Test {
 
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
-    event AssetMarkedAsSupported(address indexed asset,
-                                 address indexed oracle);
-    event AssetMarkedAsUnsupported(address indexed asset);
-    event AssetOracleUpdated(address indexed asset,
-                             address indexed oldOracle,
-                             address indexed newOracle);
-    event AssetMarkedAsSupportedForBonding(address indexed asset);
-    event AssetMarkedAsSupportedForUnbonding(address indexed asset);
-    event AssetMarkedAsUnsupportedForBonding(address indexed asset);
-    event AssetMarkedAsUnsupportedForUnbonding(address indexed asset);
-    event AssetsBonded(address indexed who,
-                       address indexed asset,
-                       uint kttsMinted);
-    event AssetsUnbonded(address indexed who,
-                         address indexed asset,
-                         uint kttsBurned);
+    event AssetRegistered(address indexed asset, address indexed oracle);
+    event AssetDeregistered(address indexed asset);
+    event AssetOracleUpdated(
+        address indexed asset,
+        address indexed oldOracle,
+        address indexed newOracle
+    );
+    event AssetListedAsBondable(address indexed asset);
+    event AssetListedAsRedeemable(address indexed asset);
+    event AssetDelistedAsBondable(address indexed asset);
+    event AssetDelistedAsRedeemable(address indexed asset);
+    event AssetsBonded(
+        address indexed who,
+        address indexed asset,
+        uint kttsMinted
+    );
+    event AssetsRedeemed(
+        address indexed who,
+        address indexed asset,
+        uint kttsBurned
+    );
 
     // Constants copied from elastic-receipt-token.
     // For more info see elastic-receipt-token.

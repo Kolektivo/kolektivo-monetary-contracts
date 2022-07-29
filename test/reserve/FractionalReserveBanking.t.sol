@@ -80,7 +80,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
     //--------------------------------------------------------------------------
     // Un/Bonding Functions
 
-    function testBondingAndUnbonding() public {
+    function testBondingAndRedeeming() public {
         // 1. Bond ERC20 with 18 decimal places.
         //
         uint erc20WadPrice = 100e18; // 100 USD
@@ -96,10 +96,10 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20Wad.mint(address(this), erc20WadAmount);
         erc20Wad.approve(address(reserve), erc20WadAmount);
 
-        // Support erc20 in reserve and for un/bonding.
-        reserve.supportERC20(address(erc20Wad), address(oWad));
-        reserve.supportERC20ForBonding(address(erc20Wad), true);
-        reserve.supportERC20ForUnbonding(address(erc20Wad), true);
+        // Register erc20 in reserve and list as bondable/redeemable.
+        reserve.registerERC20(address(erc20Wad), address(oWad));
+        reserve.listERC20AsBondable(address(erc20Wad));
+        reserve.listERC20AsRedeemable(address(erc20Wad));
 
         // Bond erc20.
         reserve.bondERC20AllFromTo(address(erc20Wad), address(this), address(this));
@@ -125,10 +125,10 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20NonWad.mint(address(this), erc20NonWadAmount);
         erc20NonWad.approve(address(reserve), erc20NonWadAmount);
 
-        // Support erc20 in reserve and for un/bonding.
-        reserve.supportERC20(address(erc20NonWad), address(oNonWad));
-        reserve.supportERC20ForBonding(address(erc20NonWad), true);
-        reserve.supportERC20ForUnbonding(address(erc20NonWad), true);
+        // Register erc20 in reserve and list as bondable/redeemable.
+        reserve.registerERC20(address(erc20NonWad), address(oNonWad));
+        reserve.listERC20AsBondable(address(erc20NonWad));
+        reserve.listERC20AsRedeemable(address(erc20NonWad));
 
         // Bond erc20.
         reserve.bondERC20AllFromTo(address(erc20NonWad), address(this), address(this));
@@ -148,10 +148,10 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         // Approve.
         nft.approve(address(reserve), DEFAULT_ERC721ID.id);
 
-        // Support erc721Id in reserve and for un/bonding.
-        reserve.supportERC721Id(DEFAULT_ERC721ID, address(defaultERC721IdOracle));
-        reserve.supportERC721IdForBonding(DEFAULT_ERC721ID, true);
-        reserve.supportERC721IdForUnbonding(DEFAULT_ERC721ID, true);
+        // Register erc721Id in reserve and list as bondable/redeemable.
+        reserve.registerERC721Id(DEFAULT_ERC721ID, address(defaultERC721IdOracle));
+        reserve.listERC721IdAsBondable(DEFAULT_ERC721ID);
+        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721ID);
 
         // Bond erc721Id.
         reserve.bondERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
@@ -168,12 +168,12 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         // Note that the reserve's backing ratio is now 200%.
         tokenOracle.setDataAndValid(5e17, true); // 0.5 USD
 
-        // 5. Unbond the erc20Wad tokens.
+        // 5. Redeem the erc20Wad tokens.
         //
         // Note that the token price contracted by 50%.
         // Therefore, we only receive half the erc20Wad tokens for the same 10k tokens
         // we received for bonding the whole erc20Wad amount.
-        reserve.unbondERC20(address(erc20Wad), 10_000e18);
+        reserve.redeemERC20(address(erc20Wad), 10_000e18);
 
         // Check balances.
         assertEq(erc20Wad.balanceOf(address(reserve)), erc20WadAmount / 2);
@@ -185,15 +185,15 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         // Note that we could not unbond the erc721Id otherwise.
         tokenOracle.setDataAndValid(1e18, true); // 1 USD
 
-        // 7. Unbond the erc721Id instance.
-        reserve.unbondERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
+        // 7. Redeem the erc721Id instance.
+        reserve.redeemERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
 
         // Check balances.
         assertEq(nft.ownerOf(DEFAULT_ERC721ID.id), address(this));
         assertEq(token.balanceOf(address(this)), 50 * 1e18);
 
-        // 7. Unbond the erc20NonWad tokens.
-        reserve.unbondERC20AllFromTo(address(erc20NonWad), address(this), address(this));
+        // 7. Redeem the erc20NonWad tokens.
+        reserve.redeemERC20AllFromTo(address(erc20NonWad), address(this), address(this));
 
         // Check balances.
         assertEq(erc20NonWad.balanceOf(address(reserve)), 0);
@@ -201,7 +201,9 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         assertEq(token.balanceOf(address(this)), 0);
     }
 
-    function testBondingAndUnbondigWithDiscountsAndVesting() public {
+    function testBondingAndRedeemingWithBondingDiscountsAndBondingVesting()
+        public
+    {
         // Note that the test is copied from the above one.
         // A discount is added to the erc20Wad token and erc721Id instance, and
         // the expected token amounts are adjusted.
@@ -221,13 +223,13 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20Wad.mint(address(this), erc20WadAmount);
         erc20Wad.approve(address(reserve), erc20WadAmount);
 
-        // Support erc20 in reserve and for un/bonding.
-        reserve.supportERC20(address(erc20Wad), address(oWad));
-        reserve.supportERC20ForBonding(address(erc20Wad), true);
-        reserve.supportERC20ForUnbonding(address(erc20Wad), true);
+        // Register erc20 in reserve and list as bondable/redeemable.
+        reserve.registerERC20(address(erc20Wad), address(oWad));
+        reserve.listERC20AsBondable(address(erc20Wad));
+        reserve.listERC20AsRedeemable(address(erc20Wad));
 
         // Set discount of 10%.
-        reserve.setDiscountForERC20(address(erc20Wad), 1_000); // 1,000 bps = 10%
+        reserve.setBondingDiscountForERC20(address(erc20Wad), 1_000); // 1,000 bps = 10%
 
         // Bond erc20.
         reserve.bondERC20AllFromTo(address(erc20Wad), address(this), address(this));
@@ -254,13 +256,13 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20NonWad.mint(address(this), erc20NonWadAmount);
         erc20NonWad.approve(address(reserve), erc20NonWadAmount);
 
-        // Support erc20 in reserve and for un/bonding.
-        reserve.supportERC20(address(erc20NonWad), address(oNonWad));
-        reserve.supportERC20ForBonding(address(erc20NonWad), true);
-        reserve.supportERC20ForUnbonding(address(erc20NonWad), true);
+        // Register erc20 in reserve and list as bondable/redeemable.
+        reserve.registerERC20(address(erc20NonWad), address(oNonWad));
+        reserve.listERC20AsBondable(address(erc20NonWad));
+        reserve.listERC20AsRedeemable(address(erc20NonWad));
 
         // Set vesting of 1 hour.
-        reserve.setVestingForERC20(address(erc20NonWad), 1 hours);
+        reserve.setBondingVestingForERC20(address(erc20NonWad), 1 hours);
 
         // Bond erc20.
         reserve.bondERC20AllFromTo(address(erc20NonWad), address(this), address(this));
@@ -286,13 +288,13 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         // Approve.
         nft.approve(address(reserve), DEFAULT_ERC721ID.id);
 
-        // Support erc721Id in reserve and for un/bonding.
-        reserve.supportERC721Id(DEFAULT_ERC721ID, address(defaultERC721IdOracle));
-        reserve.supportERC721IdForBonding(DEFAULT_ERC721ID, true);
-        reserve.supportERC721IdForUnbonding(DEFAULT_ERC721ID, true);
+        // Register erc721Id in reserve and list as bondable/redeemable.
+        reserve.registerERC721Id(DEFAULT_ERC721ID, address(defaultERC721IdOracle));
+        reserve.listERC721IdAsBondable(DEFAULT_ERC721ID);
+        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721ID);
 
         // Set discount of 5%.
-        reserve.setDiscountForERC721Id(DEFAULT_ERC721ID, 500); // 500 bps = 5%
+        reserve.setBondingDiscountForERC721Id(DEFAULT_ERC721ID, 500); // 500 bps = 5%
 
         // Bond erc721Id.
         reserve.bondERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
@@ -326,12 +328,12 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(price, true);
 
-        // Support erc20 in reserve.
-        reserve.supportERC20(address(erc20), address(o));
+        // Register erc20 in reserve.
+        reserve.registerERC20(address(erc20), address(o));
 
-        // Support erc20 for un/bonding.
-        reserve.supportERC20ForBonding(address(erc20), true);
-        reserve.supportERC20ForUnbonding(address(erc20), true);
+        // List erc20 as bondable/redeemable.
+        reserve.listERC20AsBondable(address(erc20));
+        reserve.listERC20AsRedeemable(address(erc20));
 
         return (erc20, o);
     }

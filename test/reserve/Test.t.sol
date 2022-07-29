@@ -17,7 +17,7 @@ import {VestingVaultMock} from "../utils/mocks/VestingVaultMock.sol";
  * Enables checking for errors with vm.expectRevert(Errors.<Error>).
  */
 library Errors {
-    // Inherited from solrocket/Ownable.sol.
+    // Inherited from solrocket/TSOwnable.sol.
     bytes internal constant OnlyCallableByOwner
         = abi.encodeWithSignature("OnlyCallableByOwner()");
 
@@ -27,14 +27,38 @@ library Errors {
     bytes internal constant InvalidAmount
         = abi.encodeWithSignature("Reserve__InvalidAmount()");
 
-    bytes internal constant ERC20NotSupported
-        = abi.encodeWithSignature("Reserve__ERC20NotSupported()");
+    bytes internal constant ERC20NotRegistered
+        = abi.encodeWithSignature("Reserve__ERC20NotRegistered()");
 
-    bytes internal constant ERC721IdNotSupported
-        = abi.encodeWithSignature("Reserve__ERC721IdNotSupported()");
+    bytes internal constant ERC721IdNotRegistered
+        = abi.encodeWithSignature("Reserve__ERC721IdNotRegistered()");
+
+    bytes internal constant ERC20NotBondable
+        = abi.encodeWithSignature("Reserve__ERC20NotBondable()");
+
+    bytes internal constant ERC721IdNotBondable
+        = abi.encodeWithSignature("Reserve__ERC721IdNotBondable()");
+
+    bytes internal constant ERC20NotRedeemable
+        = abi.encodeWithSignature("Reserve__ERC20NotRedeemable()");
+
+    bytes internal constant ERC721IdNotRedeemable
+        = abi.encodeWithSignature("Reserve__ERC721NotRedeemable()");
+
+    bytes internal constant ERC20BondingLimitExceeded
+        = abi.encodeWithSignature("Reserve__ERC20BondingLimitExceeded()");
+
+    bytes internal constant ERC20RedeemLimitExceeded
+        = abi.encodeWithSignature("Reserve__ERC20RedeemLimitExceeded()");
+
+    bytes internal constant ERC20BalanceNotSufficient
+        = abi.encodeWithSignature("Reserve__ERC20BalanceNotSufficient()");
 
     bytes internal constant MinimumBackingLimitExceeded
         = abi.encodeWithSignature("Reserve__MinimumBackingLimitExceeded()");
+
+    bytes internal constant InvalidOracle
+        = abi.encodeWithSignature("Reserve__InvalidOracle()");
 }
 
 /**

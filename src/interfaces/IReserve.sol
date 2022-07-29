@@ -22,31 +22,31 @@ interface IReserve {
     /// @notice Given token amount invalid.
     error Reserve__InvalidAmount();
 
-    /// @notice Given ERC20 token address not supported.
-    error Reserve__ERC20NotSupported();
+    /// @notice Given ERC20 token address not registered.
+    error Reserve__ERC20NotRegistered();
 
-    /// @notice Given ERC721Id instance not supported.
-    error Reserve__ERC721IdNotSupported();
+    /// @notice Given ERC721Id instance not registered.
+    error Reserve__ERC721IdNotRegistered();
 
     /// @notice Given ERC20 token address not bondable.
     error Reserve__ERC20NotBondable();
 
-    /// @notice Given ERC721 instance not bondable.
-    error Reserve__ERC721NotBondable();
+    /// @notice Given ERC721Id instance not bondable.
+    error Reserve__ERC721IdNotBondable();
 
-    /// @notice Given ERC20 token address not unbondable.
-    error Reserve__ERC20NotUnbondable();
+    /// @notice Given ERC20 token address not redeemable.
+    error Reserve__ERC20NotRedeemable();
 
-    /// @notice Given ERC721 instance not unbondable.
-    error Reserve__ERC721NotUnbondable();
+    /// @notice Given ERC721Id instance not redeemable.
+    error Reserve__ERC721IdNotRedeemable();
 
     /// @notice Bonding operation exceeded reserve's bonding limit for given
     ///         ERC20 token address.
     error Reserve__ERC20BondingLimitExceeded();
 
-    /// @notice Unbonding operation exceeded reserve's unbonding limit for
+    /// @notice Redeem operation exceeded reserve's redeem limit for
     ///         given ERC20 token address.
-    error Reserve__ERC20UnbondingLimitExceeded();
+    error Reserve__ERC20RedeemLimitExceeded();
 
     /// @notice Reserve's balance for given ERC20 token address no sufficient.
     error Reserve__ERC20BalanceNotSufficient();
@@ -69,7 +69,7 @@ interface IReserve {
     event BackingUpdated(uint oldBacking, uint newBacking);
 
     //----------------------------------
-    // Un/Bonding
+    // Bonding & Redeeming
 
     /// @notice Event emitted when ERC20 bonding operation succeeded.
     /// @param erc20 The ERC20 token address.
@@ -87,21 +87,21 @@ interface IReserve {
     /// @param tokensMinted The amount of reserve tokens minted.
     event BondedERC721(ERC721Id erc721Id, uint tokensMinted);
 
-    /// @notice Event emitted when ERC20 unbonding operation succeeded.
+    /// @notice Event emitted when ERC20 redeem operation succeeded.
     /// @param erc20 The ERC20 token address.
-    /// @param erc20sUnbonded The amount of ERC20 tokens unbonded.
+    /// @param erc20sRedeemed The amount of ERC20 tokens redeemed.
     /// @param tokensBurned The amount of reserve tokens burned.
-    event UnbondedERC20(
+    event RedeemedERC20(
         address indexed erc20,
-        uint erc20sUnbonded,
+        uint erc20sRedeemed,
         uint tokensBurned
     );
 
-    /// @notice Event emitted when ERC721Id instance unbonding operation
+    /// @notice Event emitted when ERC721Id instance redeem operation
     ///         succeeded.
     /// @param erc721Id The ERC721 instance.
     /// @param tokensBurned The amount of reserve tokens burned.
-    event UnbondedERC721Id(ERC721Id erc721Id, uint tokensBurned);
+    event RedeemedERC721Id(ERC721Id erc721Id, uint tokensBurned);
 
     //----------------------------------
     // Oracle Management
@@ -153,55 +153,56 @@ interface IReserve {
     //----------------------------------
     // Asset Management
 
-    /// @notice Event emitted when ERC20 token address marked as supported.
+    /// @notice Event emitted when ERC20 token address registered.
     /// @param erc20 The ERC20 token address.
-    event ERC20MarkedAsSupported(address indexed erc20);
+    event ERC20Registered(address indexed erc20);
 
-    /// @notice Event emitted when ERC721 instance marked as supported.
+    /// @notice Event emitted when ERC721 instance registered.
     /// @param erc721Id The ERC721 instance.
-    event ERC721IdMarkedAsSupported(ERC721Id indexed erc721Id);
+    event ERC721IdRegistered(ERC721Id indexed erc721Id);
 
-    /// @notice Event emitted when ERC20 token addres marked as unsupported.
+    /// @notice Event emitted when ERC20 token addres deregistered.
     /// @param erc20 The ERC20 token address.
-    event ERC20MarkedAsUnsupported(address indexed erc20);
+    event ERC20Deregistered(address indexed erc20);
 
-    /// @notice Event emitted when ERC721Id instance marked as unsupported.
+    /// @notice Event emitted when ERC721Id instance deregistered.
     /// @param erc721Id The ERC721Id instance.
-    event ERC721IdMarkedAsUnsupported(ERC721Id indexed erc721Id);
+    event ERC721IdDeregistered(ERC721Id indexed erc721Id);
 
     //----------------------------------
-    // Un/Bonding Management
+    // Bonding & Redeeming Management
 
-    /// @notice Event emitted when ERC20 token's support for bonding set.
+    /// @notice Event emitted when ERC20 token listed as bondable.
     /// @param erc20 The ERC20 token address.
-    /// @param support Whether the ERC20 token is supported or unsupported for
-    ///                bonding.
-    event SetERC20BondingSupport(address indexed erc20, bool support);
+    event ERC20ListedAsBondable(address indexed erc20);
 
-    /// @notice Event emitted when ERC721Id instance's support for bonding set.
-    /// @param erc721Id The ERC721Id instance.
-    /// @param support Whether the ERC721Id instance is supported or
-    ///                unsupported for bonding.
-    event SetERC721IdBondingSupport(
-        ERC721Id indexed erc721Id,
-        bool support
-    );
-
-    /// @notice Event emitted when ERC20 token's support for unbonding set.
+    /// @notice Event emitted when ERC20 token delisted as bondable.
     /// @param erc20 The ERC20 token address.
-    /// @param support Whether the ERC20 token is supported or unsupported for
-    ///                bonding.
-    event SetERC20UnbondingSupport(address indexed erc20, bool support);
+    event ERC20DelistedAsBondable(address indexed erc20);
 
-    /// @notice Event emitted when ERC721Id instance's support for unbonding
-    ///         set.
+    /// @notice Event emitted when ERC721Id instance listed as bondable.
     /// @param erc721Id The ERC721Id instance.
-    /// @param support Whether the ERC721Id instance is supported or
-    ///                unsupported for unbonding.
-    event SetERC721IdUnbondingSupport(
-        ERC721Id indexed erc721Id,
-        bool support
-    );
+    event ERC721IdListedAsBondable(ERC721Id indexed erc721Id);
+
+    /// @notice Event emitted when ERC721Id instance delisted as bondable.
+    /// @param erc721Id The ERC721Id instance.
+    event ERC721IdDelistedAsBondable(ERC721Id indexed erc721Id);
+
+    /// @notice Event emitted when ERC20 token listed as redeemable.
+    /// @param erc20 The ERC20 token address.
+    event ERC20ListedAsRedeemable(address indexed erc20);
+
+    /// @notice Event emitted when ERC20 token delisted as redeemable.
+    /// @param erc20 The ERC20 token address.
+    event ERC20DelistedAsRedeemable(address indexed erc20);
+
+    /// @notice Event emitted when ERC721Id instance's listed as redeemable.
+    /// @param erc721Id The ERC721Id instance.
+    event ERC721IdListedAsRedeemable(ERC721Id indexed erc721Id);
+
+    /// @notice Event emitted when ERC721Id instance's delisted as redeemable.
+    /// @param erc721Id The ERC721Id instance.
+    event ERC721IdDelistedAsRedeemable(ERC721Id indexed erc721Id);
 
     /// @notice Event emitted when ERC20 token's bonding limit set.
     /// @param erc20 The ERC20 token address.
@@ -213,11 +214,11 @@ interface IReserve {
         uint newLimit
     );
 
-    /// @notice Event emitted when ERC20 token's unbonding limit set.
+    /// @notice Event emitted when ERC20 token's redeem limit set.
     /// @param erc20 The ERC20 token address.
-    /// @param oldLimit The ERC20 token's old unbonding limit.
-    /// @param newLimit The ERC20 token's new unbonding limit.
-    event SetERC20UnbondingLimit(
+    /// @param oldLimit The ERC20 token's old redeem limit.
+    /// @param newLimit The ERC20 token's new redeem limit.
+    event SetERC20RedeemLimit(
         address indexed erc20,
         uint oldLimit,
         uint newLimit
@@ -226,21 +227,21 @@ interface IReserve {
     //----------------------------------
     // Discount Management
 
-    /// @notice Event emitted when ERC20 token's discount set.
+    /// @notice Event emitted when ERC20 token's bonding discount set.
     /// @param erc20 The ERC20 token's address.
-    /// @param oldDiscount The ERC20 token's old discount.
-    /// @param newDiscount The ERC20 token's new discount.
-    event SetERC20Discount(
+    /// @param oldDiscount The ERC20 token's old bonding discount.
+    /// @param newDiscount The ERC20 token's new bonding discount.
+    event SetERC20BondingDiscount(
         address indexed erc20,
         uint oldDiscount,
         uint newDiscount
     );
 
-    /// @notice Event emitted when ERC721Id instance's discount set.
+    /// @notice Event emitted when ERC721Id instance's bonding discount set.
     /// @param erc721Id The ERC721Id instance.
-    /// @param oldDiscount The ERC721Id instance's old discount.
-    /// @param newDiscount The ERC721Id instance's new discount.
-    event SetERC721IdDiscount(
+    /// @param oldDiscount The ERC721Id instance's old bonding discount.
+    /// @param newDiscount The ERC721Id instance's new bonding discount.
+    event SetERC721IdBondingDiscount(
         ERC721Id indexed erc721Id,
         uint oldDiscount,
         uint newDiscount
@@ -257,21 +258,25 @@ interface IReserve {
         address indexed newVestingVault
     );
 
-    /// @notice Event emitted when ERC20 token's vesting duration set.
+    /// @notice Event emitted when ERC20 token's bonding vesting duration set.
     /// @param erc20 The ERC20 token's address.
-    /// @param oldVestingDuration The ERC20 token's old vesting duration.
-    /// @param newVestingDuration The ERC20 token's new vesting duration.
-    event SetERC20Vesting(
+    /// @param oldVestingDuration The ERC20 token's old bonding vesting
+    ///                           duration.
+    /// @param newVestingDuration The ERC20 token's new bonding vesting
+    ///                           duration.
+    event SetERC20BondingVesting(
         address indexed erc20,
         uint oldVestingDuration,
         uint newVestingDuration
     );
 
-    /// @notice Event emitted when ERC721Id instance's vesting duration set.
+    /// @notice Event emitted when ERC721Id instance's bonding vesting duration set.
     /// @param erc721Id The ERC721Id instance.
-    /// @param oldVestingDuration The ERC721Id instance's old vesting duration.
-    /// @param newVestingDuration The ERC721Id instance's new vesting duration.
-    event SetERC721IdVesting(
+    /// @param oldVestingDuration The ERC721Id instance's old bonding vesting
+    ///                           duration.
+    /// @param newVestingDuration The ERC721Id instance's new bonding vesting
+    ///                           duration.
+    event SetERC721IdBondingVesting(
         ERC721Id indexed erc721Id,
         uint oldVestingDuration,
         uint newVestingDuration
@@ -300,30 +305,30 @@ interface IReserve {
     //----------------------------------
     // Asset Management
 
-    /// @notice Marks given ERC20 token as being supported.
+    /// @notice Registers given ERC20 token with given oracle.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param oracle The ERC20 token's price oracle of type IOracle.
-    function supportERC20(address erc20, address oracle) external;
+    function registerERC20(address erc20, address oracle) external;
 
-    /// @notice Marks given ERC721Id instance as being supported.
+    /// @notice Registers given ERC721Id instance with given oracle.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
     /// @param oracle The ERC721Id instance's price oracle of type IOracle.
-    function supportERC721Id(
+    function registerERC721Id(
         ERC721Id memory erc721Id,
         address oracle
     ) external;
 
-    /// @notice Marks given ERC20 token as being unsupported.
+    /// @notice Deregisters given ERC20 token.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    function unsupportERC20(address erc20) external;
+    function deregisterERC20(address erc20) external;
 
-    /// @notice Marks given ERC721Id instance as being unsupported.
+    /// @notice Deregisters given ERC721Id instance.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
-    function unsupportERC721Id(ERC721Id memory erc721Id) external;
+    function deregisterERC721Id(ERC721Id memory erc721Id) external;
 
     /// @notice Updates the price oracle for given ERC20 token.
     /// @dev Only callable by owner.
@@ -341,48 +346,55 @@ interface IReserve {
     ) external;
 
     //----------------------------------
-    // Un/Bonding Management
+    // Bonding & Redeeming Management
 
-    /// @notice Marks given ERC20 token as supported or unsupported for bonding.
-    /// @dev ERC20 token must be supported already.
+    /// @notice Lists given ERC20 token as bondable.
+    /// @dev ERC20 token must be registered already.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    /// @param support Whether the ERC20 token should be supported or
-    ///                unsupported for bonding.
-    function supportERC20ForBonding(address erc20, bool support) external;
+    function listERC20AsBondable(address erc20) external;
 
-    /// @notice Marks given ERC721Id instance as supported or unsupported for
-    ///         bonding.
-    /// @dev ERC721 instance must be supported already.
-    /// @dev Only callable by owner.
-    /// @param erc721Id The ERC721Id instance.
-    /// @param support Whether the ERC721Id instance should be supported or
-    ///                unsupported for bonding.
-    function supportERC721IdForBonding(
-        ERC721Id memory erc721Id,
-        bool support
-    ) external;
-
-    /// @notice Marks given ERC20 token as supported or unsupported for
-    ///         unbonding.
-    /// @dev ERC20 token must be supported already.
+    /// @notice Delists given ERC20 token as bondable.
+    /// @dev ERC20 token must be registered already.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    /// @param support Whether the ERC20 token should be supported or
-    ///                unsupported for bonding.
-    function supportERC20ForUnbonding(address erc20, bool support) external;
+    function delistERC20AsBondable(address erc20) external;
 
-    /// @notice Marks given ERC721Id instance as supported or unsupported for
-    ///         unbonding.
-    /// @dev ERC721 instance must be supported already.
+    /// @notice Lists given ERC721Id instance as bondable.
+    /// @dev ERC721 instance must be registered already.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
-    /// @param support Whether the ERC721Id instance should be supported or
-    ///                unsupported for bonding.
-    function supportERC721IdForUnbonding(
-        ERC721Id memory erc721Id,
-        bool support
-    ) external;
+    function listERC721IdAsBondable(ERC721Id memory erc721Id) external;
+
+    /// @notice Delists given ERC721Id instance as bondable.
+    /// @dev ERC721 instance must be registered already.
+    /// @dev Only callable by owner.
+    /// @param erc721Id The ERC721Id instance.
+    function delistERC721IdAsBondable(ERC721Id memory erc721Id) external;
+
+    /// @notice Lists given ERC20 token as redeemable.
+    /// @dev ERC20 token must be registered already.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    function listERC20AsRedeemable(address erc20) external;
+
+    /// @notice Delists given ERC20 token as redeemable.
+    /// @dev ERC20 token must be registered already.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    function delistERC20AsRedeemable(address erc20) external;
+
+    /// @notice Lists given ERC721Id instance as redeemable.
+    /// @dev ERC721 instance must be registered already.
+    /// @dev Only callable by owner.
+    /// @param erc721Id The ERC721Id instance.
+    function listERC721IdAsRedeemable(ERC721Id memory erc721Id) external;
+
+    /// @notice Delists given ERC721Id instance as redeemable.
+    /// @dev ERC721 instance must be registered already.
+    /// @dev Only callable by owner.
+    /// @param erc721Id The ERC721Id instance.
+    function delistERC721IdAsRedeemable(ERC721Id memory erc721Id) external;
 
     /// @notice Sets the maximum balance of given ERC20 token allowed in the
     ///         reserve.
@@ -396,24 +408,24 @@ interface IReserve {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param limit The lower balance limit for the ERC20 token.
-    function setERC20UnbondingLimit(address erc20, uint limit) external;
+    function setERC20RedeemLimit(address erc20, uint limit) external;
 
     //----------------------------------
     // Discount Management
 
-    /// @notice Sets a discount percentage, denominated in bps, for given ERC20
-    ///         token.
+    /// @notice Sets a bonding discount percentage, denominated in bps, for
+    ///         given ERC20 token.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    /// @param discount The discount for the ERC20 token.
-    function setDiscountForERC20(address erc20, uint discount) external;
+    /// @param discount The bonding discount for the ERC20 token.
+    function setBondingDiscountForERC20(address erc20, uint discount) external;
 
-    /// @notice Sets a discount percentage, denominated in bps, for given
-    ///         ERC721Id instance.
+    /// @notice Sets a bonding discount percentage, denominated in bps, for
+    ///         given ERC721Id instance.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
-    /// @param discount The discount for the ERC721Id instance.
-    function setDiscountForERC721Id(
+    /// @param discount The bonding discount for the ERC721Id instance.
+    function setBondingDiscountForERC721Id(
         ERC721Id memory erc721Id,
         uint discount
     ) external;
@@ -426,17 +438,19 @@ interface IReserve {
     /// @param vestingVault The vesting vault address of type IVestingVault.
     function setVestingVault(address vestingVault) external;
 
-    /// @notice Sets the vesting duration for given ERC20 token.
+    /// @notice Sets the bonding vesting duration for given ERC20 token.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    /// @param vestingDuration The vesting duration for the ERC20 token.
-    function setVestingForERC20(address erc20, uint vestingDuration) external;
+    /// @param vestingDuration The bonding vesting duration for the ERC20 token.
+    function setBondingVestingForERC20(address erc20, uint vestingDuration)
+        external;
 
-    /// @notice Sets the vesting duration for given ERC721Id instance.
+    /// @notice Sets the bonding vesting duration for given ERC721Id instance.
     /// @dev Only callable by owner.
     /// @param erc721Id The ERC721Id instance.
-    /// @param vestingDuration The vesting duration for the ERC721Id instance.
-    function setVestingForERC721Id(
+    /// @param vestingDuration The bonding vesting duration for the ERC721Id
+    ///        instance.
+    function setBondingVestingForERC721Id(
         ERC721Id memory erc721Id,
         uint vestingDuration
     ) external;
@@ -480,7 +494,7 @@ interface IReserve {
     function payDebt(uint amount) external;
 
     //----------------------------------
-    // Un/Bonding Functions
+    // Bonding & Redeeming Functions
 
     /// @notice Bonds given amount of ERC20 tokens from the caller and mints
     ///         corresponding reserve tokens to the caller.
@@ -570,96 +584,96 @@ interface IReserve {
         address recipient
     ) external;
 
-    /// @notice Unbonds some amount of given ERC20 token to the caller and
+    /// @notice Redeems some amount of given ERC20 token to the caller and
     ///         burns given amount of reserve tokens from the caller.
-    /// @param erc20 The ERC20 token to unbond.
+    /// @param erc20 The ERC20 token to redeem.
     /// @param tokenAmount The amount of reserve tokens to burn.
-    function unbondERC20(address erc20, uint tokenAmount) external;
+    function redeemERC20(address erc20, uint tokenAmount) external;
 
-    /// @notice Unbonds some amount of given ERC20 token to the caller and
+    /// @notice Redeems some amount of given ERC20 token to the caller and
     ///         burns given amount of reserve tokens from given address.
-    /// @param erc20 The ERC20 token to unbond.
+    /// @param erc20 The ERC20 token to redeem.
     /// @param from The address to fetch the reserve tokens from.
     /// @param tokenAmount The amount of reserve tokens to burn.
-    function unbondERC20From(address erc20, address from, uint tokenAmount)
+    function redeemERC20From(address erc20, address from, uint tokenAmount)
         external;
 
-    /// @notice Unbonds some amount of given ERC20 token to given recipient and
+    /// @notice Redeems some amount of given ERC20 token to given recipient and
     ///         burns given amount of reserve tokens from the caller.
-    /// @param erc20 The ERC20 token to unbond.
-    /// @param recipient The recipient address for the unbonded ERC20 tokens.
+    /// @param erc20 The ERC20 token to redeem.
+    /// @param recipient The recipient address for the redeemed ERC20 tokens.
     /// @param tokenAmount The amount of reserve tokens to burn.
-    function unbondERC20To(address erc20, address recipient, uint tokenAmount)
+    function redeemERC20To(address erc20, address recipient, uint tokenAmount)
         external;
 
-    /// @notice Unbonds some amount of given ERC20 token to given recipient and
+    /// @notice Redeems some amount of given ERC20 token to given recipient and
     ///         burns given amount of reserve tokens from given address.
-    /// @param erc20 The ERC20 token to unbond.
+    /// @param erc20 The ERC20 token to redeem.
     /// @param from The address to fetch the reserve tokens from.
-    /// @param recipient The recipient address for the unbonded ERC20 tokens.
+    /// @param recipient The recipient address for the redeemed ERC20 tokens.
     /// @param tokenAmount The amount of reserve tokens to burn.
-    function unbondERC20FromTo(
+    function redeemERC20FromTo(
         address erc20,
         address from,
         address recipient,
         uint tokenAmount
     ) external;
 
-    /// @notice Unbonds some amount of given ERC20 token to the caller and
+    /// @notice Redeems some amount of given ERC20 token to the caller and
     ///         burns whole balance of reserve tokens from the caller.
-    /// @param erc20 The ERC20 token to unbond.
-    function unbondERC20All(address erc20) external;
+    /// @param erc20 The ERC20 token to redeem.
+    function redeemERC20All(address erc20) external;
 
-    /// @notice Unbonds some amount of given ERC20 token to the caller and
+    /// @notice Redeems some amount of given ERC20 token to the caller and
     ///         burns whole balance of reserve tokens from given address.
-    /// @param erc20 The ERC20 token to unbond.
+    /// @param erc20 The ERC20 token to redeem.
     /// @param from The address to fetch the reserve tokens from.
-    function unbondERC20AllFrom(address erc20, address from) external;
+    function redeemERC20AllFrom(address erc20, address from) external;
 
-    /// @notice Unbonds some amount of given ERC20 token to given recipient and
+    /// @notice Redeems some amount of given ERC20 token to given recipient and
     ///         burns whole balance of reserve tokens from the caller.
-    /// @param erc20 The ERC20 token to unbond.
-    /// @param recipient The recipient address for the unbonded ERC20 tokens.
-    function unbondERC20AllTo(address erc20, address recipient) external;
+    /// @param erc20 The ERC20 token to redeem.
+    /// @param recipient The recipient address for the redeemed ERC20 tokens.
+    function redeemERC20AllTo(address erc20, address recipient) external;
 
-    /// @notice Unbonds some amount of given ERC20 token to given recipient and
+    /// @notice Redeems some amount of given ERC20 token to given recipient and
     ///         burns whole balance of reserve tokens from given address.
-    /// @param erc20 The ERC20 token to unbond.
+    /// @param erc20 The ERC20 token to redeem.
     /// @param from The address to fetch the reserve tokens from.
-    /// @param recipient The recipient address for the unbonded ERC20 tokens.
-    function unbondERC20AllFromTo(
+    /// @param recipient The recipient address for the redeemed ERC20 tokens.
+    function redeemERC20AllFromTo(
         address erc20,
         address from,
         address recipient
     ) external;
 
-    /// @notice Unbonds given ERC721Id instance to the caller and burns
+    /// @notice Redeems given ERC721Id instance to the caller and burns
     ///         corresponding amount of reserve tokens from the caller.
     /// @param erc721Id The ERC721Id instance.
-    function unbondERC721Id(ERC721Id memory erc721Id) external;
+    function redeemERC721Id(ERC721Id memory erc721Id) external;
 
-    /// @notice Unbonds given ERC721Id instance to given recipient and burns
+    /// @notice Redeems given ERC721Id instance to given recipient and burns
     ///         corresponding amount of reserve tokens from given address.
     /// @param erc721Id The ERC721Id instance.
     /// @param from The address to fetch the ERC721Id instance from.
-    function unbondERC721IdFrom(ERC721Id memory erc721Id, address from)
+    function redeemERC721IdFrom(ERC721Id memory erc721Id, address from)
         external;
 
-    /// @notice Unbonds given ERC721Id instance to given recipient and burns
+    /// @notice Redeems given ERC721Id instance to given recipient and burns
     ///         corresponding amount of reserve tokens from the caller.
     /// @param erc721Id The ERC721Id instance.
-    /// @param recipient The recipient address for the unbonded ERC721Id
+    /// @param recipient The recipient address for the redeemed ERC721Id
     ///                  instance.
-    function unbondERC721IdTo(ERC721Id memory erc721Id, address recipient)
+    function redeemERC721IdTo(ERC721Id memory erc721Id, address recipient)
         external;
 
-    /// @notice Unbonds given ERC721Id instance to given recipient and burns
+    /// @notice Redeems given ERC721Id instance to given recipient and burns
     ///         corresponding amount of reserve tokens from the caller.
     /// @param erc721Id The ERC721Id instance.
     /// @param from The address to fetch the ERC721Id instance from.
-    /// @param recipient The recipient address for the unbonded ERC721Id
+    /// @param recipient The recipient address for the redeemed ERC721Id
     ///                  instance.
-    function unbondERC721IdFromTo(
+    function redeemERC721IdFromTo(
         ERC721Id memory erc721Id,
         address from,
         address recipient
@@ -679,20 +693,20 @@ interface IReserve {
         pure
         returns (bytes32);
 
-    /// @notice Returns the supported ERC20 token address at given index.
-    function supportedERC20s(uint index) external view returns (address);
+    /// @notice Returns the registered ERC20 token address at given index.
+    function registeredERC20s(uint index) external view returns (address);
 
-    /// @notice Returns the supported ERC721Id instance at given index.
-    function supportedERC721Ids(uint index)
+    /// @notice Returns the registered ERC721Id instance at given index.
+    function registeredERC721Ids(uint index)
         external
         view
         returns (address, uint);
 
-    /// @notice Returns the number of supported ERC20 tokens.
-    function supportedERC20sSize() external view returns (uint);
+    /// @notice Returns the number of registered ERC20 tokens.
+    function registeredERC20sSize() external view returns (uint);
 
-    /// @notice Returns the number of supported ERC721Id instances.
-    function supportedERC721IdsSize() external view returns (uint);
+    /// @notice Returns the number of registered ERC721Id instances.
+    function registeredERC721IdsSize() external view returns (uint);
 
     //----------------------------------
     // Vesting View Functions
@@ -726,7 +740,7 @@ interface IReserve {
         returns (address);
 
     //----------------------------------
-    // Un/Bonding View Functions
+    // Bonding & Redeeming View Functions
 
     /// @notice Returns whether the given ERC20 token address is bondable.
     /// @param erc20 The ERC20 token address.
@@ -742,16 +756,16 @@ interface IReserve {
         view
         returns (bool);
 
-    /// @notice Returns whether the given ERC20 token address is unbondable.
+    /// @notice Returns whether the given ERC20 token address is redeemable.
     /// @param erc20 The ERC20 token address.
-    /// @return Whether the ERC20 token address is unbondable.
-    function isERC20Unbondable(address erc20) external view returns (bool);
+    /// @return Whether the ERC20 token address is redeemable.
+    function isERC20Redeemable(address erc20) external view returns (bool);
 
     /// @notice Returns whether the ERC721Id instance, identified through given
-    ///         hash, is unbondable.
+    ///         hash, is redeemable.
     /// @param erc721IdHash The ERC721Id instance's hash.
-    /// @return Whether the ERC721Id instance is unbondable.
-    function isERC721IdUnbondable(bytes32 erc721IdHash)
+    /// @return Whether the ERC721Id instance is redeemable.
+    function isERC721IdRedeemable(bytes32 erc721IdHash)
         external
         view
         returns (bool);
@@ -762,27 +776,27 @@ interface IReserve {
     /// @return The bonding limit for given ERC20 token address.
     function bondingLimitPerERC20(address erc20) external view returns (uint);
 
-    /// @notice Returns the unbonding limit for given ERC20 token address.
+    /// @notice Returns the redeem limit for given ERC20 token address.
     /// @param erc20 The ERC20 token address.
-    /// @return The unbonding limit for given ERC20 token address.
-    function unbondingLimitPerERC20(address erc20) external view returns (uint);
+    /// @return The redeem limit for given ERC20 token address.
+    function redeemLimitPerERC20(address erc20) external view returns (uint);
 
     //----------------------------------
     // Discount View Functions
 
-    /// @notice Returns the discount percentage, denominated in bps, for given
-    ///         ERC20 token address.
+    /// @notice Returns the bonding discount percentage, denominated in bps,
+    ///         for given ERC20 token address.
     /// @param erc20 The ERC20 token address.
-    /// @return The discount percentage, denomintated in bps, for given ERC20
-    ///         token address.
-    function discountPerERC20(address erc20) external view returns (uint);
+    /// @return The bonding discount percentage, denomintated in bps, for
+    ///         given ERC20 token address.
+    function bondingDiscountPerERC20(address erc20) external view returns (uint);
 
-    /// @notice Returns the discount percentage, denominated in bps, for the
-    ///         ERC721Id instance, identified through given hash.
+    /// @notice Returns the bonding discount percentage, denominated in bps,
+    ///         for the ERC721Id instance, identified through given hash.
     /// @param erc721IdHash The ERC721Id instance's hash.
-    /// @return The discount percentage, denomintated in bps, for given ERc721
-    ///         instance.
-    function discountPerERC721Id(bytes32 erc721IdHash)
+    /// @return The bonding discount percentage, denomintated in bps, for given
+    ///         ERC721Id instance.
+    function bondingDiscountPerERC721Id(bytes32 erc721IdHash)
         external
         view
         returns (uint);
@@ -790,19 +804,20 @@ interface IReserve {
     //----------------------------------
     // Vesting View Mappings
 
-    /// @notice Returns the vesting duration for given ERC20 token address.
+    /// @notice Returns the bonding vesting duration for given ERC20 token
+    ///         address.
     /// @param erc20 The ERC20 token address.
-    /// @return The vesting duration for given ERC20 token address.
-    function vestingDurationPerERC20(address erc20)
+    /// @return The bonding vesting duration for given ERC20 token address.
+    function bondingVestingDurationPerERC20(address erc20)
         external
         view
         returns (uint);
 
-    /// @notice Returns the vesting duration for the ERC721Id instance,
+    /// @notice Returns the bonding vesting duration for the ERC721Id instance,
     ///         identified through given hash.
     /// @param erc721IdHash The ERC721Id instance's hash.
-    /// @return The vesting duration for given ERC721Id instance.
-    function vestingDurationPerERC721Id(bytes32 erc721IdHash)
+    /// @return The bonding vesting duration for given ERC721Id instance.
+    function bondingVestingDurationPerERC721Id(bytes32 erc721IdHash)
         external
         view
         returns (uint);

@@ -55,49 +55,49 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.bondERC721IdFromTo(erc721Id, address(1), address(1));
 
         //----------------------------------
-        // Unbond Functions
+        // Redeem Functions
 
         //--------------
-        // Unbond ERC20 Functions
+        // Redeem ERC20 Functions
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20(address(0), 0);
+        reserve.redeemERC20(address(0), 0);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20From(address(0), address(1), 0);
+        reserve.redeemERC20From(address(0), address(1), 0);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20To(address(0), address(1), 0);
+        reserve.redeemERC20To(address(0), address(1), 0);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20FromTo(address(0), address(1), address(1), 0);
+        reserve.redeemERC20FromTo(address(0), address(1), address(1), 0);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20All(address(0));
+        reserve.redeemERC20All(address(0));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20AllFrom(address(0), address(1));
+        reserve.redeemERC20AllFrom(address(0), address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20AllTo(address(0), address(1));
+        reserve.redeemERC20AllTo(address(0), address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC20AllFromTo(address(0), address(1), address(1));
+        reserve.redeemERC20AllFromTo(address(0), address(1), address(1));
 
         //--------------
-        // Unbond ERC721Id Functions
+        // redeem ERC721Id Functions
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC721Id(erc721Id);
+        reserve.redeemERC721Id(erc721Id);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC721IdFrom(erc721Id, address(1));
+        reserve.redeemERC721IdFrom(erc721Id, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC721IdTo(erc721Id, address(1));
+        reserve.redeemERC721IdTo(erc721Id, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unbondERC721IdFromTo(erc721Id, address(1), address(1));
+        reserve.redeemERC721IdFromTo(erc721Id, address(1), address(1));
 
         //----------------------------------
         // Emergency Functions
@@ -117,19 +117,19 @@ contract ReserveOnlyOwner is ReserveTest {
         // Asset Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.supportERC20(address(token), address(tokenOracle));
+        reserve.registerERC20(address(token), address(tokenOracle));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.supportERC721Id(
+        reserve.registerERC721Id(
             DEFAULT_ERC721ID,
             address(defaultERC721IdOracle)
         );
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unsupportERC20(address(token));
+        reserve.deregisterERC20(address(token));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.unsupportERC721Id(DEFAULT_ERC721ID);
+        reserve.deregisterERC721Id(DEFAULT_ERC721ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.updateOracleForERC20(address(token), address(tokenOracle));
@@ -141,34 +141,34 @@ contract ReserveOnlyOwner is ReserveTest {
         );
 
         //----------------------------------
-        // Un/Bonding Management
+        // Bonding & Redeeming Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.supportERC20ForBonding(address(token), true);
+        reserve.listERC20AsBondable(address(token));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.supportERC721IdForBonding(DEFAULT_ERC721ID, true);
+        reserve.listERC721IdAsBondable(DEFAULT_ERC721ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.supportERC20ForUnbonding(address(token), true);
+        reserve.listERC20AsRedeemable(address(token));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.supportERC721IdForUnbonding(DEFAULT_ERC721ID, true);
+        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.setERC20BondingLimit(address(token), 1e18);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setERC20UnbondingLimit(address(token), 1e18);
+        reserve.setERC20RedeemLimit(address(token), 1e18);
 
         //----------------------------------
         // Discount Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setDiscountForERC20(address(token), 1e18);
+        reserve.setBondingDiscountForERC20(address(token), 1e18);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setDiscountForERC721Id(DEFAULT_ERC721ID, 1e18);
+        reserve.setBondingDiscountForERC721Id(DEFAULT_ERC721ID, 1e18);
 
         //----------------------------------
         // Vesting Management
@@ -177,10 +177,10 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.setVestingVault(address(vestingVault));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setVestingForERC20(address(token), 1 hours);
+        reserve.setBondingVestingForERC20(address(token), 1 hours);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setVestingForERC721Id(DEFAULT_ERC721ID, 1 hours);
+        reserve.setBondingVestingForERC721Id(DEFAULT_ERC721ID, 1 hours);
 
         //---------------------------------
         // Reserve Management
@@ -245,68 +245,67 @@ contract ReserveOnlyOwner is ReserveTest {
     //----------------------------------
     // Asset Management
 
-    function testSupportERC20() public {
+    function testRegisterERC20() public {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         // @todo Check event emission.
-        reserve.supportERC20(address(erc20), address(o));
-        assertEq(reserve.supportedERC20s(0), address(erc20));
+        reserve.registerERC20(address(erc20), address(o));
+        assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
         // Check that function is idempotent.
-        reserve.supportERC20(address(erc20), address(o));
-        assertEq(reserve.supportedERC20s(0), address(erc20));
+        reserve.registerERC20(address(erc20), address(o));
+        assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
         // Reverts due to IndexOutOfBounds.
         // This indicates that the erc20 was not added again, i.e. that the
         // function is idempotent.
         vm.expectRevert(bytes(""));
-        reserve.supportedERC20s(1);
+        reserve.registeredERC20s(1);
     }
-
-    function testSupportERC20_NotAcceptedIf_TokenCodeIsZero() public {
+    function testRegisterERC20_NotAcceptedIf_TokenCodeIsZero() public {
         address erc20 = address(0); // erc20 has no code
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC20(erc20, address(0));
+        reserve.registerERC20(erc20, address(0));
     }
 
-    function testSupportERC20_NotAcceptedIf_AlreadySupported() public {
+    function testRegisterERC20_NotAcceptedIf_AlreadyRegistered() public {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
         // Reverts if erc20 is added again with a different oracle.
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC20(address(erc20), address(o2));
+        reserve.registerERC20(address(erc20), address(o2));
     }
 
-    function testSupportERC20_NotAcceptedIf_OracleInvalid() public {
+    function testRegisterERC20_NotAcceptedIf_OracleInvalid() public {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, false); // Oracle is invalid
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
         o.setDataAndValid(0, true); // Oracle's price is zero
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
     }
 
-    function testSupportERC721() public {
+    function testRegisterERC721() public {
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
         IReserve.ERC721Id memory erc721Id
@@ -317,17 +316,17 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         // @todo Check event emission
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
-        (address addedERC721, uint addedId) = reserve.supportedERC721Ids(0);
+        (address addedERC721, uint addedId) = reserve.registeredERC721Ids(0);
         assertEq(addedERC721, erc721Id.erc721);
         assertEq(addedId, erc721Id.id);
         assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o));
 
         // Check that function is idempotent.
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
-        (addedERC721, addedId) = reserve.supportedERC721Ids(0);
+        (addedERC721, addedId) = reserve.registeredERC721Ids(0);
         assertEq(addedERC721, erc721Id.erc721);
         assertEq(addedId, erc721Id.id);
         assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o));
@@ -336,10 +335,10 @@ contract ReserveOnlyOwner is ReserveTest {
         // This indicates that the erc721Id was not added again, i.e. that the
         // function is idempotent.
         vm.expectRevert(bytes(""));
-        reserve.supportedERC721Ids(1);
+        reserve.registeredERC721Ids(1);
     }
 
-    function testSupportERC721_NotAcceptedIf_TokenCodeIsZero() public {
+    function testRegisterERC721_NotAcceptedIf_TokenCodeIsZero() public {
         IReserve.ERC721Id memory erc721Id = IReserve.ERC721Id(
             address(0), // ERC721 code is empty
             1
@@ -349,10 +348,10 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
     }
 
-    function testSupportERC721_NotAcceptedIf_AlreadySupported() public {
+    function testRegisterERC721_NotAcceptedIf_AlreadyRegistered() public {
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
         IReserve.ERC721Id memory erc721Id
@@ -361,17 +360,17 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
         // Reverts is ERC721Id is added again with different oracle.
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC721Id(erc721Id, address(o2));
+        reserve.registerERC721Id(erc721Id, address(o2));
     }
 
-    function testSupportERC721_NotAcceptedIf_OracleInvalid() public {
+    function testRegisterERC721_NotAcceptedIf_OracleInvalid() public {
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
         IReserve.ERC721Id memory erc721Id
@@ -381,37 +380,37 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, false); // Oracle is invalid
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
         o.setDataAndValid(0, true); // Oracle's price is zero
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
     }
 
-    function testUnsupportERC20() public {
+    function testDeregisterERC20() public {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
         // @todo Check event emission.
-        reserve.unsupportERC20(address(erc20));
+        reserve.deregisterERC20(address(erc20));
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportedERC20s(0);
+        reserve.registeredERC20s(0);
         assertEq(reserve.oraclePerERC20(address(erc20)), address(0));
 
         // Check that function is idempotent.
-        reserve.unsupportERC20(address(erc20));
+        reserve.deregisterERC20(address(erc20));
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportedERC20s(0);
+        reserve.registeredERC20s(0);
         assertEq(reserve.oraclePerERC20(address(erc20)), address(0));
     }
 
-    function testUnsupportERC721Id() public {
+    function testDeregisterERC721Id() public {
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
         IReserve.ERC721Id memory erc721Id
@@ -421,20 +420,20 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
         // @todo Check event emission
-        reserve.unsupportERC721Id(erc721Id);
+        reserve.deregisterERC721Id(erc721Id);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportedERC721Ids(0);
+        reserve.registeredERC721Ids(0);
         assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(0));
 
         // Check that function is idempotent.
-        reserve.unsupportERC721Id(erc721Id);
+        reserve.deregisterERC721Id(erc721Id);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.supportedERC721Ids(0);
+        reserve.registeredERC721Ids(0);
         assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(0));
     }
 
@@ -443,7 +442,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
@@ -457,14 +456,14 @@ contract ReserveOnlyOwner is ReserveTest {
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o2));
     }
 
-    function testUpdateOracleForERC20_NotAcceptedIf_ERC20NotSupported()
+    function testUpdateOracleForERC20_NotAcceptedIf_ERC20NotRegistered()
         public
     {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        vm.expectRevert(Errors.ERC20NotSupported);
+        vm.expectRevert(Errors.ERC20NotRegistered);
         reserve.updateOracleForERC20(address(erc20), address(o));
     }
 
@@ -473,7 +472,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, false); // Oracle is invalid
@@ -497,7 +496,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
@@ -511,7 +510,7 @@ contract ReserveOnlyOwner is ReserveTest {
         assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o2));
     }
 
-    function testUpdateOracleForERC721Id_NotAcceptedIf_ERC721IdNotSupported()
+    function testUpdateOracleForERC721Id_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
@@ -522,7 +521,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        vm.expectRevert(Errors.ERC721IdNotSupported);
+        vm.expectRevert(Errors.ERC721IdNotRegistered);
         reserve.updateOracleForERC721Id(erc721Id, address(o));
     }
 
@@ -535,7 +534,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, false); // Oracle is invalid
@@ -552,43 +551,43 @@ contract ReserveOnlyOwner is ReserveTest {
     //----------------------------------
     // Un/Bonding Management
 
-    function testSupportERC20ForBonding() public {
+    function testListERC20AsBonding() public {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
-        // Set erc20 as being supported for bonding.
+        // Set erc20 as being listed for bonding.
         // @todo Check event emission.
-        reserve.supportERC20ForBonding(address(erc20), true);
+        reserve.listERC20AsBondable(address(erc20));
         assertEq(reserve.isERC20Bondable(address(erc20)), true);
 
         // Check that function is idempotent.
-        reserve.supportERC20ForBonding(address(erc20), true);
+        reserve.listERC20AsBondable(address(erc20));
         assertEq(reserve.isERC20Bondable(address(erc20)), true);
 
-        // Set erc20 as being unsupported for bonding.
-        reserve.supportERC20ForBonding(address(erc20), false);
+        // Set erc20 as being delisted for bonding.
+        reserve.delistERC20AsBondable(address(erc20));
         assertEq(reserve.isERC20Bondable(address(erc20)), false);
 
         // Check that function is idempotent.
-        reserve.supportERC20ForBonding(address(erc20), false);
+        reserve.delistERC20AsBondable(address(erc20));
         assertEq(reserve.isERC20Bondable(address(erc20)), false);
     }
 
-    function testSupportERC20ForBonding_NotAcceptedIf_ERC20NotSupported()
+    function testListERC20AsBondable_NotAcceptedIf_ERC20NotRegistered()
         public
     {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        vm.expectRevert(Errors.ERC20NotSupported);
-        reserve.supportERC20ForBonding(address(erc20), true);
+        vm.expectRevert(Errors.ERC20NotRegistered);
+        reserve.listERC20AsBondable(address(erc20));
     }
 
-    function testSupportERC721IdForBonding() public {
+    function testListERC721IdAsBondable() public {
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
         IReserve.ERC721Id memory erc721Id
@@ -598,27 +597,27 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
-        // Set erc721Id as being supported for bonding.
+        // Set erc721Id as being listed as bondable.
         // @todo Check event emission.
-        reserve.supportERC721IdForBonding(erc721Id, true);
+        reserve.listERC721IdAsBondable(erc721Id);
         assertEq(reserve.isERC721IdBondable(erc721IdHash), true);
 
         // Check that function is idempotent.
-        reserve.supportERC721IdForBonding(erc721Id, true);
+        reserve.listERC721IdAsBondable(erc721Id);
         assertEq(reserve.isERC721IdBondable(erc721IdHash), true);
 
-        // Set erc721Id as being unsupported for bonding.
-        reserve.supportERC721IdForBonding(erc721Id, false);
+        // Set erc721Id as being delisted as bondable.
+        reserve.delistERC721IdAsBondable(erc721Id);
         assertEq(reserve.isERC721IdBondable(erc721IdHash), false);
 
         // Check that function is idempotent.
-        reserve.supportERC721IdForBonding(erc721Id, false);
+        reserve.delistERC721IdAsBondable(erc721Id);
         assertEq(reserve.isERC721IdBondable(erc721IdHash), false);
     }
 
-    function testSupportERC721IdForBonding_NotAcceptedIf_ERC721IdNotSupported()
+    function testListERC721IdAsBondable_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
@@ -629,50 +628,58 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        vm.expectRevert(Errors.ERC721IdNotSupported);
-        reserve.supportERC721IdForBonding(erc721Id, true);
+        vm.expectRevert(Errors.ERC721IdNotRegistered);
+        reserve.listERC721IdAsBondable(erc721Id);
     }
 
-    function testSupportERC20ForUnbonding() public {
+    function testListERC20AsRedeemable() public {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o));
 
-        // Set erc20 as being supported for unbonding.
+        // Set erc20 as being listed as redeemable.
         // @todo Check event emission.
-        reserve.supportERC20ForUnbonding(address(erc20), true);
-        assertEq(reserve.isERC20Unbondable(address(erc20)), true);
+        reserve.listERC20AsRedeemable(address(erc20));
+        assertEq(reserve.isERC20Redeemable(address(erc20)), true);
 
         // Check that function is idempotent.
-        reserve.supportERC20ForUnbonding(address(erc20), true);
-        assertEq(reserve.isERC20Unbondable(address(erc20)), true);
+        reserve.listERC20AsRedeemable(address(erc20));
+        assertEq(reserve.isERC20Redeemable(address(erc20)), true);
 
-        // Set erc20 as being unsupported for unbonding.
-        reserve.supportERC20ForUnbonding(address(erc20), false);
-        assertEq(reserve.isERC20Unbondable(address(erc20)), false);
+        // Set erc20 as being delisted for redeemable.
+        reserve.delistERC20AsRedeemable(address(erc20));
+        assertEq(reserve.isERC20Redeemable(address(erc20)), false);
 
         // Check that function is idempotent.
-        reserve.supportERC20ForUnbonding(address(erc20), false);
-        assertEq(reserve.isERC20Unbondable(address(erc20)), false);
+        reserve.delistERC20AsRedeemable(address(erc20));
+        assertEq(reserve.isERC20Redeemable(address(erc20)), false);
     }
 
-    function testSupportERC20ForUnbonding_NotAcceptedIf_ERC20NotSupported()
+    function testListERC20AsRedeemable_NotAcceptedIf_ERC20NotRegistered()
         public
     {
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        vm.expectRevert(Errors.ERC20NotSupported);
-        reserve.supportERC20ForUnbonding(address(erc20), true);
-
-        vm.expectRevert(Errors.ERC20NotSupported);
-        reserve.supportERC20ForUnbonding(address(erc20), false);
+        vm.expectRevert(Errors.ERC20NotRegistered);
+        reserve.listERC20AsRedeemable(address(erc20));
     }
 
-    function testSupportERC721IdForUnbonding() public {
+    function testDelistERC20AsRedeemable_NotAcceptedIf_ERC20NotRegistered()
+        public
+    {
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        vm.expectRevert(Errors.ERC20NotRegistered);
+        reserve.delistERC20AsRedeemable(address(erc20));
+    }
+
+    function testListERC721IdAsRedeemable() public {
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
         IReserve.ERC721Id memory erc721Id
@@ -682,27 +689,27 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.supportERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721Id, address(o));
 
-        // Set erc721Id as being supported for unbonding.
+        // Set erc721Id as being listed as redeemable.
         // @todo Check event emission.
-        reserve.supportERC721IdForUnbonding(erc721Id, true);
-        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), true);
+        reserve.listERC721IdAsRedeemable(erc721Id);
+        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), true);
 
         // Check that function is idempotent.
-        reserve.supportERC721IdForUnbonding(erc721Id, true);
-        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), true);
+        reserve.listERC721IdAsRedeemable(erc721Id);
+        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), true);
 
-        // Set erc721Id as being unsupported for unbonding.
-        reserve.supportERC721IdForUnbonding(erc721Id, false);
-        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), false);
+        // Set erc721Id as being delisted as redeemable.
+        reserve.delistERC721IdAsRedeemable(erc721Id);
+        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), false);
 
         // Check that function is idempotent.
-        reserve.supportERC721IdForUnbonding(erc721Id, false);
-        assertEq(reserve.isERC721IdUnbondable(erc721IdHash), false);
+        reserve.delistERC721IdAsRedeemable(erc721Id);
+        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), false);
     }
 
-    function testSupportERC721IdForUnbonding_NotAcceptedIf_ERC721IdNotSupported()
+    function testListERC721IdAsRedeemable_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
@@ -713,8 +720,23 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        vm.expectRevert(Errors.ERC721IdNotSupported);
-        reserve.supportERC721IdForUnbonding(erc721Id, true);
+        vm.expectRevert(Errors.ERC721IdNotRegistered);
+        reserve.listERC721IdAsRedeemable(erc721Id);
+    }
+
+    function testDelistERC721IdAsRedeemable_NotAcceptedIf_ERC721IdNotRegistered()
+        public
+    {
+        ERC721Mock erc721 = new ERC721Mock();
+        erc721.mint(address(this), 1);
+        IReserve.ERC721Id memory erc721Id
+            = IReserve.ERC721Id(address(erc721), 1);
+
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        vm.expectRevert(Errors.ERC721IdNotRegistered);
+        reserve.delistERC721IdAsRedeemable(erc721Id);
     }
 
     function testSetERC20BondingLimit(uint limit) public {
@@ -730,36 +752,36 @@ contract ReserveOnlyOwner is ReserveTest {
         assertEq(reserve.bondingLimitPerERC20(address(erc20)), limit);
     }
 
-    function testSetERC20UnbondingLimit(uint limit) public {
+    function testSetERC20RedeemLimit(uint limit) public {
         // Note that erc20 does not need to be supported.
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
 
         // @todo Check event emission.
-        reserve.setERC20UnbondingLimit(address(erc20), limit);
-        assertEq(reserve.unbondingLimitPerERC20(address(erc20)), limit);
+        reserve.setERC20RedeemLimit(address(erc20), limit);
+        assertEq(reserve.redeemLimitPerERC20(address(erc20)), limit);
 
         // Check that function is idempotent.
-        reserve.setERC20UnbondingLimit(address(erc20), limit);
-        assertEq(reserve.unbondingLimitPerERC20(address(erc20)), limit);
+        reserve.setERC20RedeemLimit(address(erc20), limit);
+        assertEq(reserve.redeemLimitPerERC20(address(erc20)), limit);
     }
 
     //----------------------------------
     // Discount Management
 
-    function testSetDiscountForERC20(uint discount) public {
+    function testSetBondingDiscountForERC20(uint discount) public {
         // Note that erc20 does not need to be supported.
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
 
         // @todo Check event emission.
-        reserve.setDiscountForERC20(address(erc20), discount);
-        assertEq(reserve.discountPerERC20(address(erc20)), discount);
+        reserve.setBondingDiscountForERC20(address(erc20), discount);
+        assertEq(reserve.bondingDiscountPerERC20(address(erc20)), discount);
 
         // Check that function is idempotent.
-        reserve.setDiscountForERC20(address(erc20), discount);
-        assertEq(reserve.discountPerERC20(address(erc20)), discount);
+        reserve.setBondingDiscountForERC20(address(erc20), discount);
+        assertEq(reserve.bondingDiscountPerERC20(address(erc20)), discount);
     }
 
-    function testSetDiscountForERC721Id(uint discount) public {
+    function testSetBondingDiscountForERC721Id(uint discount) public {
         // Note that erc721Id does not need to be supported.
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
@@ -768,12 +790,12 @@ contract ReserveOnlyOwner is ReserveTest {
         bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
 
         // @todo Check event emission.
-        reserve.setDiscountForERC721Id(erc721Id, discount);
-        assertEq(reserve.discountPerERC721Id(erc721IdHash), discount);
+        reserve.setBondingDiscountForERC721Id(erc721Id, discount);
+        assertEq(reserve.bondingDiscountPerERC721Id(erc721IdHash), discount);
 
         // Check that function is idempotent.
-        reserve.setDiscountForERC721Id(erc721Id, discount);
-        assertEq(reserve.discountPerERC721Id(erc721IdHash), discount);
+        reserve.setBondingDiscountForERC721Id(erc721Id, discount);
+        assertEq(reserve.bondingDiscountPerERC721Id(erc721IdHash), discount);
     }
 
     //----------------------------------
@@ -800,19 +822,19 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.setVestingVault(address(vv));
     }
 
-    function testSetVestingForERC20(uint vestingDuration) public {
+    function testSetBondingVestingForERC20(uint vestingDuration) public {
         // Note that erc20 does not need to be supported.
         ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
 
         // @todo Check event emission.
-        reserve.setVestingForERC20(address(erc20), vestingDuration);
+        reserve.setBondingVestingForERC20(address(erc20), vestingDuration);
         assertEq(
-            reserve.vestingDurationPerERC20(address(erc20)),
+            reserve.bondingVestingDurationPerERC20(address(erc20)),
             vestingDuration
         );
     }
 
-    function testSetVestingForERC721Id(uint vestingDuration) public {
+    function testSetBondingVestingForERC721Id(uint vestingDuration) public {
         // Note that erc721Id does not need to be supported.
         ERC721Mock erc721 = new ERC721Mock();
         erc721.mint(address(this), 1);
@@ -821,9 +843,9 @@ contract ReserveOnlyOwner is ReserveTest {
         bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
 
         // @todo Check event emission.
-        reserve.setVestingForERC721Id(erc721Id, vestingDuration);
+        reserve.setBondingVestingForERC721Id(erc721Id, vestingDuration);
         assertEq(
-            reserve.vestingDurationPerERC721Id(erc721IdHash),
+            reserve.bondingVestingDurationPerERC721Id(erc721IdHash),
             vestingDuration
         );
     }

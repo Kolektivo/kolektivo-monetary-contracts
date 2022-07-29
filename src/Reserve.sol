@@ -106,7 +106,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     ///      ERC721Id instances.
     modifier isBondableERC721Id(ERC721Id memory erc721Id) {
         if (!isERC721IdBondable[_hashOfERC721Id(erc721Id)]) {
-            revert Reserve__ERC721NotBondable();
+            revert Reserve__ERC721IdNotBondable();
         }
         _;
     }
@@ -124,7 +124,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     ///      ERC721Id instances.
     modifier isRedeemableERC721Id(ERC721Id memory erc721Id) {
         if (!isERC721IdRedeemable[_hashOfERC721Id(erc721Id)]) {
-            revert Reserve__ERC721NotRedeemable();
+            revert Reserve__ERC721IdNotRedeemable();
         }
         _;
     }
@@ -195,7 +195,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(bytes32 => address) public oraclePerERC721Id;
 
     //----------------------------------
-    // Un/Bonding Mappings
+    // Bonding & Redeeming Mappings
 
     /// @inheritdoc IReserve
     mapping(address => bool) public isERC20Bondable;
@@ -439,10 +439,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     //----------------------------------
-    // Unbond Functions
+    // Redeem Functions
 
     //--------------
-    // Unbond ERC20 Functions
+    // Redeem ERC20 Functions
 
     /// @inheritdoc IReserve
     function redeemERC20(address erc20, uint tokenAmount) external onlyOwner {
@@ -525,7 +525,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     //--------------
-    // Unbond ERC721Id Functions
+    // Redeem ERC721Id Functions
 
     /// @inheritdoc IReserve
     function redeemERC721Id(ERC721Id memory erc721Id) external onlyOwner {
@@ -765,7 +765,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     //----------------------------------
-    // Un/Bonding Management
+    // Bonding & Redeeming Management
 
     /// @inheritdoc IReserve
     function listERC20AsBondable(address erc20)
@@ -825,7 +825,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     function delistERC20AsRedeemable(address erc20)
         external
         onlyOwner
-        isRedeemableERC20(erc20)
+        isRegisteredERC20(erc20)
     {
         isERC20Redeemable[erc20] = false;
         emit ERC20DelistedAsRedeemable(erc20);
@@ -1109,7 +1109,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     //----------------------------------
-    // Unbond Functions
+    // Redeem Functions
 
     function _redeemERC20(
         address erc20,

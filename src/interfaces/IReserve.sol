@@ -31,14 +31,14 @@ interface IReserve {
     /// @notice Given ERC20 token address not bondable.
     error Reserve__ERC20NotBondable();
 
-    /// @notice Given ERC721 instance not bondable.
-    error Reserve__ERC721NotBondable();
+    /// @notice Given ERC721Id instance not bondable.
+    error Reserve__ERC721IdNotBondable();
 
     /// @notice Given ERC20 token address not redeemable.
     error Reserve__ERC20NotRedeemable();
 
-    /// @notice Given ERC721 instance not redeemable.
-    error Reserve__ERC721NotRedeemable();
+    /// @notice Given ERC721Id instance not redeemable.
+    error Reserve__ERC721IdNotRedeemable();
 
     /// @notice Bonding operation exceeded reserve's bonding limit for given
     ///         ERC20 token address.
@@ -69,7 +69,7 @@ interface IReserve {
     event BackingUpdated(uint oldBacking, uint newBacking);
 
     //----------------------------------
-    // Un/Bonding
+    // Bonding & Redeeming
 
     /// @notice Event emitted when ERC20 bonding operation succeeded.
     /// @param erc20 The ERC20 token address.
@@ -170,7 +170,7 @@ interface IReserve {
     event ERC721IdDeregistered(ERC721Id indexed erc721Id);
 
     //----------------------------------
-    // Un/Bonding Management
+    // Bonding & Redeeming Management
 
     /// @notice Event emitted when ERC20 token listed as bondable.
     /// @param erc20 The ERC20 token address.
@@ -346,7 +346,7 @@ interface IReserve {
     ) external;
 
     //----------------------------------
-    // Un/Bonding Management
+    // Bonding & Redeeming Management
 
     /// @notice Lists given ERC20 token as bondable.
     /// @dev ERC20 token must be registered already.
@@ -494,7 +494,7 @@ interface IReserve {
     function payDebt(uint amount) external;
 
     //----------------------------------
-    // Un/Bonding Functions
+    // Bonding & Redeeming Functions
 
     /// @notice Bonds given amount of ERC20 tokens from the caller and mints
     ///         corresponding reserve tokens to the caller.
@@ -740,7 +740,7 @@ interface IReserve {
         returns (address);
 
     //----------------------------------
-    // Un/Bonding View Functions
+    // Bonding & Redeeming View Functions
 
     /// @notice Returns whether the given ERC20 token address is bondable.
     /// @param erc20 The ERC20 token address.

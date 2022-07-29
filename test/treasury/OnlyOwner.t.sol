@@ -16,14 +16,18 @@ contract TreasuryOnlyOwner is TreasuryTest {
             return;
         }
 
-        // We need to support one asset, otherwise functions can fail with
-        // AssetIsNotSupported instead of OnlyCallableByOwner.
+        // We need to register one asset, otherwise functions can fail with
+        // AssetIsNotRegistered instead of OnlyCallableByOwner.
         // Note that the asset also needs a functional oracle to be accepted
         // as supported.
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
         treasury.registerAsset(asset, address(oracle));
+
+        // List asset as bondable + redeemable.
+        treasury.listAssetAsBondable(asset);
+        treasury.listAssetAsRedeemable(asset);
 
         vm.startPrank(caller);
 
@@ -36,13 +40,13 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.executeTx(address(0), callData);
 
         //----------------------------------
-        // Whitelist Management
+        // Bond & Redeem Function
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.addToWhitelist(address(1));
+        treasury.bond(asset, 1);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.removeFromWhitelist(address(1));
+        treasury.redeem(asset, 1);
 
         //----------------------------------
         // Asset and Oracle Management
@@ -92,35 +96,12 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Call an onlyOwner function on the treasury.
         address target = address(treasury);
         bytes memory callData = abi.encodeWithSignature(
-            "addToWhitelist()",
+            "listAssetAsBondable()",
             address(0)
         );
 
         // Fails with OnlyCallableByOwner.
         treasury.executeTx(target, callData);
-    }
-
-    //----------------------------------
-    // Whitelist Management
-
-    function testAddToWhitelist(address who) public {
-        treasury.addToWhitelist(who);
-        // Function should be idempotent.
-        treasury.addToWhitelist(who);
-
-        // Check that address got whiteslited.
-        assertTrue(treasury.whitelist(who));
-    }
-
-    function testRemoveFromWhitelist(address who) public {
-        treasury.addToWhitelist(who);
-
-        treasury.removeFromWhitelist(who);
-        // Function should be idempotent.
-        treasury.removeFromWhitelist(who);
-
-        // Check that address is not whitelisted anymore.
-        assertTrue(!treasury.whitelist(who));
     }
 
     //----------------------------------

@@ -30,24 +30,10 @@ contract TreasuryBonding is TreasuryTest {
         }
     }
 
-    modifier validUser(address user, bool fail) {
-        if (user != address(0) &&
-            user != address(this) &&
-            user != address(treasury))
-        {
-            _;
-        } else {
-            if (fail) {
-                revert();
-            }
-        }
-    }
-
     //--------------------------------------------------------------------------
     // setUp Functions
 
     function setUpForBonding(
-        address user,
         uint price,
         uint amount,
         uint decimals
@@ -61,13 +47,9 @@ contract TreasuryBonding is TreasuryTest {
         treasury.registerAsset(address(token), address(oracle));
         treasury.listAssetAsBondable(address(token));
 
-        // Add user to whitelist and mint them tokens.
-        treasury.addToWhitelist(user);
-        token.mint(user, amount);
-
-        // Approve user's tokens for treasury.
-        vm.prank(user);
+        // Mint tokens.
         token.approve(address(treasury), type(uint).max);
+        token.mint(address(this), amount);
 
         return (token, oracle);
     }
@@ -76,139 +58,124 @@ contract TreasuryBonding is TreasuryTest {
     // Tests
 
     //----------------------------------
-    // Un/Bonding disabled for invalid oracles
+    // Bond & Redeem disabled for invalid oracles
 
-    function testFailBondingDisabledIfOracleInvalid(address user, uint amount)
+    function testFailBondingDisabledIfOracleInvalid(uint amount)
         public
-        validUser(user, true)
         validAmount(amount, true)
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
+        (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Set token's oracle to invalid.
         oracle.setValid(false);
 
         // Fails with StalePriceDeliveredByOracle.
-        vm.prank(user);
         treasury.bond(address(token), amount);
     }
 
-    function testFailBondingDisabledIfOraclePriceIsZero(address user, uint amount)
+    function testFailBondingDisabledIfOraclePriceIsZero(uint amount)
         public
-        validUser(user, true)
         validAmount(amount, true)
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
+        (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Set token's oracle price to 0.
         oracle.setData(0);
 
         // Fails with StalePriceDeliveredByOracle.
-        vm.prank(user);
         treasury.bond(address(token), amount);
     }
 
-    function testFailRedeemDisabledIfOracleInvalid(address user, uint amount)
+    function testFailRedeemDisabledIfOracleInvalid(uint amount)
         public
-        validUser(user, true)
         validAmount(amount, true)
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
+        (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
         treasury.listAssetAsRedeemable(address(token));
 
         // Bond tokens.
-        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Set token's oracle to invalid.
         oracle.setValid(false);
 
         // Fails with StalePriceDelivered.
-        vm.prank(user);
         treasury.redeem(address(token), amount);
     }
 
-    function testFailRedeemDisabledIfOraclePriceIsZero(address user, uint amount)
+    function testFailRedeemDisabledIfOraclePriceIsZero(uint amount)
         public
-        validUser(user, true)
         validAmount(amount, true)
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
+        (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
         treasury.listAssetAsRedeemable(address(token));
 
         // Bond tokens.
-        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Set oracle's price to zero.
         oracle.setData(0);
 
         // Fails with StalePriceDelivered.
-        vm.prank(user);
         treasury.redeem(address(token), amount);
     }
 
     //----------------------------------
     // Bonding
 
-    function testFailCanNotRedeemToZero(address user, uint amount)
+    function testFailCanNotRedeemToZero(uint amount)
         public
-        validUser(user, true)
         validAmount(amount, true)
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
+        (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
         treasury.listAssetAsRedeemable(address(token));
 
         // Bond tokens.
-        vm.prank(user);
         treasury.bond(address(token), amount);
 
         // Redeem all tokens.
-        vm.prank(user);
         // Fails with a Division by 0 in ElasticReceiptToken.
         treasury.redeem(address(token), amount);
     }
 
-    function testBondingAndRedeeming(address user, uint amount)
+    function testBondingAndRedeeming(uint amount)
         public
-        validUser(user, false)
         validAmount(amount, false)
     {
         ERC20Mock token;
         OracleMock oracle;
-        (token, oracle) = setUpForBonding(user, ONE_USD, amount, 18);
+        (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
         treasury.listAssetAsRedeemable(address(token));
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetsBonded(user, address(token), amount);
+        emit AssetsBonded(address(this), address(token), amount);
 
         // Bond tokens.
-        vm.prank(user);
         treasury.bond(address(token), amount);
 
-        // Check that user received amount of KTT tokens.
-        assertEq(treasury.balanceOf(user), amount);
-        // Check that user does not have any tokens anymore.
-        assertEq(token.balanceOf(user), 0);
+        // Check that address(this) received amount of KTT tokens.
+        assertEq(treasury.balanceOf(address(this)), amount);
+        // Check that address(this) does not have any tokens anymore.
+        assertEq(token.balanceOf(address(this)), 0);
         // Check that treasury now holds the tokens.
         assertEq(token.balanceOf(address(treasury)), amount);
         // Check that treasury's total valuation equals the amount bonded.
@@ -225,15 +192,14 @@ contract TreasuryBonding is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetsRedeemed(user, address(token), tokensUnbonded);
+        emit AssetsRedeemed(address(this), address(token), tokensUnbonded);
 
-        vm.prank(user);
         treasury.redeem(address(token), tokensUnbonded);
 
-        // Check that user received the tokens unbonded.
-        assertEq(token.balanceOf(user), tokensUnbonded);
-        // Check that user's KTT tokens got burned.
-        assertEq(treasury.balanceOf(user), amount - tokensUnbonded);
+        // Check that address(this) received the tokens unbonded.
+        assertEq(token.balanceOf(address(this)), tokensUnbonded);
+        // Check that address(this)'s KTT tokens got burned.
+        assertEq(treasury.balanceOf(address(this)), amount - tokensUnbonded);
         // Check that treasury's total valuation decreased by the amount of
         // tokens unbonded.
         assertEq(treasury.totalValuation(), amount - tokensUnbonded);
@@ -241,13 +207,7 @@ contract TreasuryBonding is TreasuryTest {
         assertEq(treasury.totalSupply(), amount - tokensUnbonded);
     }
 
-    function testBondingAndRedeemingWithNonWadAssets(
-        address user,
-        bool redeemT1
-    )
-        public
-        validUser(user, false)
-    {
+    function testBondingAndRedeemingWithNonWadAssets(bool redeemT1) public {
         //----------------------------------
         // Bonding
 
@@ -256,16 +216,15 @@ contract TreasuryBonding is TreasuryTest {
         // => total value = 1$
         ERC20Mock t1;
         OracleMock o1;
-        (t1, o1) = setUpForBonding(user, ONE_USD, 1e20, 20);
+        (t1, o1) = setUpForBonding(ONE_USD, 1e20, 20);
 
         // Bond t1.
-        vm.prank(user);
         treasury.bond(address(t1), 1e20);
 
-        // Check that user received amount of KTT tokens.
-        assertEq(treasury.balanceOf(user), 1e18);
-        // Check that user does not have any t1 anymore.
-        assertEq(t1.balanceOf(user), 0);
+        // Check that address(this) received amount of KTT tokens.
+        assertEq(treasury.balanceOf(address(this)), 1e18);
+        // Check that address(this) does not have any t1 anymore.
+        assertEq(t1.balanceOf(address(this)), 0);
         // Check that treasury now holds the t1.
         assertEq(t1.balanceOf(address(treasury)), 1e20);
         // Check that treasury's total valuation equals the amount bonded.
@@ -278,16 +237,15 @@ contract TreasuryBonding is TreasuryTest {
         // => total value = 4$
         ERC20Mock t2;
         OracleMock o2;
-        (t2, o2) = setUpForBonding(user, ONE_USD * 2, 2e9, 9);
+        (t2, o2) = setUpForBonding(ONE_USD * 2, 2e9, 9);
 
         // Bond t2.
-        vm.prank(user);
         treasury.bond(address(t2), 2e9);
 
-        // Check that user received amount of KTT tokens.
-        assertEq(treasury.balanceOf(user), 1e18 + (2e18 * 2));
-        // Check that user does not have any t2 anymore.
-        assertEq(t2.balanceOf(user), 0);
+        // Check that address(this) received amount of KTT tokens.
+        assertEq(treasury.balanceOf(address(this)), 1e18 + (2e18 * 2));
+        // Check that address(this) does not have any t2 anymore.
+        assertEq(t2.balanceOf(address(this)), 0);
         // Check that treasury now holds the t2.
         assertEq(t2.balanceOf(address(treasury)), 2e9);
         // Check that treasury's total valuation equals the amount bonded.
@@ -304,14 +262,13 @@ contract TreasuryBonding is TreasuryTest {
             // List t1 as redeemable.
             treasury.listAssetAsRedeemable(address(t1));
 
-            // User redeem t1.
-            vm.prank(user);
+            // address(this) redeem t1.
             treasury.redeem(address(t1), 1e18);
 
-            // Check that user received the t1 redeemed.
-            assertEq(t1.balanceOf(user), 1e20);
-            // Check that user's KTT tokens got burned.
-            assertEq(treasury.balanceOf(user), 2e18 * 2);
+            // Check that address(this) received the t1 redeemed.
+            assertEq(t1.balanceOf(address(this)), 1e20);
+            // Check that address(this)'s KTT tokens got burned.
+            assertEq(treasury.balanceOf(address(this)), 2e18 * 2);
             // Check that treasury's total valuation decreased by the amount of
             // tokens unbonded.
             assertEq(treasury.totalValuation(), 2e18 * 2);
@@ -321,14 +278,13 @@ contract TreasuryBonding is TreasuryTest {
             // Mark t2 as redeemable.
             treasury.listAssetAsRedeemable(address(t2));
 
-            // User redeem t2.
-            vm.prank(user);
+            // address(this) redeem t2.
             treasury.redeem(address(t2), 2e18 * 2);
 
-            // Check that user received the t1 redeemed.
-            assertEq(t2.balanceOf(user), 2e9);
-            // Check that user's KTT tokens got burned.
-            assertEq(treasury.balanceOf(user), 1e18);
+            // Check that address(this) received the t1 redeemed.
+            assertEq(t2.balanceOf(address(this)), 2e9);
+            // Check that address(this)'s KTT tokens got burned.
+            assertEq(treasury.balanceOf(address(this)), 1e18);
             // Check that treasury's total valuation decreased by the amount of
             // tokens unbonded.
             assertEq(treasury.totalValuation(), 1e18);

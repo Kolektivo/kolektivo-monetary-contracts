@@ -8,7 +8,6 @@ import {IERC721Receiver} from "./interfaces/_external/IERC721Receiver.sol";
 // External Contracts.
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {TSOwnable} from "solrocket/TSOwnable.sol";
-import {Whitelisted} from "solrocket/Whitelisted.sol";
 
 // External Libraries.
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
@@ -27,7 +26,7 @@ import {Wad} from "./lib/Wad.sol";
 /**
  * @title Treasury
  *
- * @dev A treasury in which whitelisted addresses can bond and redeem assets.
+ * @dev A treasury in which the owner can bond and redeem assets.
  *      The treasury token (KTT) is continously synced to the treasury's total
  *      value in USD of assets held. This is made possible by inheriting from
  *      the ElasticReceiptToken.
@@ -43,7 +42,6 @@ import {Wad} from "./lib/Wad.sol";
 contract Treasury is
     ElasticReceiptToken,
     TSOwnable,
-    Whitelisted,
     IERC721Receiver
 {
     using SafeTransferLib for ERC20;
@@ -217,7 +215,7 @@ contract Treasury is
     }
 
     //--------------------------------------------------------------------------
-    // (Un-)Bonding Functions
+    // Bond & Redeem Functions
 
     /// @notice Bonds an amount of one asset in exchange for an amount of KTTs.
     /// @dev Only callable if address is whitelisted.
@@ -230,7 +228,7 @@ contract Treasury is
         // isSupported(asset)
         isBondable(asset)
         validAmount(amount)
-        onlyWhitelisted
+        onlyOwner
     {
         // Convert amount to wad.
         uint amountWad = Wad.convertToWad(asset, amount);
@@ -259,7 +257,7 @@ contract Treasury is
         // isSupported(asset)
         isRedeemable(asset)
         validAmount(kttWad)
-        onlyWhitelisted
+        onlyOwner
     {
         // Burn KTTs from msg.sender.
         // Note to update the KTT amount which could have changed due to
@@ -365,23 +363,6 @@ contract Treasury is
         bool success;
         (success, /*returnData*/) = target.call(callData);
         require(success);
-    }
-
-    //----------------------------------
-    // Whitelist Management
-
-    /// @notice Adds an address to the whitelist.
-    /// @dev Only callable by owner.
-    /// @param who The address to add to the whitelist.
-    function addToWhitelist(address who) external onlyOwner {
-        super._addToWhitelist(who);
-    }
-
-    /// @notice Removes an address from the whitelist.
-    /// @dev Only callable by owner.
-    /// @param who The address to remove from the whitelist.
-    function removeFromWhitelist(address who) external onlyOwner {
-        super._removeFromWhitelist(who);
     }
 
     //----------------------------------

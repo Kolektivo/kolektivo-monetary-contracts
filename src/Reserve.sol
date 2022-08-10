@@ -1232,7 +1232,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint supplyValuation = _supplyValuation();
 
         uint backing =
-            reserveValuation >= supplyValuation
+            supplyValuation == 0
                 ? BPS
                 : (reserveValuation * BPS) / supplyValuation;
 

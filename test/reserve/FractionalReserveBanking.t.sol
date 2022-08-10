@@ -13,6 +13,28 @@ contract ReserveFractionalReserveBanking is ReserveTest {
     // Max deposit value is defined as 1 billion USD.
     uint constant MAX_DEPOSIT_VALUE = 1_000_000_000 * 1e18;
 
+    function testOvercollateralizedBacking() public {
+        uint erc20Price = 10e18;      // 10 USD
+        uint erc20Deposit = 1_000e18; // 1,000 erc20s
+        // => ReserveValuation = 10,000 USD
+        // => SupplyValuation  = 10,000 USD
+        // => Backing          = 100%       = 10_000 bps
+
+        // Setup an erc20 token and some initial backing.
+        (ERC20Mock erc20, OracleMock erc20Oracle) = _setUpERC20(erc20Price);
+        _setUpInitialBacking(erc20, erc20Deposit);
+
+        // Mint some erc20 and send them to reserve.
+        // => Increases ReserveValuation but keeps supplyValuation as is.
+        erc20.mint((address(this)), erc20Deposit);
+        erc20.transfer(address(reserve), erc20Deposit);
+
+        // => ReserveValuation = 20,000 USD
+        // => SupplyValuation  = 10,000 USD
+        // => Backing          = 200%       = 20_000 bps
+        _checkBacking(20_000e18, 10_000e18, 20_000);
+    }
+
     //--------------------------------------------------------------------------
     // onlyOwner Debt Management Functions
 

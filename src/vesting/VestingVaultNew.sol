@@ -130,7 +130,7 @@ contract VestingVault is TSOwnable {
 
         Vesting[] storage vestings = _vestingsPerAddress[msg.sender];
 
-        // @todo Keep? Earlieast remove after tests!
+        // @todo Remove after tests!
         assert(releasables.length == vestings.length);
 
         uint sum;
@@ -211,8 +211,8 @@ contract VestingVault is TSOwnable {
 
         // Loop variables declared outside of loop to save gas.
         Vesting memory vesting;
-        uint step;
-        uint totalSteps;
+        uint currentDuration;
+        uint totalDuration;
 
         uint len = vestings.length;
         for (uint i; i < len; ++i) {
@@ -229,11 +229,11 @@ contract VestingVault is TSOwnable {
             // If vesting's end not yet reached, compute and store the current
             // releasable amount.
             if (block.timestamp < vesting.end) {
-                step       = block.timestamp - vesting.start;
-                totalSteps = vesting.end     - vesting.start;
+                currentDuration = block.timestamp - vesting.start;
+                totalDuration = vesting.end - vesting.start;
 
                 releasables[i] =
-                    ((vesting.totalAmount * step) / totalSteps) // Total amount releasable
+                    ((vesting.totalAmount * currentDuration) / totalDuration) // Total amount releasable
                     - vesting.alreadyReleased;                  // Substract already released amount
 
                 continue;

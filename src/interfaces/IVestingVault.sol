@@ -21,8 +21,13 @@ interface IVestingVault {
     ///         the recipient.
     function vestedFor(address recipient) external view returns (uint);
 
+    function notYetClaimable();
+
     /// @notice Returns the amunt of token that are currently unvested,
     ///         i.e. claimable, for the recipient.
-    function unvestedFor(address recipient) external view returns (uint);
+    //function unvestedFor(address recipient) external view returns (uint);
+
+    // Forall vesting for user A: Sum every claimable amount of each vesting.
+    function claimable();
 
 }

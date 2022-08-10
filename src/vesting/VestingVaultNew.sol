@@ -82,6 +82,11 @@ contract VestingVault is TSOwnable {
 
     ERC20 private immutable _token;
 
+    // user:
+    // vesting A: 100 token, 100 days
+    // After 50 days
+    // vesting B: 200 tokens, 50 days
+
     // user => array of vesting instances.
     mapping(address => Vesting[]) private _vestingsPerAddress;
 

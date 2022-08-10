@@ -131,11 +131,11 @@ contract VestingVault is TSOwnable {
         uint sum;
         uint deleted;
 
-        uint len = releasable.length;
+        uint len = releasables.length;
         for (uint i; i < len; ++i) {
 
             // Add releasable amount to sum.
-            sum += releasable[i];
+            sum += releasables[i];
 
             // If vesting expired, delete instance and continue loop.
             if (vestings[i].end <= block.timestamp) {
@@ -148,7 +148,7 @@ contract VestingVault is TSOwnable {
                 }
 
                 // @todo If this breaks, we do not release all tokens.
-                assert(vestings[i].totalAmount == vestings[i].alreadyReleased + releasable[i]);
+                assert(vestings[i].totalAmount == vestings[i].alreadyReleased + releasables[i]);
 
                 continue;
             }
@@ -156,7 +156,7 @@ contract VestingVault is TSOwnable {
             // Adjust vesting's alreadyReleased field if vesting already
             // (and still) active.
             if (vestings[i].start <= block.timestamp) {
-                vestings[i].alreadyReleased += releasable[i];
+                vestings[i].alreadyReleased += releasables[i];
 
                 // @todo Remove after enough testing.
                 assert(vestings[i].alreadyReleased < vestings[i].totalAmount);
@@ -223,7 +223,7 @@ contract VestingVault is TSOwnable {
 
             // If vesting's end not yet reached, compute and store the current
             // releasable amount.
-            if (block.timestamp < vesting.deadline) {
+            if (block.timestamp < vesting.end) {
                 step       = block.timestamp - vesting.start;
                 totalSteps = vesting.end     - vesting.start;
 

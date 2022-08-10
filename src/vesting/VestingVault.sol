@@ -18,7 +18,14 @@ abstract contract VestingVault is TSOwnable, IVestingVault {
 
     address public immutable token;
 
-    //mapping(address => )
+    struct Details {
+        uint lastUpdate;
+        uint deadline;
+        uint totalAmount;
+    }
+
+    // user => array of vestings details
+    //mapping(address => Details[]);
 
     constructor(address token_) {
         require(token_ != address(0));

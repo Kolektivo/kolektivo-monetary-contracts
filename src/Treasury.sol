@@ -184,7 +184,7 @@ contract Treasury is
     //--------------------------------------------------------------------------
     // Storage
 
-    /// @notice The assets registered by the treasury, i.e. the assets taking
+    /// @notice The assets registered by the treasury, i.e. the assets taken
     ///         into account for the treasury's valuation.
     /// @dev Each registered asset always has to have a corresponding oracle
     ///      in the oraclePerAsset mapping!
@@ -194,7 +194,7 @@ contract Treasury is
 
     /// @notice The mapping of oracles providing the price for an asset.
     /// @dev Changeable by owner.
-    /// @dev Address in supportedAssets => address of type IOracle.
+    /// @dev Address in registeredAssets => address of type IOracle.
     mapping(address => address) public oraclePerAsset;
 
     /// @notice Mapping of bondable assets.
@@ -224,8 +224,8 @@ contract Treasury is
     /// @param amount The amount of assets to bond.
     function bond(address asset, uint amount)
         external
-        // Note that if an asset is bondable, it is also supported.
-        // isSupported(asset)
+        // Note that if an asset is bondable, it is also registered.
+        // isRegistered(asset)
         isBondable(asset)
         validAmount(amount)
         onlyOwner
@@ -253,8 +253,8 @@ contract Treasury is
     /// @param kttWad The amount of KTT tokens to burn.
     function redeem(address asset, uint kttWad)
         external
-        // Note that if an asset is unbondable, it is also supported.
-        // isSupported(asset)
+        // Note that if an asset is unbondable, it is also registered.
+        // isRegistered(asset)
         isRedeemable(asset)
         validAmount(kttWad)
         onlyOwner
@@ -294,7 +294,7 @@ contract Treasury is
         address from,
         uint256 tokenId,
         bytes calldata data
-    ) external returns (bytes4) {
+    ) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -562,7 +562,7 @@ contract Treasury is
         emit AssetListedAsRedeemable(asset);
     }
 
-    /// @notice Delists an asset as redeemable
+    /// @notice Delists an asset as redeemable.
     /// @dev Only callable by owner.
     /// @param asset The asset to delist as redeemable.
     function delistAssetAsRedeemable(address asset)

@@ -59,7 +59,7 @@ contract VestingVault {
         // Create a new Vesting instance.
         Vesting memory vesting = Vesting(
             block.timestamp,                   // start
-            block.timestamp + duration, // end
+            block.timestamp + duration,        // end
             amount,                            // totalAmount
             0                                  // alreadyReleased
         );
@@ -72,6 +72,8 @@ contract VestingVault {
 
     // @notice release all available tokens for caller
     function claim() external {
+
+        //1. getTotalClaimable(), 2. updateVestings()
         uint claimableAmount = getTotalClaimableAmount(msg.sender);
         require(claimableAmount > 0, "nothing to witdraw");
 
@@ -80,6 +82,8 @@ contract VestingVault {
         // TODO emit event
     }
 
+    // implement Claimable(), notYetClaimable()
+
     // TODO replace single require with modifier ?
     // TODO this method must be call only, without modify state
     function getTotalClaimableAmount(address receiver) public returns (uint) {
@@ -87,8 +91,7 @@ contract VestingVault {
 
         uint totalClaimable;
         for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
-            uint claimablePerVesting =
-            getClaimableAndUpdateTotalAmountPerVesting(receiver, vestingSlot);
+            uint claimablePerVesting = getClaimablePerVesting(receiver, vestingSlot);
             if(claimablePerVesting > 0)
                 totalClaimable += claimablePerVesting;
         }
@@ -96,35 +99,21 @@ contract VestingVault {
         return totalClaimable;
     }
 
-    function getClaimableAndUpdateTotalAmountPerVesting(address receiver, uint vestingSlot)
+    // TODO extract function in getTotalClaimableAmount
+    function getClaimablePerVesting(address receiver, uint vestingSlot)
       private
       returns (uint)
     {
-        // TODO fix following memory allocation
         Vesting memory vesting = _vestings[receiver][vestingSlot];
-
         // @dev if vesting is finished and nothing is claimed, everything is available
         if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
-            // NOTE optional: alternative for following line is to delete the vesting
-            vesting.alreadyReleased = vesting.totalAmount;
             return vesting.totalAmount;
         }
         // @dev if not everything is released yet, use regular calculation
         if(vesting.totalAmount > vesting.alreadyReleased){
             uint timePassed = block.timestamp - vesting.start;
             uint totalDuration = vesting.end - vesting.start;
-            uint claimableAmount = timePassed * vesting.totalAmount / totalDuration
-            - vesting.alreadyReleased;
-
-            vesting.alreadyReleased += claimableAmount;
-
-            // NOTE optional: to save gas, may want to check if
-            // totalSupply not more than alreadyReleased, delete vesting
-
-            // TODO remove following line, for test purposes only
-            require(vesting.alreadyReleased <= vesting.totalAmount, "incorrect calculation !");
-
-            return claimableAmount;
+            return timePassed * vesting.totalAmount / totalDuration - vesting.alreadyReleased;
         }
         return 0;
     }

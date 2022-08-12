@@ -72,17 +72,106 @@ contract VestingVault {
 
     // @notice release all available tokens for caller
     function claim() external {
+        require(_vestings[msg.sender].length > 0, "sender has no vestings available");
 
-        //1. getTotalClaimable(), 2. updateVestings()
-        uint claimableAmount = getTotalClaimableAmount(msg.sender);
-        require(claimableAmount > 0, "nothing to witdraw");
+        uint totalClaimable;
+        for(uint vestingSlot; vestingSlot < _vestings[msg.sender].length; ++vestingSlot){
+            uint claimablePerVesting = getAndUpdateClaimablePerVesting(msg.sender, vestingSlot);
+            if(claimablePerVesting > 0)
+                totalClaimable += claimablePerVesting;
+        }
 
-        _token.safeTransfer(msg.sender, claimableAmount);
+        require(totalClaimable > 0, "nothing to witdraw");
+
+        _token.safeTransfer(msg.sender, totalClaimable);
 
         // TODO emit event
     }
 
-    // implement Claimable(), notYetClaimable()
+    // TODO extract function in claim
+    function getAndUpdateClaimablePerVesting(address receiver, uint vestingSlot)
+      private
+      returns (uint)
+    {
+        Vesting memory vesting = _vestings[receiver][vestingSlot];
+        // @dev if vesting is finished and nothing is claimed, everything is available
+        if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
+            delete vesting;
+            return vesting.totalAmount;
+        }
+        // @dev if not everything is released yet, use regular calculation
+        if(vesting.totalAmount > vesting.alreadyReleased){
+            uint timePassed = block.timestamp - vesting.start;
+            uint totalDuration = vesting.end - vesting.start;
+            uint claimableAmount = timePassed * vesting.totalAmount / totalDuration
+            - vesting.alreadyReleased;
+
+            vesting.alreadyReleased += claimableAmount;
+
+            if(vesting.alreadyReleased == vesting.totalAmount)
+                delete vesting;
+
+            return claimableAmount;
+        }
+        /// NOTE following case is highly unlikely and should be removed after testing
+        return 0;
+    }
+
+    function getTotalVestedFor(address receiver) external returns (uint) {
+        require(_vestings[receiver].length > 0, "receiver has no vestings available");
+
+        uint totalVestedFor;
+        for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
+            totalVestedFor += _vestings[receiver][vestingSlot].totalAmount;
+        }
+
+        return totalVestedFor;
+    }
+
+    // TODO extract function in getTotalVestedFor
+    function getVestedForPerVesting(address receiver, uint vestingSlot)
+      private
+      returns (uint)
+    {
+        Vesting memory vesting = _vestings[receiver][vestingSlot];
+
+        return vesting.totalAmount;
+    }
+
+    function getTotalNonClaimableAmount(address receiver) external returns (uint) {
+        require(_vestings[receiver].length > 0, "receiver has no vestings available");
+
+        uint totalNonClaimable;
+        for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
+            uint nonClaimablePerVesting = getNonClaimablePerVesting(receiver, vestingSlot);
+            if(nonClaimablePerVesting > 0)
+                totalNonClaimable += nonClaimablePerVesting;
+        }
+
+        return totalNonClaimable;
+    }
+
+    // TODO extract function in getTotalNonClaimableAmount
+    function getNonClaimablePerVesting(address receiver, uint vestingSlot)
+      private
+      returns (uint)
+    {
+        Vesting memory vesting = _vestings[receiver][vestingSlot];
+        // @dev if vesting is already finished, nothing more will be claimable
+        if(block.timestamp >= vesting.end){
+            return 0;
+        }
+        // @dev if vesting is currently ongoing, use regular calculation
+        if(block.timestamp > vesting.start){
+            uint timeRemaining = vesting.end - block.timestamp;
+            uint totalDuration = vesting.end - vesting.start;
+
+            return vesting.totalAmount / totalDuration * timeRemaining;
+        }
+        // NOTE following case is almost impossible, only if called
+        // the same second as depositFor()
+        return vesting.totalAmount;
+    }
 
     // TODO replace single require with modifier ?
     // TODO this method must be call only, without modify state
@@ -115,6 +204,8 @@ contract VestingVault {
             uint totalDuration = vesting.end - vesting.start;
             return timePassed * vesting.totalAmount / totalDuration - vesting.alreadyReleased;
         }
+        // NOTE following case is almost impossible, only if called
+        // the same second as depositFor()
         return 0;
     }
 }

@@ -35,6 +35,22 @@ contract VestingVault {
         uint alreadyReleased;
     }
 
+
+    //--------------------------------------------------------------------------
+    // Errors
+
+    /// @notice Invalid token recipient.
+    error InvalidRecipient();
+
+    /// @notice Invalid token amount.
+    error InvalidAmount();
+
+    /// @notice Invalid vesting duration.
+    error InvalidVestingDuration();
+
+    /// @notice receiver has no active vestings.
+    error InvalidVestingsData();
+
     //--------------------------------------------------------------------------
     // Events
 
@@ -42,6 +58,45 @@ contract VestingVault {
     event DepositFor(address indexed investor, address indexed receiver, uint amount, uint duration);
     /// @notice Event emitted when receiver withdraws vested tokens.
     event Claim(address indexed receiver, uint withdrawnAmount);
+
+    //--------------------------------------------------------------------------
+    // Modifiers
+
+    /// @dev Modifier to guarantee token recipient is valid.
+    modifier validRecipient(address to) {
+        if (to == address(0)      ||
+            to == address(this)   ||
+            to == msg.sender      ||
+            to == address(_token)
+        ) {
+            revert InvalidRecipient();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee token amount is valid.
+    modifier validAmount(uint amount) {
+        if (amount == 0) {
+            revert InvalidAmount();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee vesting duration is valid.
+    modifier validVestingDuration(uint vestingDuration) {
+        if (vestingDuration == 0) {
+            revert InvalidVestingDuration();
+        }
+        _;
+    }
+
+    /// @dev Modifier to guarantee vesting duration is valid.
+    modifier validVestingData(address receiver) {
+        if (_vestings[receiver].length == 0) {
+            revert InvalidVestingsData();
+        }
+        _;
+    }
 
     //--------------------------------------------------------------------------
     // Storage
@@ -73,12 +128,12 @@ contract VestingVault {
     /// @param recipient Address to receive the vesting.
     /// @param amount Amount of tokens to be deposited.
     /// @param duration Length of time over which tokens are vested.
-    function depositFor(address recipient, uint amount, uint duration) external {
-        require(recipient != address(0), "invalid recipient");
-        require(recipient != msg.sender, "receiver cant be sender");
-        require(recipient != address(_token), "receiver cant be token");
-        require(amount > 0, "amount cant be 0");
-        require(duration > 0, "duration cant be 0");
+    function depositFor(address recipient, uint amount, uint duration)
+        external
+        validRecipient(recipient)
+        validAmount(amount)
+        validVestingDuration(duration)
+    {
 
         _token.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -88,7 +143,6 @@ contract VestingVault {
             amount,                            // totalAmount
             0                                  // alreadyReleased
         );
-
         _vestings[recipient].push(vesting);
 
         emit DepositFor(msg.sender, recipient, amount, duration);
@@ -96,9 +150,7 @@ contract VestingVault {
 
     // TODO replace require statement w modifier
     /// @notice Release all claimable tokens to caller.
-    function claim() external {
-        require(_vestings[msg.sender].length > 0, "sender has no vestings available");
-
+    function claim() external validVestingData(msg.sender) {
         uint totalClaimable;
         for(uint vestingSlot; vestingSlot < _vestings[msg.sender].length; ++vestingSlot){
             Vesting memory vesting = _vestings[msg.sender][vestingSlot];
@@ -142,9 +194,12 @@ contract VestingVault {
     /// @notice Returns sum of all vestings for receiver address.
     /// @param receiver Address of user to query.
     /// @return uint Amount of vested tokens for specified address.
-    function getTotalVestedFor(address receiver) external view returns (uint) {
-        require(_vestings[receiver].length > 0, "receiver has no vestings available");
-
+    function getTotalVestedFor(address receiver)
+        external
+        validVestingData(receiver)
+        view
+        returns (uint)
+    {
         uint totalVestedFor;
         for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
             totalVestedFor += _vestings[receiver][vestingSlot].totalAmount;
@@ -157,9 +212,12 @@ contract VestingVault {
     /// @notice Returns amount of tokens that can currently be claimed for specified address.
     /// @param receiver Address of user to query.
     /// @return uint Amount of tokens that can currently be claimed.
-    function getTotalClaimableAmount(address receiver) external view returns (uint) {
-        require(_vestings[receiver].length > 0, "receiver has no vestings available");
-
+    function getTotalClaimableAmount(address receiver)
+        external
+        validVestingData(receiver)
+        view
+        returns (uint)
+    {
         uint totalClaimable;
         for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
           Vesting memory vesting = _vestings[receiver][vestingSlot];
@@ -183,9 +241,12 @@ contract VestingVault {
     ///         but will be available for claiming in the future for specified address.
     /// @param receiver Address of user to query.
     /// @return uint Amount of tokens that will be available for claiming in the future.
-    function getTotalNotYetClaimableAmount(address receiver) external view returns (uint) {
-        require(_vestings[receiver].length > 0, "receiver has no vestings available");
-
+    function getTotalNotYetClaimableAmount(address receiver)
+        external
+        validVestingData(receiver)
+        view
+        returns (uint)
+    {
         uint totalNonClaimable;
         for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
             Vesting memory vesting = _vestings[receiver][vestingSlot];

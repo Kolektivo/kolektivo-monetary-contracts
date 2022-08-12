@@ -33,6 +33,9 @@ contract VestingVault {
     // recipientAddress => Vesting
     mapping(address => Vesting[]) private _vestings;
 
+    event DepositFor(address indexed sender, address indexed receiver, uint amount, uint duration);
+    event Claim(address indexed receiver, uint withdrawnAmount);
+
     constructor(address token) {
         require(token != address(0), "token cant be 0x0");
         require(token != msg.sender, "token cant be same as sender");
@@ -54,7 +57,6 @@ contract VestingVault {
 
         _token.safeTransferFrom(msg.sender, address(this), amount);
 
-        // Create a new Vesting instance.
         Vesting memory vesting = Vesting(
             block.timestamp,                   // start
             block.timestamp + duration,        // end
@@ -62,13 +64,12 @@ contract VestingVault {
             0                                  // alreadyReleased
         );
 
-        // Push new Vesting instance to recipient's vesting array.
         _vestings[recipient].push(vesting);
 
-          // TODO emit event
+        emit DepositFor(msg.sender, recipient, amount, duration);
     }
 
-    // @notice release all available tokens for caller
+    // @notice release all available tokens to caller
     function claim() external {
         require(_vestings[msg.sender].length > 0, "sender has no vestings available");
 
@@ -100,7 +101,7 @@ contract VestingVault {
 
         _token.safeTransfer(msg.sender, totalClaimable);
 
-        // TODO emit event
+        emit Claim(msg.sender, totalClaimable);
     }
 
     //--------------------------------------------------------------------------
@@ -132,7 +133,8 @@ contract VestingVault {
           if(vesting.totalAmount > vesting.alreadyReleased){
               uint timePassed = block.timestamp - vesting.start;
               uint totalDuration = vesting.end - vesting.start;
-              totalClaimable += timePassed * vesting.totalAmount / totalDuration - vesting.alreadyReleased;
+              totalClaimable += timePassed * vesting.totalAmount / totalDuration
+              - vesting.alreadyReleased;
           }
           // @dev if vesting is finished and nothing is claimed, everything is available
           if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){

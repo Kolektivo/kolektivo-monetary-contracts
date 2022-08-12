@@ -13,7 +13,10 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 /**
  * @title Vesting Vault
  *
- * @dev ...
+ * @dev
+ *      Investors can vest the same receiver multiple times,
+ *      vested tokens are unlocked gradually over time period specified by investor.
+ *
  *      Note that feeOnTransfer and rebasing tokens are NOT supported.
  *
  * @author byterocket
@@ -21,8 +24,10 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 contract VestingVault {
     using SafeTransferLib for ERC20;
 
-    ERC20 private immutable _token;
+    //--------------------------------------------------------------------------
+    // Types
 
+    /// @dev Vesting encapsulates vesting metadata.
     struct Vesting {
         uint start;
         uint end;
@@ -30,12 +35,27 @@ contract VestingVault {
         uint alreadyReleased;
     }
 
-    // recipientAddress => Vesting
-    mapping(address => Vesting[]) private _vestings;
+    //--------------------------------------------------------------------------
+    // Events
 
-    event DepositFor(address indexed sender, address indexed receiver, uint amount, uint duration);
+    /// @notice Event emitted when investor deposits tokens.
+    event DepositFor(address indexed investor, address indexed receiver, uint amount, uint duration);
+    /// @notice Event emitted when receiver withdraws vested tokens.
     event Claim(address indexed receiver, uint withdrawnAmount);
 
+    //--------------------------------------------------------------------------
+    // Storage
+
+    /// @dev _token will use ERC20.sol
+    ERC20 private immutable _token;
+
+    /// @dev Mapping of recipient address to Vesting struct array.
+    mapping(address => Vesting[]) private _vestings;
+
+    //--------------------------------------------------------------------------
+    // Constructor
+
+    /// @param token Token address used for vesting.
     constructor(address token) {
         require(token != address(0), "token cant be 0x0");
         require(token != msg.sender, "token cant be same as sender");
@@ -48,6 +68,11 @@ contract VestingVault {
     // External Functions
 
     // TODO use modifiers + reverts instead of require statements
+    /// @notice Create new vesting by depositing tokens.
+    /// @notice Vesting starts immediately.
+    /// @param recipient Address to receive the vesting.
+    /// @param amount Amount of tokens to be deposited.
+    /// @param duration Length of time over which tokens are vested.
     function depositFor(address recipient, uint amount, uint duration) external {
         require(recipient != address(0), "invalid recipient");
         require(recipient != msg.sender, "receiver cant be sender");
@@ -69,13 +94,13 @@ contract VestingVault {
         emit DepositFor(msg.sender, recipient, amount, duration);
     }
 
-    // @notice release all available tokens to caller
+    // TODO replace require statement w modifier
+    /// @notice Release all claimable tokens to caller.
     function claim() external {
         require(_vestings[msg.sender].length > 0, "sender has no vestings available");
 
         uint totalClaimable;
         for(uint vestingSlot; vestingSlot < _vestings[msg.sender].length; ++vestingSlot){
-
             Vesting memory vesting = _vestings[msg.sender][vestingSlot];
             // @dev if vesting is finished and nothing is claimed, everything is available
             if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
@@ -97,7 +122,7 @@ contract VestingVault {
             }
         }
 
-        require(totalClaimable > 0, "nothing to witdraw");
+        require(totalClaimable > 0, "nothing to claim");
 
         _token.safeTransfer(msg.sender, totalClaimable);
 
@@ -107,10 +132,16 @@ contract VestingVault {
     //--------------------------------------------------------------------------
     // External view Functions
 
+    /// @notice Returns address of token used for vesting.
+    /// @return address Vesting token address.
     function getTokenAddress() external view returns (address) {
         return address(_token);
     }
 
+    /// NOTE vestings that are already drained are deleted, therefore not accounted for.
+    /// @notice Returns sum of all vestings for receiver address.
+    /// @param receiver Address of user to query.
+    /// @return uint Amount of vested tokens for specified address.
     function getTotalVestedFor(address receiver) external view returns (uint) {
         require(_vestings[receiver].length > 0, "receiver has no vestings available");
 
@@ -123,6 +154,9 @@ contract VestingVault {
     }
 
     // TODO replace single require with modifier ?
+    /// @notice Returns amount of tokens that can currently be claimed for specified address.
+    /// @param receiver Address of user to query.
+    /// @return uint Amount of tokens that can currently be claimed.
     function getTotalClaimableAmount(address receiver) external view returns (uint) {
         require(_vestings[receiver].length > 0, "receiver has no vestings available");
 
@@ -145,6 +179,10 @@ contract VestingVault {
         return totalClaimable;
     }
 
+    /// @notice Returns amount of tokens that are still locked,
+    ///         but will be available for claiming in the future for specified address.
+    /// @param receiver Address of user to query.
+    /// @return uint Amount of tokens that will be available for claiming in the future.
     function getTotalNotYetClaimableAmount(address receiver) external view returns (uint) {
         require(_vestings[receiver].length > 0, "receiver has no vestings available");
 

@@ -251,7 +251,7 @@ contract VestingVault {
                 uint timeRemaining = vesting.end - block.timestamp;
                 uint totalDuration = vesting.end - vesting.start;
 
-                totalNonClaimable += vesting.totalAmount / totalDuration * timeRemaining;
+                totalNonClaimable += vesting.totalAmount * timeRemaining / totalDuration;
             }
         }
 

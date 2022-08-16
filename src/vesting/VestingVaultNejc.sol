@@ -149,8 +149,8 @@ contract VestingVault {
     /// @notice Release all claimable tokens to caller.
     function claim() external validVestingData(msg.sender) {
         uint totalClaimable;
-        for(uint vestingSlot; vestingSlot < _vestings[msg.sender].length; ++vestingSlot){
-            Vesting memory vesting = _vestings[msg.sender][vestingSlot];
+        for(uint slot; slot < _vestings[msg.sender].length; ++slot){
+            Vesting memory vesting = _vestings[msg.sender][slot];
             // @dev if vesting is finished and nothing is claimed, everything is available
             if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
                 totalClaimable += vesting.totalAmount;
@@ -197,8 +197,8 @@ contract VestingVault {
         returns (uint)
     {
         uint totalVestedFor;
-        for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
-            totalVestedFor += _vestings[receiver][vestingSlot].totalAmount;
+        for(uint slot; slot < _vestings[receiver].length; ++slot){
+            totalVestedFor += _vestings[receiver][slot].totalAmount;
         }
 
         return totalVestedFor;
@@ -243,8 +243,8 @@ contract VestingVault {
         returns (uint)
     {
         uint totalNonClaimable;
-        for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
-            Vesting memory vesting = _vestings[receiver][vestingSlot];
+        for(uint slot; slot < _vestings[receiver].length; ++slot){
+            Vesting memory vesting = _vestings[receiver][slot];
             // @dev if vesting is currently ongoing (not finished), use regular calculation
             if(block.timestamp < vesting.end){
                 uint timeRemaining = vesting.end - block.timestamp;

@@ -236,8 +236,8 @@ contract VestingVault {
     /// @notice Receivers amount of tokens that are still locked,
     ///         but will be available for claiming in the future.
     /// @param receiver Address of user to query.
-    /// @return uint Amount of tokens that will be available for claiming in the future.
-    function getTotalNotYetClaimableAmount(address receiver)
+    /// @return uint Amount of tokens that will be available for claiming later.
+    function getTotalNotClaimableYetFor(address receiver)
         external
         validVestingData(receiver)
         view

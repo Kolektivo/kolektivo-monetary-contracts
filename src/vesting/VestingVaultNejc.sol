@@ -157,7 +157,7 @@ contract VestingVault {
                 delete vesting;
             }
             // @dev if not everything is released yet, use regular calculation
-            if(vesting.totalAmount > vesting.alreadyReleased){
+            else {
                 uint timePassed = block.timestamp - vesting.start;
                 uint totalDuration = vesting.end - vesting.start;
                 uint claimableAmount = timePassed * vesting.totalAmount / totalDuration

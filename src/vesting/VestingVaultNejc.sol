@@ -110,13 +110,13 @@ contract VestingVault {
     //--------------------------------------------------------------------------
     // Constructor
 
-    /// @param token Token address used for vesting.
-    constructor(address token) {
-        require(token != address(0), "token cant be 0x0");
-        require(token != msg.sender, "token cant be same as sender");
-        require(token.code.length != 0, "token cant be 0 length");
+    /// @param token_ Token address used for vesting.
+    constructor(address token_) {
+        require(token_ != address(0), "token cant be 0x0");
+        require(token_ != msg.sender, "token cant be same as sender");
+        require(token_.code.length != 0, "token cant be 0 length");
 
-        _token = ERC20(token);
+        _token = ERC20(token_);
     }
 
     //--------------------------------------------------------------------------

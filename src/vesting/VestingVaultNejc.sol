@@ -214,19 +214,20 @@ contract VestingVault {
         returns (uint)
     {
         uint totalClaimable;
-        for(uint vestingSlot; vestingSlot < _vestings[receiver].length; ++vestingSlot){
-          Vesting memory vesting = _vestings[receiver][vestingSlot];
-          // @dev if not everything is released yet, use regular calculation
-          if(vesting.totalAmount > vesting.alreadyReleased){
-              uint timePassed = block.timestamp - vesting.start;
-              uint totalDuration = vesting.end - vesting.start;
-              totalClaimable += timePassed * vesting.totalAmount / totalDuration
-              - vesting.alreadyReleased;
-          }
-          // @dev if vesting is finished and nothing is claimed, everything is available
-          if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
-              totalClaimable += vesting.totalAmount;
-          }
+        for(uint slot; slot < _vestings[receiver].length; ++slot){
+            Vesting memory vesting = _vestings[receiver][slot];
+            // @dev if vesting is finished and nothing is claimed, everything is available
+            if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
+                totalClaimable += vesting.totalAmount;
+
+            // @dev if not everything is released yet, use regular calculation
+          }else if(vesting.totalAmount > vesting.alreadyReleased){
+                uint timePassed = block.timestamp - vesting.start;
+                uint totalDuration = vesting.end - vesting.start;
+
+                totalClaimable += timePassed * vesting.totalAmount / totalDuration
+                - vesting.alreadyReleased;
+            }
         }
 
         return totalClaimable;

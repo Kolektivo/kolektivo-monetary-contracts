@@ -90,7 +90,7 @@ contract VestingVault {
         _;
     }
 
-    /// @dev Modifier to guarantee vesting duration is valid.
+    /// @dev Modifier to guarantee receiver has active vestings assigned to him.
     modifier validVestingData(address receiver) {
         if (_vestings[receiver].length == 0) {
             revert InvalidVestingsData();
@@ -122,7 +122,6 @@ contract VestingVault {
     //--------------------------------------------------------------------------
     // External Functions
 
-    // TODO use modifiers + reverts instead of require statements
     /// @notice Create new vesting by depositing tokens.
     /// @notice Vesting starts immediately.
     /// @param recipient Address to receive the vesting.
@@ -134,7 +133,6 @@ contract VestingVault {
         validAmount(amount)
         validVestingDuration(duration)
     {
-
         _token.safeTransferFrom(msg.sender, address(this), amount);
 
         Vesting memory vesting = Vesting(
@@ -148,7 +146,6 @@ contract VestingVault {
         emit DepositFor(msg.sender, recipient, amount, duration);
     }
 
-    // TODO replace require statement w modifier
     /// @notice Release all claimable tokens to caller.
     function claim() external validVestingData(msg.sender) {
         uint totalClaimable;
@@ -190,7 +187,6 @@ contract VestingVault {
         return address(_token);
     }
 
-    /// NOTE vestings that are already drained are deleted, therefore not accounted for.
     /// @notice Returns sum of all vestings for receiver address.
     /// @param receiver Address of user to query.
     /// @return uint Amount of vested tokens for specified address.
@@ -208,7 +204,6 @@ contract VestingVault {
         return totalVestedFor;
     }
 
-    // TODO replace single require with modifier ?
     /// @notice Returns amount of tokens that can currently be claimed for specified address.
     /// @param receiver Address of user to query.
     /// @return uint Amount of tokens that can currently be claimed.
@@ -237,8 +232,8 @@ contract VestingVault {
         return totalClaimable;
     }
 
-    /// @notice Returns amount of tokens that are still locked,
-    ///         but will be available for claiming in the future for specified address.
+    /// @notice Receivers amount of tokens that are still locked,
+    ///         but will be available for claiming in the future.
     /// @param receiver Address of user to query.
     /// @return uint Amount of tokens that will be available for claiming in the future.
     function getTotalNotYetClaimableAmount(address receiver)

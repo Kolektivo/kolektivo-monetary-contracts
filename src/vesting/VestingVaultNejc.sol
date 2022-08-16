@@ -253,10 +253,6 @@ contract VestingVault {
 
                 totalNonClaimable += vesting.totalAmount / totalDuration * timeRemaining;
             }
-            // TODO remove following case after testing as it is almost impossible;
-            // only if called the same second as depositFor().
-            if(block.timestamp == vesting.start)
-                totalNonClaimable += vesting.totalAmount;
         }
 
         return totalNonClaimable;

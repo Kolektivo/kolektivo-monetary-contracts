@@ -207,7 +207,7 @@ contract VestingVault {
     /// @notice Returns amount of tokens that can currently be claimed for specified address.
     /// @param receiver Address of user to query.
     /// @return uint Amount of tokens that can currently be claimed.
-    function getTotalClaimableAmount(address receiver)
+    function getTotalClaimableFor(address receiver)
         external
         validVestingData(receiver)
         view

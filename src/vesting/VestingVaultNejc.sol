@@ -183,7 +183,7 @@ contract VestingVault {
 
     /// @notice Returns address of token used for vesting.
     /// @return address Vesting token address.
-    function getTokenAddress() external view returns (address) {
+    function token() external view returns (address) {
         return address(_token);
     }
 

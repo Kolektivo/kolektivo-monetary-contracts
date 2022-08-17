@@ -30,7 +30,7 @@ contract LinearVestingVault is VestingVault {
 
     }
 
-    function vestedFor(address recipient)
+    function getTotalVestedFor(address receiver)
         external
         override(VestingVault)
         view
@@ -39,7 +39,7 @@ contract LinearVestingVault is VestingVault {
         return 0;
     }
 
-    function unvestedFor(address recipient)
+    function getTotalClaimableFor(address receiver)
         external
         override(VestingVault)
         view

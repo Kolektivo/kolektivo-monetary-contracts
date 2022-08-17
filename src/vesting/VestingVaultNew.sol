@@ -93,11 +93,11 @@ contract VestingVault is TSOwnable {
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(address token) {
-        require(token != address(0));
-        require(token.code.length != 0);
+    constructor(address token_) {
+        require(token_ != address(0));
+        require(token_.code.length != 0);
 
-        _token = ERC20(token);
+        _token = ERC20(token_);
     }
 
     //--------------------------------------------------------------------------

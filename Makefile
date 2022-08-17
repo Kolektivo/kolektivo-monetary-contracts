@@ -54,10 +54,6 @@ testReserveToken: ## Run ReserveToken tests
 testReserve: ## Run Reserve tests
 	@forge test -vvv --match-contract "Reserve"
 
-.PHONY: testDiscountZapper
-testDiscountZapper: ## Run Discount Zapper tests
-	@forge test -vvv --match-contract "DiscountZapper"
-
 .PHONY: testGeoNFT
 testGeoNFT: ## Run GeoNFT tests
 	@forge test -vvv --match-contract "GeoNFT"

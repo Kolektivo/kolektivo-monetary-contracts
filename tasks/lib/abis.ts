@@ -628,11 +628,6 @@ export function treasuryABI(): any {
             "type": "error"
         },
         {
-            "inputs": [],
-            "name": "OnlyCallableByWhitelistedAddress",
-            "type": "error"
-        },
-        {
             "inputs": [
                 {
                     "internalType": "address",
@@ -651,7 +646,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "Treasury__AssetIsNotSupported",
+            "name": "Treasury__AssetIsNotRedeemable",
             "type": "error"
         },
         {
@@ -662,7 +657,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "Treasury__AssetIsNotUnbondable",
+            "name": "Treasury__AssetIsNotRegistered",
             "type": "error"
         },
         {
@@ -680,32 +675,6 @@ export function treasuryABI(): any {
             ],
             "name": "Treasury__StalePriceDeliveredByOracle",
             "type": "error"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "who",
-                    "type": "address"
-                }
-            ],
-            "name": "AddressAddedToWhitelist",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "who",
-                    "type": "address"
-                }
-            ],
-            "name": "AddressRemovedFromWhitelist",
-            "type": "event"
         },
         {
             "anonymous": false,
@@ -740,15 +709,9 @@ export function treasuryABI(): any {
                     "internalType": "address",
                     "name": "asset",
                     "type": "address"
-                },
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "oracle",
-                    "type": "address"
                 }
             ],
-            "name": "AssetMarkedAsSupported",
+            "name": "AssetDelistedAsBondable",
             "type": "event"
         },
         {
@@ -761,7 +724,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "AssetMarkedAsSupportedForBonding",
+            "name": "AssetDelistedAsRedeemable",
             "type": "event"
         },
         {
@@ -774,7 +737,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "AssetMarkedAsSupportedForUnbonding",
+            "name": "AssetDeregistered",
             "type": "event"
         },
         {
@@ -787,7 +750,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "AssetMarkedAsUnsupported",
+            "name": "AssetListedAsBondable",
             "type": "event"
         },
         {
@@ -800,20 +763,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "AssetMarkedAsUnsupportedForBonding",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                }
-            ],
-            "name": "AssetMarkedAsUnsupportedForUnbonding",
+            "name": "AssetListedAsRedeemable",
             "type": "event"
         },
         {
@@ -878,6 +828,25 @@ export function treasuryABI(): any {
                 {
                     "indexed": true,
                     "internalType": "address",
+                    "name": "asset",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "oracle",
+                    "type": "address"
+                }
+            ],
+            "name": "AssetRegistered",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
                     "name": "who",
                     "type": "address"
                 },
@@ -919,7 +888,7 @@ export function treasuryABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "AssetsUnbonded",
+            "name": "AssetsRedeemed",
             "type": "event"
         },
         {
@@ -1067,19 +1036,6 @@ export function treasuryABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "who",
-                    "type": "address"
-                }
-            ],
-            "name": "addToWhitelist",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
                     "name": "owner_",
                     "type": "address"
                 },
@@ -1202,6 +1158,45 @@ export function treasuryABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
+                    "name": "asset",
+                    "type": "address"
+                }
+            ],
+            "name": "delistAssetAsBondable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "asset",
+                    "type": "address"
+                }
+            ],
+            "name": "delistAssetAsRedeemable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "asset",
+                    "type": "address"
+                }
+            ],
+            "name": "deregisterAsset",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
                     "name": "target",
                     "type": "address"
                 },
@@ -1248,7 +1243,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "isSupportedForBonding",
+            "name": "isAssetBondable",
             "outputs": [
                 {
                     "internalType": "bool",
@@ -1267,7 +1262,7 @@ export function treasuryABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "isSupportedForUnbonding",
+            "name": "isAssetRedeemable",
             "outputs": [
                 {
                     "internalType": "bool",
@@ -1282,19 +1277,26 @@ export function treasuryABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "",
+                    "name": "asset",
                     "type": "address"
                 }
             ],
-            "name": "lastPricePerAsset",
-            "outputs": [
+            "name": "listAssetAsBondable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
                 {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
+                    "internalType": "address",
+                    "name": "asset",
+                    "type": "address"
                 }
             ],
-            "stateMutability": "view",
+            "name": "listAssetAsRedeemable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {
@@ -1333,22 +1335,22 @@ export function treasuryABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "operator",
+                    "name": "",
                     "type": "address"
                 },
                 {
                     "internalType": "address",
-                    "name": "from",
+                    "name": "",
                     "type": "address"
                 },
                 {
                     "internalType": "uint256",
-                    "name": "tokenId",
+                    "name": "",
                     "type": "uint256"
                 },
                 {
                     "internalType": "bytes",
-                    "name": "data",
+                    "name": "",
                     "type": "bytes"
                 }
             ],
@@ -1360,7 +1362,7 @@ export function treasuryABI(): any {
                     "type": "bytes4"
                 }
             ],
-            "stateMutability": "nonpayable",
+            "stateMutability": "pure",
             "type": "function"
         },
         {
@@ -1462,13 +1464,55 @@ export function treasuryABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "who",
+                    "name": "asset",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "kttWad",
+                    "type": "uint256"
+                }
+            ],
+            "name": "redeem",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "asset",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "oracle",
                     "type": "address"
                 }
             ],
-            "name": "removeFromWhitelist",
+            "name": "registerAsset",
             "outputs": [],
             "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "registeredAssets",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
             "type": "function"
         },
         {
@@ -1517,69 +1561,6 @@ export function treasuryABI(): any {
             "type": "function"
         },
         {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "oracle",
-                    "type": "address"
-                }
-            ],
-            "name": "supportAsset",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                }
-            ],
-            "name": "supportAssetForBonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                }
-            ],
-            "name": "supportAssetForUnbonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "supportedAssets",
-            "outputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
             "inputs": [],
             "name": "symbol",
             "outputs": [
@@ -1615,7 +1596,7 @@ export function treasuryABI(): any {
                     "type": "uint256"
                 }
             ],
-            "stateMutability": "nonpayable",
+            "stateMutability": "view",
             "type": "function"
         },
         {
@@ -1722,63 +1703,6 @@ export function treasuryABI(): any {
                     "type": "address"
                 },
                 {
-                    "internalType": "uint256",
-                    "name": "kttWad",
-                    "type": "uint256"
-                }
-            ],
-            "name": "unbond",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                }
-            ],
-            "name": "unsupportAsset",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                }
-            ],
-            "name": "unsupportAssetForBonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                }
-            ],
-            "name": "unsupportAssetForUnbonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "asset",
-                    "type": "address"
-                },
-                {
                     "internalType": "address",
                     "name": "oracle",
                     "type": "address"
@@ -1793,19 +1717,23 @@ export function treasuryABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "",
+                    "name": "asset",
                     "type": "address"
-                }
-            ],
-            "name": "whitelist",
-            "outputs": [
+                },
                 {
-                    "internalType": "bool",
-                    "name": "",
-                    "type": "bool"
+                    "internalType": "address",
+                    "name": "recipient",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
                 }
             ],
-            "stateMutability": "view",
+            "name": "withdrawAsset",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         }
     ];
@@ -2005,19 +1933,6 @@ export function oracleABI(): any {
             "type": "event"
         },
         {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "provider",
-                    "type": "address"
-                }
-            ],
-            "name": "ReportTimestampOutOfRange",
-            "type": "event"
-        },
-        {
             "inputs": [],
             "name": "acceptOwnership",
             "outputs": [],
@@ -2052,7 +1967,7 @@ export function oracleABI(): any {
                     "type": "bool"
                 }
             ],
-            "stateMutability": "nonpayable",
+            "stateMutability": "view",
             "type": "function"
         },
         {
@@ -2282,7 +2197,7 @@ export function oracleABI(): any {
     ];
 }
 
-export function reserve2TokenABI(): any {
+export function reserveTokenABI(): any {
     return [
         {
             "inputs": [
@@ -2312,27 +2227,27 @@ export function reserve2TokenABI(): any {
         },
         {
             "inputs": [],
-            "name": "KOL__InvalidAmount",
-            "type": "error"
-        },
-        {
-            "inputs": [],
-            "name": "KOL__InvalidRecipient",
-            "type": "error"
-        },
-        {
-            "inputs": [],
-            "name": "KOL__NotMintBurner",
-            "type": "error"
-        },
-        {
-            "inputs": [],
             "name": "OnlyCallableByOwner",
             "type": "error"
         },
         {
             "inputs": [],
             "name": "OnlyCallableByPendingOwner",
+            "type": "error"
+        },
+        {
+            "inputs": [],
+            "name": "ReserveToken__InvalidAmount",
+            "type": "error"
+        },
+        {
+            "inputs": [],
+            "name": "ReserveToken__InvalidRecipient",
+            "type": "error"
+        },
+        {
+            "inputs": [],
+            "name": "ReserveToken__NotMintBurner",
             "type": "error"
         },
         {
@@ -2800,7 +2715,7 @@ export function reserve2TokenABI(): any {
     ];
 }
 
-export function reserve2ABI(): any {
+export function reserveABI(): any {
     return [
         {
             "inputs": [
@@ -2845,67 +2760,67 @@ export function reserve2ABI(): any {
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC20BalanceNotSufficient",
+            "name": "Reserve__ERC20BalanceNotSufficient",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC20BondingLimitExceeded",
+            "name": "Reserve__ERC20BondingLimitExceeded",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC20NotBondable",
+            "name": "Reserve__ERC20NotBondable",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC20NotSupported",
+            "name": "Reserve__ERC20NotRedeemable",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC20NotUnbondable",
+            "name": "Reserve__ERC20NotRegistered",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC20UnbondingLimitExceeded",
+            "name": "Reserve__ERC20RedeemLimitExceeded",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC721IdNotSupported",
+            "name": "Reserve__ERC721IdNotBondable",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC721NotBondable",
+            "name": "Reserve__ERC721IdNotRedeemable",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__ERC721NotUnbondable",
+            "name": "Reserve__ERC721IdNotRegistered",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__InvalidAmount",
+            "name": "Reserve__InvalidAmount",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__InvalidOracle",
+            "name": "Reserve__InvalidOracle",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__InvalidRecipient",
+            "name": "Reserve__InvalidRecipient",
             "type": "error"
         },
         {
             "inputs": [],
-            "name": "Reserve2__MinimumBackingLimitExceeded",
+            "name": "Reserve__MinimumBackingLimitExceeded",
             "type": "error"
         },
         {
@@ -2969,7 +2884,7 @@ export function reserve2ABI(): any {
                         }
                     ],
                     "indexed": false,
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -3019,7 +2934,7 @@ export function reserve2ABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "ERC20MarkedAsSupported",
+            "name": "ERC20DelistedAsBondable",
             "type": "event"
         },
         {
@@ -3032,7 +2947,59 @@ export function reserve2ABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "ERC20MarkedAsUnsupported",
+            "name": "ERC20DelistedAsRedeemable",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "ERC20Deregistered",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "ERC20ListedAsBondable",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "ERC20ListedAsRedeemable",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "ERC20Registered",
             "type": "event"
         },
         {
@@ -3052,12 +3019,12 @@ export function reserve2ABI(): any {
                         }
                     ],
                     "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 }
             ],
-            "name": "ERC721IdMarkedAsSupported",
+            "name": "ERC721IdDelistedAsBondable",
             "type": "event"
         },
         {
@@ -3077,12 +3044,112 @@ export function reserve2ABI(): any {
                         }
                     ],
                     "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 }
             ],
-            "name": "ERC721IdMarkedAsUnsupported",
+            "name": "ERC721IdDelistedAsRedeemable",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "indexed": true,
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "ERC721IdDeregistered",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "indexed": true,
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "ERC721IdListedAsBondable",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "indexed": true,
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "ERC721IdListedAsRedeemable",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "indexed": true,
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "ERC721IdRegistered",
             "type": "event"
         },
         {
@@ -3135,36 +3202,48 @@ export function reserve2ABI(): any {
                 {
                     "indexed": false,
                     "internalType": "uint256",
-                    "name": "oldLimit",
+                    "name": "erc20sRedeemed",
                     "type": "uint256"
                 },
                 {
                     "indexed": false,
                     "internalType": "uint256",
-                    "name": "newLimit",
+                    "name": "tokensBurned",
                     "type": "uint256"
                 }
             ],
-            "name": "SetERC20BondingLimit",
+            "name": "RedeemedERC20",
             "type": "event"
         },
         {
             "anonymous": false,
             "inputs": [
                 {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "indexed": false,
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
                 },
                 {
                     "indexed": false,
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
+                    "internalType": "uint256",
+                    "name": "tokensBurned",
+                    "type": "uint256"
                 }
             ],
-            "name": "SetERC20BondingSupport",
+            "name": "RedeemedERC721Id",
             "type": "event"
         },
         {
@@ -3189,7 +3268,57 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "SetERC20Discount",
+            "name": "SetERC20BondingDiscount",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "oldLimit",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "newLimit",
+                    "type": "uint256"
+                }
+            ],
+            "name": "SetERC20BondingLimit",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "oldVestingDuration",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "newVestingDuration",
+                    "type": "uint256"
+                }
+            ],
+            "name": "SetERC20BondingVesting",
             "type": "event"
         },
         {
@@ -3239,51 +3368,7 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "SetERC20UnbondingLimit",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "SetERC20UnbondingSupport",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "oldVestingDuration",
-                    "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "newVestingDuration",
-                    "type": "uint256"
-                }
-            ],
-            "name": "SetERC20Vesting",
+            "name": "SetERC20RedeemLimit",
             "type": "event"
         },
         {
@@ -3303,38 +3388,7 @@ export function reserve2ABI(): any {
                         }
                     ],
                     "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "SetERC721IdBondingSupport",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -3351,7 +3405,7 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "SetERC721IdDiscount",
+            "name": "SetERC721IdBondingDiscount",
             "type": "event"
         },
         {
@@ -3371,7 +3425,44 @@ export function reserve2ABI(): any {
                         }
                     ],
                     "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "oldVestingDuration",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "newVestingDuration",
+                    "type": "uint256"
+                }
+            ],
+            "name": "SetERC721IdBondingVesting",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "indexed": true,
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -3389,74 +3480,6 @@ export function reserve2ABI(): any {
                 }
             ],
             "name": "SetERC721IdOracle",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "SetERC721IdUnbondingSupport",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "indexed": true,
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "oldVestingDuration",
-                    "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "newVestingDuration",
-                    "type": "uint256"
-                }
-            ],
-            "name": "SetERC721IdVesting",
             "type": "event"
         },
         {
@@ -3514,62 +3537,6 @@ export function reserve2ABI(): any {
                 }
             ],
             "name": "SetVestingVault",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "erc20sUnbonded",
-                    "type": "uint256"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "tokensBurned",
-                    "type": "uint256"
-                }
-            ],
-            "name": "UnbondedERC20",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "indexed": false,
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "tokensBurned",
-                    "type": "uint256"
-                }
-            ],
-            "name": "UnbondedERC721Id",
             "type": "event"
         },
         {
@@ -3758,7 +3725,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 }
@@ -3783,7 +3750,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -3813,7 +3780,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -3848,7 +3815,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -3861,6 +3828,44 @@ export function reserve2ABI(): any {
             "name": "bondERC721IdTo",
             "outputs": [],
             "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "bondingDiscountPerERC20",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "bytes32",
+                    "name": "",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "bondingDiscountPerERC721Id",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
             "type": "function"
         },
         {
@@ -3890,7 +3895,7 @@ export function reserve2ABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "discountPerERC20",
+            "name": "bondingVestingDurationPerERC20",
             "outputs": [
                 {
                     "internalType": "uint256",
@@ -3909,7 +3914,7 @@ export function reserve2ABI(): any {
                     "type": "bytes32"
                 }
             ],
-            "name": "discountPerERC721Id",
+            "name": "bondingVestingDurationPerERC721Id",
             "outputs": [
                 {
                     "internalType": "uint256",
@@ -3918,6 +3923,120 @@ export function reserve2ABI(): any {
                 }
             ],
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "delistERC20AsBondable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "delistERC20AsRedeemable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "delistERC721IdAsBondable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "delistERC721IdAsRedeemable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "deregisterERC20",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "deregisterERC721Id",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {
@@ -3953,7 +4072,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 }
@@ -4009,7 +4128,7 @@ export function reserve2ABI(): any {
                     "type": "address"
                 }
             ],
-            "name": "isERC20Unbondable",
+            "name": "isERC20Redeemable",
             "outputs": [
                 {
                     "internalType": "bool",
@@ -4047,7 +4166,7 @@ export function reserve2ABI(): any {
                     "type": "bytes32"
                 }
             ],
-            "name": "isERC721IdUnbondable",
+            "name": "isERC721IdRedeemable",
             "outputs": [
                 {
                     "internalType": "bool",
@@ -4056,6 +4175,82 @@ export function reserve2ABI(): any {
                 }
             ],
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "listERC20AsBondable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "listERC20AsRedeemable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "listERC721IdAsBondable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "listERC721IdAsRedeemable",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {
@@ -4075,22 +4270,22 @@ export function reserve2ABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "operator",
+                    "name": "",
                     "type": "address"
                 },
                 {
                     "internalType": "address",
-                    "name": "from",
+                    "name": "",
                     "type": "address"
                 },
                 {
                     "internalType": "uint256",
-                    "name": "tokenId",
+                    "name": "",
                     "type": "uint256"
                 },
                 {
                     "internalType": "bytes",
-                    "name": "data",
+                    "name": "",
                     "type": "bytes"
                 }
             ],
@@ -4102,7 +4297,7 @@ export function reserve2ABI(): any {
                     "type": "bytes4"
                 }
             ],
-            "stateMutability": "nonpayable",
+            "stateMutability": "pure",
             "type": "function"
         },
         {
@@ -4183,6 +4378,426 @@ export function reserve2ABI(): any {
             "type": "function"
         },
         {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "tokenAmount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "redeemERC20",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC20All",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC20AllFrom",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC20AllFromTo",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC20AllTo",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "tokenAmount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "redeemERC20From",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "tokenAmount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "redeemERC20FromTo",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "tokenAmount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "redeemERC20To",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                }
+            ],
+            "name": "redeemERC721Id",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC721IdFrom",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC721IdFromTo",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemERC721IdTo",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "redeemLimitPerERC20",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "oracle",
+                    "type": "address"
+                }
+            ],
+            "name": "registerERC20",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "address",
+                    "name": "oracle",
+                    "type": "address"
+                }
+            ],
+            "name": "registerERC721Id",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "registeredERC20s",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "registeredERC20sSize",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "registeredERC721Ids",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc721",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "id",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "registeredERC721IdsSize",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
             "inputs": [],
             "name": "reserveStatus",
             "outputs": [
@@ -4218,7 +4833,7 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "setDiscountForERC20",
+            "name": "setBondingDiscountForERC20",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
@@ -4238,7 +4853,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -4248,7 +4863,55 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "setDiscountForERC721Id",
+            "name": "setBondingDiscountForERC721Id",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "vestingDuration",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setBondingVestingForERC20",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "vestingDuration",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setBondingVestingForERC721Id",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
@@ -4284,7 +4947,7 @@ export function reserve2ABI(): any {
                     "type": "uint256"
                 }
             ],
-            "name": "setERC20UnbondingLimit",
+            "name": "setERC20RedeemLimit",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
@@ -4332,54 +4995,6 @@ export function reserve2ABI(): any {
             "inputs": [
                 {
                     "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "vestingDuration",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setVestingForERC20",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "vestingDuration",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setVestingForERC721Id",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
                     "name": "vestingVault_",
                     "type": "address"
                 }
@@ -4387,219 +5002,6 @@ export function reserve2ABI(): any {
             "name": "setVestingVault",
             "outputs": [],
             "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "oracle",
-                    "type": "address"
-                }
-            ],
-            "name": "supportERC20",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "supportERC20ForBonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "supportERC20ForUnbonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "address",
-                    "name": "oracle",
-                    "type": "address"
-                }
-            ],
-            "name": "supportERC721Id",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "supportERC721IdForBonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "support",
-                    "type": "bool"
-                }
-            ],
-            "name": "supportERC721IdForUnbonding",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "supportedERC20s",
-            "outputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "supportedERC20sSize",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "supportedERC721Ids",
-            "outputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc721",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "id",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "supportedERC721IdsSize",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
             "type": "function"
         },
         {
@@ -4636,347 +5038,6 @@ export function reserve2ABI(): any {
                     "type": "address"
                 },
                 {
-                    "internalType": "uint256",
-                    "name": "tokenAmount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "unbondERC20",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC20All",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "from",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC20AllFrom",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "from",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC20AllFromTo",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC20AllTo",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "from",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "tokenAmount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "unbondERC20From",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "from",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "tokenAmount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "unbondERC20FromTo",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "tokenAmount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "unbondERC20To",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                }
-            ],
-            "name": "unbondERC721Id",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "address",
-                    "name": "from",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC721IdFrom",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "address",
-                    "name": "from",
-                    "type": "address"
-                },
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC721IdFromTo",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                },
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondERC721IdTo",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "unbondingLimitPerERC20",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                }
-            ],
-            "name": "unsupportERC20",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "components": [
-                        {
-                            "internalType": "address",
-                            "name": "erc721",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "uint256",
-                            "name": "id",
-                            "type": "uint256"
-                        }
-                    ],
-                    "internalType": "struct IReserve2.ERC721Id",
-                    "name": "erc721Id",
-                    "type": "tuple"
-                }
-            ],
-            "name": "unsupportERC721Id",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "erc20",
-                    "type": "address"
-                },
-                {
                     "internalType": "address",
                     "name": "oracle",
                     "type": "address"
@@ -5002,7 +5063,7 @@ export function reserve2ABI(): any {
                             "type": "uint256"
                         }
                     ],
-                    "internalType": "struct IReserve2.ERC721Id",
+                    "internalType": "struct IReserve.ERC721Id",
                     "name": "erc721Id",
                     "type": "tuple"
                 },
@@ -5018,44 +5079,6 @@ export function reserve2ABI(): any {
             "type": "function"
         },
         {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "vestingDurationPerERC20",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "bytes32",
-                    "name": "",
-                    "type": "bytes32"
-                }
-            ],
-            "name": "vestingDurationPerERC721Id",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
             "inputs": [],
             "name": "vestingVault",
             "outputs": [
@@ -5066,6 +5089,59 @@ export function reserve2ABI(): any {
                 }
             ],
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "erc20",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "recipient",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawERC20",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "components": [
+                        {
+                            "internalType": "address",
+                            "name": "erc721",
+                            "type": "address"
+                        },
+                        {
+                            "internalType": "uint256",
+                            "name": "id",
+                            "type": "uint256"
+                        }
+                    ],
+                    "internalType": "struct IReserve.ERC721Id",
+                    "name": "erc721Id",
+                    "type": "tuple"
+                },
+                {
+                    "internalType": "address",
+                    "name": "recipient",
+                    "type": "address"
+                }
+            ],
+            "name": "withdrawERC721Id",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         }
     ];

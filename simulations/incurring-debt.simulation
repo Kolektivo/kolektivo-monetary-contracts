@@ -2,12 +2,12 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 # First initialize the Oracle with some prices and mint some tokens in order
-# to bond them. Afterwards, add the tokens as supported to the Reserve2,
-# approve them to the Reserve2 and bond them.
+# to bond them. Afterwards, register the tokens inside the Reserve,
+# approve them to the Reserve and bond them.
 #
-# Having some assets in the Reserve2 enables us to incur debt without exceeding
-# the minimum backing requirement. We check the status of the Reserve2 and
-# finally pay the debt back.
+# Having some assets in the Reserve enables us to incur debt without exceeding
+# the minimum backing requirement. We check the status of the Reserve and
+# finally pay back the debt.
 
 # === Oracles ===
 
@@ -17,8 +17,8 @@ Oracle(ERC20) setPrice 2
 # Set price of GeoNFT with ID 1 as 100,000 USD (100,000e18)
 Oracle(GeoNFT1) setPrice 100000
 
-# Set price of Reserve2's token as being 1 USD (1e18)
-Oracle(Reserve2Token) setPrice 1
+# Set price of Reserve's token as being 1 USD (1e18)
+Oracle(ReserveToken) setPrice 1
 
 # Set price of Treasury's token as being 1 USD (1e18)
 Oracle(Treasury) setPrice 1
@@ -31,34 +31,34 @@ ERC20 mint 1000
 # Print the balance, just to make sure they were actually minted
 ERC20 balanceOf
 
-# Approve ERC20 tokens to the Reserve2
-ERC20 approve Reserve2 1000
+# Approve ERC20 tokens to the Reserve
+ERC20 approve Reserve 1000
 
-# Approve GeoNFT with ID 1 to the Reserve2
-GeoNFT approve Reserve2
+# Approve GeoNFT with ID 1 to the Reserve
+GeoNFT approve Reserve
 
-# === Reserve2 Preparation ===
+# === Reserve Preparation ===
 
-# Support ERC20 token
-Reserve2 supportERC20 ERC20
+# Register ERC20 token
+Reserve registerERC20 ERC20
 
-# Support GeoNFT with ID 1
-# Note that this NFT is minted by default already
-Reserve2 supportERC721 GeoNFT1
+# Register GeoNFT with ID 1
+# Note that this NFT is minted already by default
+Reserve registerERC721 GeoNFT1
 
 # === Bonding ===
 
-# Bond ERC20 tokens into Reserve2 and print Reserve2 status
-Reserve2 bondERC20 ERC20 1000
-Reserve2 status
+# Bond ERC20 tokens into Reserve and print Reserve status
+Reserve bondERC20 ERC20 1000
+Reserve status
 
-# Bond GeoNFT with ID 1 into Reserve2 and print status
-Reserve2 bondERC721 GeoNFT1
-Reserve2 status
+# Bond GeoNFT with ID 1 into Reserve and print status
+Reserve bondERC721 GeoNFT1
+Reserve status
 
 # === Incurring Debt ===
 
-# The Reserve2 holds now:
+# The Reserve holds now:
 # 102,000 USD =
 #               (2,000 USD = 1,000 ERC20's * 2 USD) +
 #               (100,000 USD = GeoNFT with ID 1)
@@ -67,9 +67,9 @@ Reserve2 status
 # 102,000 USD * 0.25 = 25,500 USD
 # => Leads to a backing percentage of 80%
 
-Reserve2 incurDebt 25500
-Reserve2 status
+Reserve incurDebt 25500
+Reserve status
 
 # Pay back some debt
-Reserve2 payDebt 10000
-Reserve2 status
+Reserve payDebt 10000
+Reserve status

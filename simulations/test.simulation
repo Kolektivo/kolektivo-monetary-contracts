@@ -3,7 +3,7 @@
 # ✅ Oracles
 Oracle(ERC20) setPrice 1
 Oracle(GeoNFT1) setPrice 100
-Oracle(Reserve2Token) setPrice 10
+Oracle(ReserveToken) setPrice 10
 Oracle(Treasury) setPrice 50
 
 # ✅ ERC20
@@ -13,30 +13,28 @@ ERC20 approve Treasury 100
 ERC20 balanceOf
 
 # ✅ Treasury
-Treasury support ERC20
+Treasury register ERC20
 Treasury bond ERC20 10
-Treasury unbond ERC20 5
+Treasury redeem ERC20 5
 
-# ✅ Reserve2
-Reserve2 supportERC20 ERC20
-Reserve2 unsupportERC20 ERC20
-Reserve2 supportERC721 GeoNFT1
-Reserve2 unsupportERC721 GeoNFT1
-
-# Add as supported before bonding
-Reserve2 supportERC20 ERC20
-# Approve ERC20 for Reserve2 before bonding
-ERC20 approve Reserve2 100
-Reserve2 bondERC20 ERC20 100
+# ✅ Reserve
+Reserve registerERC20 ERC20
+Reserve deregisterERC20 ERC20
+Reserve registerERC721 GeoNFT1
+Reserve deregisterERC721 GeoNFT1
 
 # Add as supported before bonding
-Reserve2 supportERC721 GeoNFT1
-# Approve ERC721 for Reserve2 before bonding
-GeoNFT approve Reserve2
-Reserve2 bondERC721 GeoNFT1
+Reserve registerERC20 ERC20
+# Approve ERC20 for Reserve before bonding
+ERC20 approve Reserve 100
+Reserve bondERC20 ERC20 100
 
-Reserve2 incurDebt 1
+# Add as supported before bonding
+Reserve registerERC721 GeoNFT1
+# Approve ERC721 for Reserve before bonding
+GeoNFT approve Reserve
+Reserve bondERC721 GeoNFT1
 
-Reserve2 status
-
-Reserve2 payDebt 1
+Reserve incurDebt 1
+Reserve status
+Reserve payDebt 1

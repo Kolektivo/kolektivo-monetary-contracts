@@ -2,7 +2,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 # First initialize the Oracle with some prices and mint some tokens in order
-# to bond them. Afterwards, add the tokens as supported to the Treasury,
+# to bond them. Afterwards, register the tokens inside the Treasury,
 # approve them to the Treasury and bond them.
 #
 # Afterwards, we change the token's price (and therefore the Treasury's valuation),
@@ -26,8 +26,8 @@ ERC20 approve Treasury 1000
 
 # === Treasury Preparation ===
 
-# Support ERC20 token
-Treasury support ERC20
+# Register ERC20 token
+Treasury register ERC20
 
 # === Bonding ===
 

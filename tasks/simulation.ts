@@ -12,8 +12,8 @@ import {
     geoNftABI,
     treasuryABI,
     oracleABI,
-    reserve2TokenABI,
-    reserve2ABI
+    reserveTokenABI,
+    reserveABI
 } from "./lib/abis";
 import { config, exit } from "process";
 import { FunctionFragment } from "ethers/lib/utils";
@@ -27,6 +27,7 @@ import { FunctionFragment } from "ethers/lib/utils";
  *  4. Run `yarn` to install hardhat dependencies
  *  5. Run `source dev.env` to setup environment variables
  *  6. Start an anvil node with `anvil` in a new terminal session
+ *     Note that it is mandatory to start a new anvil session for every simulation!
  *  7. Adjust the `file` constant below
  *  8. Execute simulation with `npx hardhat simulation`
  */
@@ -35,7 +36,7 @@ import { FunctionFragment } from "ethers/lib/utils";
 const file = "simulations/treasury-rebasing.simulation";
 
 // Contract addresses
-const ADDRESS_RESERVE2 = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
+const ADDRESS_RESERVE = "0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
 
 const ADDRESS_TREASURY = "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6";
 const ADDRESS_ORACLE_TREASURY_TOKEN = "0x610178da211fef7d417bc0e6fed39f05609ad788";
@@ -43,17 +44,17 @@ const ADDRESS_ORACLE_TREASURY_TOKEN = "0x610178da211fef7d417bc0e6fed39f05609ad78
 const ADDRESS_GEONFT = "0x0165878a594ca255338adfa4d48449f69242eb8f";
 const ADDRESS_ORACLE_GEONFT_1 = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
 
-const ADDRESS_RESERVE2_TOKEN = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
-const ADDRESS_ORACLE_RESERVE2_TOKEN = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+const ADDRESS_RESERVE_TOKEN = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
+const ADDRESS_ORACLE_RESERVE_TOKEN = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 
 const ADDRESS_ERC20 = "0x959922be3caee4b8cd9a407cc3ac1c251c2007b1";
 const ADDRESS_ORACLE_ERC20 = "0x9a676e781a523b5d0c0e43731313a708cb607508";
 
 // Contract instances
-let reserve2;
+let reserve;
 let treasury, oracleTreasuryToken;
 let geoNft, oracleGeoNFT1;
-let reserve2Token, oracleReserve2Token;
+let reserveToken, oracleReserveToken;
 let erc20, oracleERC20;
 
 // Account instances
@@ -63,8 +64,8 @@ function getAssetAndOracle(asset: string) {
     if (asset === "Treasury") {
         return [treasury, oracleTreasuryToken];
     }
-    if (asset === "Reserve2Token") {
-        return [reserve2Token, oracleReserve2Token];
+    if (asset === "ReserveToken") {
+        return [reserveToken, oracleReserveToken];
     }
     if (asset === "ERC20") {
         return [erc20, oracleERC20];
@@ -74,8 +75,8 @@ function getAssetAndOracle(asset: string) {
         const geoNFTERC721Id = { erc721: geoNft.address, id: 1 };
         return [geoNft, oracleGeoNFT1, geoNFTERC721Id];
     }
-    if (asset === "Reserve2") {
-        return [reserve2];
+    if (asset === "Reserve") {
+        return [reserve];
     }
     console.info("[ERROR] Unknown asset: " + asset);
 }
@@ -109,24 +110,24 @@ const genericInstructionsERC20 = {
 
 const instructions = {
     "Treasury": {
-        // Adds an ERC20 contract as being supported and supported for un/bonding
-        "support": (asset, oracle) => {
+        // Registerd an ERC20 token and lists it as bondable + redeemable.
+        "register": (asset, oracle) => {
             return async () => {
-                console.info("Treasury: Adding support for asset");
+                console.info("Treasury: Registering and listing asset");
                 console.info("=> Asset : " + asset.address);
-                await (await treasury.connect(owner).supportAsset(asset.address, oracle.address)).wait();
-                await (await treasury.connect(owner).supportAssetForBonding(asset.address)).wait();
-                await (await treasury.connect(owner).supportAssetForUnbonding(asset.address)).wait();
+                await (await treasury.connect(owner).registerAsset(asset.address, oracle.address)).wait();
+                await (await treasury.connect(owner).listAssetAsBondable(asset.address)).wait();
+                await (await treasury.connect(owner).listAssetAsRedeemable(asset.address)).wait();
             };
         },
-        // Removes an ERC20 contract as being unsupported and unsupported for un/bonding
-        "unsupport": (asset) => {
+        // Deregisterd an ERC20 token and delists it as bondable + redeemable.
+        "deregister": (asset) => {
             return async () => {
-                console.info("Treasury: Removing support for asset");
+                console.info("Treasury: Deregistering and delisting asset");
                 console.info("=> Asset : " + asset.address);
-                await (await treasury.connect(owner).unsupportAssetForBonding(asset.address)).wait();
-                await (await treasury.connect(owner).unsupportAssetForUnbonding(asset.address)).wait();
-                await (await treasury.connect(owner).unsupportAsset(asset.address)).wait();
+                await (await treasury.connect(owner).delistAssetAsBondable(asset.address)).wait();
+                await (await treasury.connect(owner).delistAssetAsRedeemable(asset.address)).wait();
+                await (await treasury.connect(owner).deregisterAsset(asset.address)).wait();
             };
         },
         // Bonds an amount of ERC20s from owner
@@ -140,15 +141,15 @@ const instructions = {
                 await (await treasury.connect(owner).bond(asset.address, amount)).wait();
             };
         },
-        // Unbonds an amount of TreasuryTokens from owner
+        // Redeems an amount of TreasuryTokens from owner
         // Needs token approval!
-        "unbond": (asset, amount) => {
+        "redeem": (asset, amount) => {
             return async () => {
-                console.info("Treasury: Unbonding assets");
+                console.info("Treasury: Redeeming assets");
                 console.info("=> Bonder: " + owner.address);
                 console.info("=> Asset : " + asset.address);
                 console.info("=> Amount: " + amount);
-                await (await treasury.connect(owner).unbond(asset.address, amount)).wait();
+                await (await treasury.connect(owner).redeem(asset.address, amount)).wait();
             };
         },
         "rebase": () => {
@@ -180,101 +181,102 @@ const instructions = {
         },
     },
 
-    "Reserve2": {
-        "supportERC20": (asset, oracle) => {
+    "Reserve": {
+        "registerERC20": (asset, oracle) => {
             return async () => {
-                console.info("Reserve2: Adding support for ERC20 asset");
+                console.info("Reserve: Registering and listing ERC20 asset");
                 console.info("=> Asset: " + asset.address);
-                await (await reserve2.connect(owner).supportERC20(asset.address, oracle.address)).wait();
-                await (await reserve2.connect(owner).supportERC20ForBonding(asset.address, true)).wait();
-                await (await reserve2.connect(owner).supportERC20ForUnbonding(asset.address, true)).wait();
+                await (await reserve.connect(owner).registerERC20(asset.address, oracle.address)).wait();
+                await (await reserve.connect(owner).listERC20AsBondable(asset.address)).wait();
+                await (await reserve.connect(owner).listERC20AsRedeemable(asset.address)).wait();
             };
         },
-        "unsupportERC20": (asset) => {
+        "deregisterERC20": (asset) => {
             return async () => {
-                console.info("Reserve2: Removing support for ERC20 asset");
+                console.info("Reserve: Deregistering and delisting ERC20 asset");
                 console.info("=> Asset: " + asset.address);
-                await (await reserve2.connect(owner).supportERC20ForBonding(asset.address, false)).wait();
-                await (await reserve2.connect(owner).supportERC20ForUnbonding(asset.address, false)).wait();
-                await (await reserve2.connect(owner).unsupportERC20(asset.address)).wait();
+                await (await reserve.connect(owner).delistERC20AsBondable(asset.address)).wait();
+                await (await reserve.connect(owner).delistERC20AsRedeemable(asset.address)).wait();
+                await (await reserve.connect(owner).deregisterERC20(asset.address)).wait();
             };
         },
-        "supportERC721": (erc721Id, oracle) => {
+        "registerERC721": (erc721Id, oracle) => {
             return async () => {
-                console.info("Reserve2: Adding support for ERC721 NFT");
+                console.info("Reserve: Registering and listing ERC721 asset");
                 console.info("=> Asset: " + JSON.stringify(erc721Id));
-                await (await reserve2.connect(owner).supportERC721Id(erc721Id, oracle.address)).wait();
-                await (await reserve2.connect(owner).supportERC721IdForBonding(erc721Id, true)).wait();
-                await (await reserve2.connect(owner).supportERC721IdForUnbonding(erc721Id, true)).wait();
+                await (await reserve.connect(owner).registerERC721Id(erc721Id, oracle.address)).wait();
+                await (await reserve.connect(owner).listERC721IdAsBondable(erc721Id)).wait();
+                await (await reserve.connect(owner).listERC721IdAsRedeemable(erc721Id)).wait();
             };
         },
-        "unsupportERC721": (erc721Id) => {
+        "deregisterERC721": (erc721Id) => {
             return async () => {
-                console.info("Reserve2: Removing support for ERC721 NFT");
+                console.info("Reserve: Deregistering and delisting ERC721 asset");
                 console.info("=> Asset: " + JSON.stringify(erc721Id));
-                await (await reserve2.connect(owner).supportERC721IdForBonding(erc721Id, false)).wait();
-                await (await reserve2.connect(owner).supportERC721IdForUnbonding(erc721Id, false)).wait();
-                await (await reserve2.connect(owner).unsupportERC721Id(erc721Id)).wait();
+                await (await reserve.connect(owner).delistERC721IdAsBondable(erc721Id)).wait();
+                await (await reserve.connect(owner).delistERC721IdAsRedeemable(erc721Id)).wait();
+                await (await reserve.connect(owner).deregisterERC721Id(erc721Id)).wait();
             };
         },
         "bondERC20": (asset, amount) => {
             return async () => {
-                console.info("Reserve2: Bonding ERC20 assets");
+                console.info("Reserve: Bonding ERC20 assets");
                 console.info("=> Bonder: " + owner.address);
                 console.info("=> Asset : " + asset.address);
                 console.info("=> Amount: " + amount);
-                await (await reserve2.connect(owner).bondERC20(asset.address, amount)).wait();
+                await (await reserve.connect(owner).bondERC20(asset.address, amount)).wait();
             };
         },
-        "unbondERC20": (asset, amount) => {
+        "redeemERC20": (asset, amount) => {
             return async () => {
-                console.info("Reserve2: Unbonding ERC20 assets");
+                console.info("Reserve: Redeeming ERC20 assets");
                 console.info("=> Bonder: " + owner.address);
                 console.info("=> Asset : " + asset.address);
                 console.info("=> Amount: " + amount);
-                await (await reserve2.connect(owner).unbondERC20(asset.address, amount)).wait();
+                await (await reserve.connect(owner).redeemERC20(asset.address, amount)).wait();
             };
         },
         "bondERC721": (erc721Id) => {
             return async () => {
-                console.info("Reserve2: Bonding ERC721 NFT");
+                console.info("Reserve: Bonding ERC721 NFT");
                 console.info("=> Bonder: " + owner.address);
                 console.info("=> Asset : " + JSON.stringify(erc721Id));
-                await (await reserve2.connect(owner).bondERC721Id(erc721Id)).wait();
+                await (await reserve.connect(owner).bondERC721Id(erc721Id)).wait();
             };
         },
-        "unbondERC721": (erc721Id, amount) => {
+        "redeemERC721": (erc721Id, amount) => {
             return async () => {
 
             };
         },
         "incurDebt": (amount) => {
             return async () => {
-                console.info("Reserve2: Incurring debt");
+                console.info("Reserve: Incurring debt");
                 console.info("=> Amount: " + amount);
-                await (await reserve2.connect(owner).incurDebt(amount)).wait();
+                await (await reserve.connect(owner).incurDebt(amount)).wait();
             };
         },
         "payDebt": (amount) => {
             return async () => {
-                console.info("Reserve2: Paying debt");
+                console.info("Reserve: Paying debt");
                 console.info("=> Amount: " + amount);
-                await (await reserve2.connect(owner).payDebt(amount)).wait();
+                await (await reserve.connect(owner).payDebt(amount)).wait();
             };
         },
         "status": () => {
             return async () => {
-                const [reserve, supply, backing] = await reserve2.reserveStatus();
-                console.info("Reserve2: Current status");
-                console.info("=> Asset Valuation : " + reserve);
-                console.info("=> Supply Valuation: " + supply);
-                console.info("=> Backing         : " + backing);
+                const [reserveValuation, supplyValuation, backing]
+                    = await reserve.reserveStatus();
+                console.info("Reserve: Current status");
+                console.info("=> Reserve Valuation: " + reserveValuation);
+                console.info("=> Supply Valuation : " + supplyValuation);
+                console.info("=> Backing          : " + backing);
             };
         },
     },
 
-    "Reserve2Token": {
-        // @todo R2Token
+    "ReserveToken": {
+        // @todo ReserveToken
     },
 
     "GeoNFT": {
@@ -330,23 +332,23 @@ function getInstruction(
 ) {
     // Treasury
     if (contractIdentifier === "Treasury") {
-        if (functionIdentifier === "support") {
+        if (functionIdentifier === "register") {
             const [asset, oracle] = getAssetAndOracle(values[0]);
-            return instructions["Treasury"]["support"](asset, oracle);
+            return instructions["Treasury"]["register"](asset, oracle);
         }
-        if (functionIdentifier === "unsupport") {
+        if (functionIdentifier === "deregister") {
             const [asset, _oracle] = getAssetAndOracle(values[0]);
-            return instructions["Treasury"]["unsupport"](asset);
+            return instructions["Treasury"]["deregister"](asset);
         }
         if (functionIdentifier === "bond") {
             const [asset, _oracle] = getAssetAndOracle(values[0]);
             const amount = ethers.utils.parseEther(values[1]);
             return instructions["Treasury"]["bond"](asset, amount);
         }
-        if (functionIdentifier === "unbond") {
+        if (functionIdentifier === "redeem") {
             const [asset, _oracle] = getAssetAndOracle(values[0]);
             const amount = ethers.utils.parseEther(values[1]);
-            return instructions["Treasury"]["unbond"](asset, amount);
+            return instructions["Treasury"]["redeem"](asset, amount);
         }
         if (functionIdentifier === "rebase") {
             return instructions["Treasury"]["rebase"]();
@@ -372,8 +374,8 @@ function getInstruction(
             const [_asset, oracle] = getAssetAndOracle("GeoNFT1");
             return instructions["Oracle"]["setPrice"](oracle, amount);
         }
-        if (contractIdentifier.endsWith("Reserve2Token)")) {
-            const [_asset, oracle] = getAssetAndOracle("Reserve2Token");
+        if (contractIdentifier.endsWith("ReserveToken)")) {
+            const [_asset, oracle] = getAssetAndOracle("ReserveToken");
             return instructions["Oracle"]["setPrice"](oracle, amount);
         }
         if (contractIdentifier.endsWith("Treasury)")) {
@@ -386,59 +388,59 @@ function getInstruction(
         };
     }
 
-    // Reserve2
-    if (contractIdentifier === "Reserve2") {
-        if (functionIdentifier === "supportERC20") {
+    // Reserve
+    if (contractIdentifier === "Reserve") {
+        if (functionIdentifier === "registerERC20") {
             const [asset, oracle] = getAssetAndOracle(values[0]);
-            return instructions["Reserve2"]["supportERC20"](asset, oracle);
+            return instructions["Reserve"]["registerERC20"](asset, oracle);
         }
-        if (functionIdentifier === "unsupportERC20") {
+        if (functionIdentifier === "deregisterERC20") {
             const [asset, _oracle] = getAssetAndOracle(values[0]);
-            return instructions["Reserve2"]["unsupportERC20"](asset);
+            return instructions["Reserve"]["deregisterERC20"](asset);
         }
-        if (functionIdentifier === "supportERC721") {
+        if (functionIdentifier === "registerERC721") {
             const [_asset, oracle, erc721Id] = getAssetAndOracle(values[0]);
-            return instructions["Reserve2"]["supportERC721"](erc721Id, oracle);
+            return instructions["Reserve"]["registerERC721"](erc721Id, oracle);
         }
-        if (functionIdentifier === "unsupportERC721") {
+        if (functionIdentifier === "deregisterERC721") {
             const [_asset, _oracle, erc721Id] = getAssetAndOracle(values[0]);
-            return instructions["Reserve2"]["unsupportERC721"](erc721Id);
+            return instructions["Reserve"]["deregisterERC721"](erc721Id);
         }
         if (functionIdentifier === "bondERC20") {
             const [asset] = getAssetAndOracle(values[0]);
             const amount = ethers.utils.parseEther(values[1]);
-            return instructions["Reserve2"]["bondERC20"](asset, amount);
+            return instructions["Reserve"]["bondERC20"](asset, amount);
         }
-        if (functionIdentifier === "unbondERC20") {
+        if (functionIdentifier === "redeemERC20") {
             const [asset] = getAssetAndOracle(values[0]);
             const amount = ethers.utils.parseEther(values[1]);
-            return instructions["Reserve2"]["unbondERC20"](asset, amount);
+            return instructions["Reserve"]["redeemERC20"](asset, amount);
         }
         if (functionIdentifier === "bondERC721") {
             const [_asset, _oracle, erc721Id] = getAssetAndOracle(values[0]);
-            return instructions["Reserve2"]["bondERC721"](erc721Id);
+            return instructions["Reserve"]["bondERC721"](erc721Id);
         }
-        if (functionIdentifier === "unbondERC721") {
-            // @todo Reserve2::unbondERC721
+        if (functionIdentifier === "redeemERC721") {
+            // @todo Reserve::redeemERC721
         }
         if (functionIdentifier === "incurDebt") {
             const amount = ethers.utils.parseEther(values[0]);
-            return instructions["Reserve2"]["incurDebt"](amount);
+            return instructions["Reserve"]["incurDebt"](amount);
         }
         if (functionIdentifier === "payDebt") {
             const amount = ethers.utils.parseEther(values[0]);
-            return instructions["Reserve2"]["payDebt"](amount);
+            return instructions["Reserve"]["payDebt"](amount);
         }
         if (functionIdentifier === "status") {
-            return instructions["Reserve2"]["status"]();
+            return instructions["Reserve"]["status"]();
         }
         return () => {
-            console.info("[ERROR] Unknown instruction for Reserve2: " + functionIdentifier);
+            console.info("[ERROR] Unknown instruction for Reserve: " + functionIdentifier);
             exit(1);
         }
     }
 
-    // @todo Reserve2Token
+    // @todo ReserveToken
 
     // GeoNFT
     if (contractIdentifier === "GeoNFT") {
@@ -517,6 +519,9 @@ export default async function simulation(
     const ethers = hre.ethers;
     const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545");
 
+    console.info("Running simulation: " + file);
+    console.info();
+
     console.info("============ SETUP ============");
     console.info();
 
@@ -525,8 +530,8 @@ export default async function simulation(
     await setUpEnvironment(hre, provider, owner);
 
     // Event listener
-    reserve2.on("BackingUpdated", (oldBacking, newBacking) => {
-        console.info("   => [EVENT] Reserve2's backing updated:");
+    reserve.on("BackingUpdated", (oldBacking, newBacking) => {
+        console.info("   => [EVENT] Reserve's backing updated:");
         console.info("              => oldBacking: " + oldBacking);
         console.info("              => newBacking: " + newBacking);
     });
@@ -539,17 +544,17 @@ export default async function simulation(
     console.info("========== ADDRESSES ==========");
     console.info();
     console.info("Monetray Contracts");
-    console.info("  Reserve2      : " + reserve2.address);
+    console.info("  Reserve       : " + reserve.address);
     console.info("  Treasury      : " + treasury.address);
     console.info();
     console.info("Oracle Contracts");
-    console.info("  Reserve2Token : " + oracleReserve2Token.address);
+    console.info("  ReserveToken  : " + oracleReserveToken.address);
     console.info("  Treasury      : " + oracleTreasuryToken.address);
     console.info("  ERC20         : " + oracleERC20.address);
     console.info("  GeoNFT1       : " + oracleGeoNFT1.address);
     console.info();
     console.info("Token Contracts");
-    console.info("  Reserve2Token : " + reserve2Token.address);
+    console.info("  ReserveToken  : " + reserveToken.address);
     console.info("  ERC20         : " + erc20.address);
     console.info("  GeoNFT ID 1   : " + geoNft.address);
     console.info();
@@ -600,7 +605,7 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
 
     console.info("Initiating owner switch...");
     // Set deployed contract objects to state variables
-    reserve2 = new ethers.Contract(ADDRESS_RESERVE2, reserve2ABI(), provider);
+    reserve = new ethers.Contract(ADDRESS_RESERVE, reserveABI(), provider);
 
     treasury = new ethers.Contract(ADDRESS_TREASURY, treasuryABI(), provider);
     oracleTreasuryToken = new ethers.Contract(ADDRESS_ORACLE_TREASURY_TOKEN, oracleABI(), provider);
@@ -608,14 +613,14 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
     geoNft = new ethers.Contract(ADDRESS_GEONFT, geoNftABI(), provider);
     oracleGeoNFT1 = new ethers.Contract(ADDRESS_ORACLE_GEONFT_1, oracleABI(), provider);
 
-    reserve2Token = new ethers.Contract(ADDRESS_RESERVE2_TOKEN, reserve2TokenABI(), provider);
-    oracleReserve2Token = new ethers.Contract(ADDRESS_ORACLE_RESERVE2_TOKEN, oracleABI(), provider);
+    reserveToken = new ethers.Contract(ADDRESS_RESERVE_TOKEN, reserveTokenABI(), provider);
+    oracleReserveToken = new ethers.Contract(ADDRESS_ORACLE_RESERVE_TOKEN, oracleABI(), provider);
 
-    erc20 = new ethers.Contract(ADDRESS_ERC20, reserve2TokenABI(), provider);
+    erc20 = new ethers.Contract(ADDRESS_ERC20, reserveTokenABI(), provider);
     oracleERC20 = new ethers.Contract(ADDRESS_ORACLE_ERC20, oracleABI(), provider);
 
     // Complete owner switch for each contract
-    await (await reserve2.connect(owner).acceptOwnership()).wait();
+    await (await reserve.connect(owner).acceptOwnership()).wait();
 
     await (await treasury.connect(owner).acceptOwnership()).wait();
     await (await oracleTreasuryToken.connect(owner).acceptOwnership()).wait();
@@ -623,26 +628,22 @@ async function setUpEnvironment(hre: HardhatRuntimeEnvironment, provider: any, o
     await (await geoNft.connect(owner).acceptOwnership()).wait();
     await (await oracleGeoNFT1.connect(owner).acceptOwnership()).wait();
 
-    await (await reserve2Token.connect(owner).acceptOwnership()).wait();
-    await (await oracleReserve2Token.connect(owner).acceptOwnership()).wait();
+    await (await reserveToken.connect(owner).acceptOwnership()).wait();
+    await (await oracleReserveToken.connect(owner).acceptOwnership()).wait();
 
     await (await oracleERC20.connect(owner).acceptOwnership()).wait();
     console.info("...Owner switch completed");
 
-    // Set reserve2 to mintBurner of reserve2Token
-    console.info("Setting Reserve2Token's mintBurner allowance to Reserve2");
-    await (await reserve2Token.connect(owner).setMintBurner(reserve2.address)).wait();
+    // Set reserve to mintBurner of reserveToken
+    console.info("Setting ReserveToken's mintBurner allowance to Reserve");
+    await (await reserveToken.connect(owner).setMintBurner(reserve.address)).wait();
 
     // Setup oracleProvider as provider for all oracles
     console.info("Setting up the Oracle providers");
-    await (await oracleReserve2Token.connect(owner).addProvider(oracleProvider.address)).wait();
+    await (await oracleReserveToken.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleTreasuryToken.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleERC20.connect(owner).addProvider(oracleProvider.address)).wait();
     await (await oracleGeoNFT1.connect(owner).addProvider(oracleProvider.address)).wait();
-
-    // Add owner to treasury whitelist
-    console.info("Setting up Treasury whitelist");
-    await (await treasury.connect(owner).addToWhitelist(owner.address)).wait();
 
     // Mint geoNFT to owner
     console.info("Minting first GeoNFT");

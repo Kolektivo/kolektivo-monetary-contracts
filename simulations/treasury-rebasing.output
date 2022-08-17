@@ -1,3 +1,4 @@
+Running simulation: simulations/treasury-rebasing.simulation
 
 ============ SETUP ============
 
@@ -5,25 +6,24 @@ Deploying all contracts. This takes a moment...
 ...All contracts deployed
 Initiating owner switch...
 ...Owner switch completed
-Setting Reserve2Token's mintBurner allowance to Reserve2
+Setting ReserveToken's mintBurner allowance to Reserve
 Setting up the Oracle providers
-Setting up Treasury whitelist
 Minting first GeoNFT
 
 ========== ADDRESSES ==========
 
 Monetray Contracts
-  Reserve2      : 0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0
+  Reserve       : 0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0
   Treasury      : 0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6
 
 Oracle Contracts
-  Reserve2Token : 0x5fbdb2315678afecb367f032d93f642f64180aa3
+  ReserveToken  : 0x5fbdb2315678afecb367f032d93f642f64180aa3
   Treasury      : 0x610178da211fef7d417bc0e6fed39f05609ad788
   ERC20         : 0x9a676e781a523b5d0c0e43731313a708cb607508
   GeoNFT1       : 0xdc64a140aa3e981100a9beca4e685f962f0cf6c9
 
 Token Contracts
-  Reserve2Token : 0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0
+  ReserveToken  : 0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0
   ERC20         : 0x959922be3caee4b8cd9a407cc3ac1c251c2007b1
   GeoNFT ID 1   : 0x0165878a594ca255338adfa4d48449f69242eb8f
 
@@ -49,7 +49,7 @@ ERC20: Approving tokens
 => Spender: 0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6
 => Amount : 1000000000000000000000
 
-Treasury: Adding support for asset
+Treasury: Registering and listing asset
 => Asset : 0x959922be3caee4b8cd9a407cc3ac1c251c2007b1
 
 Treasury: Bonding assets

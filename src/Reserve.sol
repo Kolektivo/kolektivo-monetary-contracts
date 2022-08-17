@@ -308,11 +308,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IERC721Receiver
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external returns (bytes4) {
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -1191,6 +1191,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     function _computeMintAmountGivenERC20(address erc20, uint amount)
         private
+        view
         returns (uint)
     {
         // Convert erc20 amount to wad format.
@@ -1210,6 +1211,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     function _computeMintAmountGivenERC721Id(bytes32 erc721IdHash)
         private
+        view
         returns (uint)
     {
         // Note that erc721Ids price equals it's bonding valuation because the

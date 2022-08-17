@@ -8,4 +8,7 @@ broadcast/
 remap-imports.go
 reports
 *.code-workspace
+
+# Environments to ignore
 prod.env
+testnet.env

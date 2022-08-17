@@ -82,15 +82,17 @@ analyze-c4udit: ## Run c4udit analyzer against project
 	@c4udit src
 
 # -----------------------------------------------------------------------------
-# Gas Snapshots and Reports
+# Reports
 
 .PHONY: gas-report
-gas-report: ## Run tests with gas reports
+gas-report: ## Print gas report and create gas snapshots file
+	@forge snapshot
 	@forge test --gas-report
 
-.PHONY: gas-snapshots
-gas-snapshots: ## Create test gas snapshots
-	@forge snapshot
+.PHONY: cov-report
+cov-report: ## Print coverage report and create lcov report file
+	@forge coverage --report lcov
+	@forge coverage
 
 # -----------------------------------------------------------------------------
 # Help Command

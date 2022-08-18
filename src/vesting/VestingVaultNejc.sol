@@ -35,6 +35,22 @@ contract VestingVault {
         uint alreadyReleased;
     }
 
+    //--------------------------------------------------------------------------
+    // Storage
+
+    /// @dev _token will use ERC20.sol
+    ERC20 private immutable _token;
+
+    /// @dev Mapping of recipient address to Vesting struct array.
+    mapping(address => Vesting[]) private _vestings;
+
+    //--------------------------------------------------------------------------
+    // Events
+
+    /// @notice Event emitted when investor deposits tokens.
+    event DepositFor(address indexed investor, address indexed receiver, uint amount, uint duration);
+    /// @notice Event emitted when receiver withdraws vested tokens.
+    event Claim(address indexed receiver, uint withdrawnAmount);
 
     //--------------------------------------------------------------------------
     // Errors
@@ -50,14 +66,6 @@ contract VestingVault {
 
     /// @notice receiver has no active vestings.
     error InvalidVestingsData();
-
-    //--------------------------------------------------------------------------
-    // Events
-
-    /// @notice Event emitted when investor deposits tokens.
-    event DepositFor(address indexed investor, address indexed receiver, uint amount, uint duration);
-    /// @notice Event emitted when receiver withdraws vested tokens.
-    event Claim(address indexed receiver, uint withdrawnAmount);
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -99,15 +107,6 @@ contract VestingVault {
     }
 
     //--------------------------------------------------------------------------
-    // Storage
-
-    /// @dev _token will use ERC20.sol
-    ERC20 private immutable _token;
-
-    /// @dev Mapping of recipient address to Vesting struct array.
-    mapping(address => Vesting[]) private _vestings;
-
-    //--------------------------------------------------------------------------
     // Constructor
 
     /// @param token_ Token address used for vesting.
@@ -135,6 +134,7 @@ contract VestingVault {
     {
         _token.safeTransferFrom(msg.sender, address(this), amount);
 
+        // @dev save vesting to storage
         Vesting memory vesting = Vesting(
             block.timestamp,                   // start
             block.timestamp + duration,        // end

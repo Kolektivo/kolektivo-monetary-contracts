@@ -146,8 +146,9 @@ contract VestingVault {
         emit DepositFor(msg.sender, recipient, amount, duration);
     }
 
-    /// @notice Release all claimable tokens to caller.
+    /// @notice Release all claimable tokens to receiver.
     function claim() external validVestingData(msg.sender) {
+        // @dev iterate receivers vesting claimableAmounts to calculate totalClaimable
         uint totalClaimable;
         for(uint slot; slot < _vestings[msg.sender].length; ++slot){
             Vesting memory vesting = _vestings[msg.sender][slot];
@@ -196,6 +197,7 @@ contract VestingVault {
         view
         returns (uint)
     {
+      // @dev iterate receivers vesting totalAmounts to calculate totalVestedFor
         uint totalVestedFor;
         for(uint slot; slot < _vestings[receiver].length; ++slot){
             totalVestedFor += _vestings[receiver][slot].totalAmount;
@@ -213,6 +215,7 @@ contract VestingVault {
         view
         returns (uint)
     {
+        // @dev iterate receivers vesting claimableAmounts to calculate totalClaimable
         uint totalClaimable;
         for(uint slot; slot < _vestings[receiver].length; ++slot){
             Vesting memory vesting = _vestings[receiver][slot];
@@ -221,7 +224,7 @@ contract VestingVault {
                 totalClaimable += vesting.totalAmount;
 
             // @dev if not everything is released yet, use regular calculation
-          }else if(vesting.totalAmount > vesting.alreadyReleased){
+            } else if(vesting.totalAmount > vesting.alreadyReleased){
                 uint timePassed = block.timestamp - vesting.start;
                 uint totalDuration = vesting.end - vesting.start;
 
@@ -243,6 +246,7 @@ contract VestingVault {
         view
         returns (uint)
     {
+      // @dev iterate receivers vesting ends to calculate totalNonClaimable
         uint totalNonClaimable;
         for(uint slot; slot < _vestings[receiver].length; ++slot){
             Vesting memory vesting = _vestings[receiver][slot];

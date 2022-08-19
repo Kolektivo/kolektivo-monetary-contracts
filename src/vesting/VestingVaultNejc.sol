@@ -41,7 +41,7 @@ contract VestingVault {
     /// @dev _token will use ERC20.sol
     ERC20 private immutable _token;
 
-    /// @dev Mapping of recipient address to Vesting struct array.
+    /// @dev Mapping of receiver address to Vesting struct array.
     mapping(address => Vesting[]) private _vestings;
 
     //--------------------------------------------------------------------------
@@ -55,7 +55,7 @@ contract VestingVault {
     //--------------------------------------------------------------------------
     // Errors
 
-    /// @notice Invalid token recipient.
+    /// @notice Invalid token receiver.
     error InvalidRecipient();
 
     /// @notice Invalid token amount.
@@ -70,7 +70,7 @@ contract VestingVault {
     //--------------------------------------------------------------------------
     // Modifiers
 
-    /// @dev Modifier to guarantee token recipient is valid.
+    /// @dev Modifier to guarantee token receiver is valid.
     modifier validRecipient(address to) {
         if (to == address(0)      ||
             to == address(this)   ||
@@ -123,12 +123,12 @@ contract VestingVault {
 
     /// @notice Create new vesting by depositing tokens.
     /// @notice Vesting starts immediately.
-    /// @param recipient Address to receive the vesting.
+    /// @param receiver Address to receive the vesting.
     /// @param amount Amount of tokens to be deposited.
     /// @param duration Length of time over which tokens are vested.
-    function depositFor(address recipient, uint amount, uint duration)
+    function depositFor(address receiver, uint amount, uint duration)
         external
-        validRecipient(recipient)
+        validRecipient(receiver)
         validAmount(amount)
         validVestingDuration(duration)
     {
@@ -141,9 +141,9 @@ contract VestingVault {
             amount,                            // totalAmount
             0                                  // alreadyReleased
         );
-        _vestings[recipient].push(vesting);
+        _vestings[receiver].push(vesting);
 
-        emit DepositFor(msg.sender, recipient, amount, duration);
+        emit DepositFor(msg.sender, receiver, amount, duration);
     }
 
     /// @notice Release all claimable tokens to receiver.

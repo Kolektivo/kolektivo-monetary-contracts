@@ -21,7 +21,7 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
  *
  * @author byterocket
  */
-contract VestingVault {
+contract VestingVaultNejc {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
@@ -62,7 +62,7 @@ contract VestingVault {
     error InvalidAmount();
 
     /// @notice Invalid vesting duration.
-    error InvalidVestingDuration();
+    error InvalidDuration();
 
     /// @notice receiver has no active vestings.
     error InvalidVestingsData();
@@ -71,11 +71,11 @@ contract VestingVault {
     // Modifiers
 
     /// @dev Modifier to guarantee token receiver is valid.
-    modifier validRecipient(address to) {
-        if (to == address(0)      ||
-            to == address(this)   ||
-            to == msg.sender      ||
-            to == address(_token)
+    modifier validRecipient(address receiver) {
+        if (receiver == address(0)      ||
+            receiver == address(this)   ||
+            receiver == msg.sender      ||
+            receiver == address(_token)
         ) {
             revert InvalidRecipient();
         }
@@ -130,7 +130,7 @@ contract VestingVault {
         external
         validRecipient(receiver)
         validAmount(amount)
-        validVestingDuration(duration)
+        validDuration(duration)
     {
         _token.safeTransferFrom(msg.sender, address(this), amount);
 

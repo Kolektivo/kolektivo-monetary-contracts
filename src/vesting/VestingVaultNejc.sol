@@ -91,9 +91,10 @@ contract VestingVaultNejc {
     }
 
     /// @dev Modifier to guarantee vesting duration is valid.
-    modifier validVestingDuration(uint vestingDuration) {
-        if (vestingDuration == 0) {
-            revert InvalidVestingDuration();
+    modifier validDuration(uint duration) {
+        // @notice duration cap is 10e8 (roughly 31 years)
+        if (duration == 0 || duration > 10e8) {
+            revert InvalidDuration();
         }
         _;
     }

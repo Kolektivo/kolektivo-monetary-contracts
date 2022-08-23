@@ -49,6 +49,40 @@ contract VestingVaultNejcTest is Test {
     uint internal constant DECIMALS = 18;
 
     //--------------------------------------------------------------------------
+    // Modifiers
+
+    modifier validParams(address receiver, uint amount, uint duration) {
+        // Expect revert if receiver is invalid.
+        // Modifier: validRecipient.
+        if (receiver == address(0)                  ||
+            receiver == address(vestingVaultNejc)   ||
+            receiver == address(this)               ||
+            receiver == address(token)
+        ) {
+            vm.expectRevert(Errors.InvalidRecipient);
+            vestingVaultNejc.depositFor(receiver, amount, duration);
+            return;
+        }
+        //
+        // // Expect revert if amount is zero.
+        // // Modifier: validAmount.
+        if (amount == 0) {
+            vm.expectRevert(Errors.InvalidAmount);
+            vestingVaultNejc.depositFor(receiver, amount, duration);
+            return;
+        }
+
+        // Expect revert if vestingDuration is zero.
+        // Modifier: validVestingDuration.
+        if (duration == 0 || duration > 10e8) {
+            vm.expectRevert(Errors.InvalidDuration);
+            vestingVaultNejc.depositFor(receiver, amount, duration);
+            return;
+        }
+        _;
+    }
+
+    //--------------------------------------------------------------------------
     // Set Up Functions
 
     function setUp() public {
@@ -71,95 +105,80 @@ contract VestingVaultNejcTest is Test {
     //--------------------------------------------------------------------------
     //Deposit Tests
 
-    function testDepositFor(address receiver, uint amount, uint duration) public {
+    function testDepositFor(address receiver, uint amount, uint duration)
+        public
+        validParams(receiver, amount, duration)
+    {
         // mint tokens for investor
         token.mint(address(this), amount);
         assertEq(token.balanceOf(address(this)), amount);
-
-        // console2.log()
-        // Expect revert if receiver is invalid.
-        // Modifier: validRecipient.
-        if (receiver == address(0)                  ||
-            receiver == address(vestingVaultNejc)   ||
-            receiver == address(this)               ||
-            receiver == address(token)
-        ) {
-            vm.expectRevert(Errors.InvalidRecipient);
-            vestingVaultNejc.depositFor(receiver, amount, duration);
-            return;
-        }
-        //
-        // // Expect revert if amount is zero.
-        // // Modifier: validAmount.
-        if (amount == 0 || amount > 10) {
-            vm.expectRevert(Errors.InvalidAmount);
-            vestingVaultNejc.depositFor(receiver, amount, duration);
-            return;
-        }
-
-        // Expect revert if vestingDuration is zero.
-        // Modifier: validVestingDuration.
-        if (duration == 0 || duration > 10e8) {
-            vm.expectRevert(Errors.InvalidDuration);
-            vestingVaultNejc.depositFor(receiver, amount, duration);
-            return;
-        }
-
 
         // Otherwise expect tokens to be deposited.
         token.approve(address(vestingVaultNejc), amount);
         assertEq(token.allowance(address(this), address(vestingVaultNejc)), amount);
 
         vestingVaultNejc.depositFor(receiver, amount, duration);
-        // TODO check emitted event
+
 
         // Check vestingVaultNejc balances
         assertEq(token.balanceOf(address(vestingVaultNejc)), amount);
+        // TODO check emitted event
 
+        // validate vesting data depositing tokens
         uint totalVested = vestingVaultNejc.getTotalVestedFor(receiver);
         assertEq(totalVested, amount);
+    }
 
-        /// TODO:
+
+    // validate vesting data depositing tokens
+    // function vestingDataIsCorrect(address receiver, uint amount, uint duration)
+    //     internal
+    // {
+    //     // deposited amount is stored properly.
+    //     uint totalVested = vestingVaultNejc.getTotalVestedFor(receiver);
+    //     assertEq(totalVested, amount);
+    // }
+
+    //--------------------------------------------------------------------------
+    // Claim Tests
+
+    function testClaim(address receiver, uint amount, uint duration)
+        public
+        validParams(receiver, amount, duration)
+    {
+        testDepositFor(receiver, amount, duration);
+
+        uint claimable = vestingVaultNejc.getTotalClaimableFor(receiver);
+        if (claimable == 0 ) {
+            vm.expectRevert(Errors.InvalidVestingsData);
+            vestingVaultNejc.claim();
+            return;
+        }
+
+        vestingVaultNejc.claim();
+
+        // uint claimedAmount = testToken.balanceOf(receiver);
+        // uint notYetClaimable = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
+        // assertEq(claimedAmount + notYetClaimable, amount)
+        //
+
+
+        // Check vestingVaultNejc balances
+        // assertEq(testToken.balanceOf(vestingVaultNejc), amount);
+        // // TODO check that event is emitted
+        //
+        // uint totalVested = vestingVaultNejc.getTotalVestedFor(receiver);
+        // assertEq(totalVested, amount);
+        //
         // uint totalClaimable = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
         // //      assert totalClaimable < totalVested
         //
         // uint totalNotClaimableYetFor = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
         //      assert totalClaimable < totalNonClaimable
-        // after vesting is complete, make sure its not possible to claim anymore
+
+        // TODO after vesting is complete, make sure its not possible to claim anymore
+        //
+        // TODO make sure event is emitted
     }
-
-
-
-    //--------------------------------------------------------------------------
-    // Claim Tests
-
-    // function testClaim() public {
-    //
-    //     if (msg.sender ! == receiver) {
-    //         vm.expectRevert(Errors.InvalidVestingsData);
-    //         vestingVaultNejc.claim();
-    //         return;
-    //     }
-    //
-    //     // Otherwise expect tokens to be claimed.
-    //     vestingVaultNejc.depositFor(receiver, amount, duration);
-    //
-    //     // Check vestingVaultNejc balances
-    //     assertEq(testToken.balanceOf(vestingVaultNejc), amount);
-    //     // TODO check that event is emitted
-    //
-    //     uint totalVested = vestingVaultNejc.getTotalVestedFor(receiver);
-    //     assertEq(totalVested, amount);
-    //
-    //     uint totalClaimable = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
-    //     //      assert totalClaimable < totalVested
-    //
-    //     uint totalNotClaimableYetFor = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
-    //     //      assert totalClaimable < totalNonClaimable
-    //
-    //     // TODO after vesting is complete, make sure its not possible to claim anymore
-    //
-    //     // TODO make sure event is emitted
-    // }
 
 }

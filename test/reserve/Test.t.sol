@@ -82,7 +82,8 @@ contract ReserveTest is Test, IERC721Receiver {
     // Test constants.
     uint constant DEFAULT_MIN_BACKING = 7_500; // 75%
 
-    IReserve.ERC721Id DEFAULT_ERC721ID;
+    address DEFAULT_ERC721_ADDRESS;
+    uint DEFAULT_ERC721_ID;
 
     // Copied from SuT.
     uint constant BPS = 10_000;
@@ -98,7 +99,8 @@ contract ReserveTest is Test, IERC721Receiver {
         nft = new ERC721Mock();
 
         nft.mint(address(this), 1);
-        DEFAULT_ERC721ID = IReserve.ERC721Id(address(nft), 1);
+        DEFAULT_ERC721_ADDRESS = address(nft);
+        DEFAULT_ERC721_ID = 1;
         defaultERC721IdOracle = new OracleMock();
         defaultERC721IdOracle.setDataAndValid(1e18, true);
 

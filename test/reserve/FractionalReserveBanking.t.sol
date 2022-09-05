@@ -168,18 +168,18 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         defaultERC721IdOracle.setDataAndValid(1_000_000e18, true); // 1MM USD
 
         // Approve.
-        nft.approve(address(reserve), DEFAULT_ERC721ID.id);
+        nft.approve(address(reserve), DEFAULT_ERC721_ID);
 
         // Register erc721Id in reserve and list as bondable/redeemable.
-        reserve.registerERC721Id(DEFAULT_ERC721ID, address(defaultERC721IdOracle));
-        reserve.listERC721IdAsBondable(DEFAULT_ERC721ID);
-        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721ID);
+        reserve.registerERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(defaultERC721IdOracle));
+        reserve.listERC721IdAsBondable(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
+        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
 
         // Bond erc721Id.
-        reserve.bondERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
+        reserve.bondERC721IdFromTo(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(this), address(this));
 
         // Check balances.
-        assertEq(nft.ownerOf(DEFAULT_ERC721ID.id), address(reserve));
+        assertEq(nft.ownerOf(DEFAULT_ERC721_ID), address(reserve));
         assertEq(token.balanceOf(address(this)), (10_000 + 50 + 1_000_000) * 1e18); // 1MM + 10,050 tokens
 
         // Check backing.
@@ -208,10 +208,10 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         tokenOracle.setDataAndValid(1e18, true); // 1 USD
 
         // 7. Redeem the erc721Id instance.
-        reserve.redeemERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
+        reserve.redeemERC721IdFromTo(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(this), address(this));
 
         // Check balances.
-        assertEq(nft.ownerOf(DEFAULT_ERC721ID.id), address(this));
+        assertEq(nft.ownerOf(DEFAULT_ERC721_ID), address(this));
         assertEq(token.balanceOf(address(this)), 50 * 1e18);
 
         // 7. Redeem the erc20NonWad tokens.
@@ -308,21 +308,21 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         defaultERC721IdOracle.setDataAndValid(1_000_000e18, true); // 1MM USD
 
         // Approve.
-        nft.approve(address(reserve), DEFAULT_ERC721ID.id);
+        nft.approve(address(reserve), DEFAULT_ERC721_ID);
 
         // Register erc721Id in reserve and list as bondable/redeemable.
-        reserve.registerERC721Id(DEFAULT_ERC721ID, address(defaultERC721IdOracle));
-        reserve.listERC721IdAsBondable(DEFAULT_ERC721ID);
-        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721ID);
+        reserve.registerERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(defaultERC721IdOracle));
+        reserve.listERC721IdAsBondable(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
+        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
 
         // Set discount of 5%.
-        reserve.setBondingDiscountForERC721Id(DEFAULT_ERC721ID, 500); // 500 bps = 5%
+        reserve.setBondingDiscountForERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, 500); // 500 bps = 5%
 
         // Bond erc721Id.
-        reserve.bondERC721IdFromTo(DEFAULT_ERC721ID, address(this), address(this));
+        reserve.bondERC721IdFromTo(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(this), address(this));
 
         // Check balances.
-        assertEq(nft.ownerOf(DEFAULT_ERC721ID.id), address(reserve));
+        assertEq(nft.ownerOf(DEFAULT_ERC721_ID), address(reserve));
         assertEq(token.balanceOf(
             address(this)),
             (11_000 + 50 + 1_000_000 + 50_000) * 1e18 // 11,050 tokens + 1MM + 5% of 1 MM

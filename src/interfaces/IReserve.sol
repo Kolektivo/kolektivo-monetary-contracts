@@ -13,6 +13,15 @@ interface IReserve {
         uint id;
     }
 
+    /// @notice Each ERC20-based asset is of a certain type, either it is a regular
+    ///         token, a stable token or an ecological asset (e.g. fractionalized
+    ///         GeoNFTs).
+    enum AssetType {
+        Default,
+        Stable,
+        Ecological
+    }
+
     //--------------------------------------------------------------------------
     // Errors
 
@@ -155,7 +164,7 @@ interface IReserve {
 
     /// @notice Event emitted when ERC20 token address registered.
     /// @param erc20 The ERC20 token address.
-    event ERC20Registered(address indexed erc20);
+    event ERC20Registered(address indexed erc20, AssetType assetType);
 
     /// @notice Event emitted when ERC721 instance registered.
     /// @param erc721Id The ERC721 instance.
@@ -309,7 +318,8 @@ interface IReserve {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param oracle The ERC20 token's price oracle of type IOracle.
-    function registerERC20(address erc20, address oracle) external;
+    /// @param assetType The asset type of the ERC20 token
+    function registerERC20(address erc20, address oracle, AssetType assetType) external;
 
     /// @notice Registers given ERC721Id instance with given oracle.
     /// @dev Only callable by owner.
@@ -707,6 +717,15 @@ interface IReserve {
 
     /// @notice Returns the number of registered ERC721Id instances.
     function registeredERC721IdsSize() external view returns (uint);
+
+    /// @notice Returns the registered ERC20 tokens.
+    function allRegisteredERC20s() external view returns (address[] memory);
+
+    /// @notice Returns the registered ERC721Id instances.
+    function allRegisteredERC721Ids() external view returns (ERC721Id[] memory);
+
+    /// @notice Returns the type of a registered erc20 asset.
+    function typeOfAsset(address erc20) external view returns (AssetType);
 
     //----------------------------------
     // Vesting View Functions

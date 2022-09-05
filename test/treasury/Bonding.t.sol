@@ -44,7 +44,7 @@ contract TreasuryBonding is TreasuryTest {
         oracle.setDataAndValid(price, true);
 
         // Let treasury support token for bonding.
-        treasury.registerAsset(address(token), address(oracle));
+        treasury.registerAsset(address(token), address(oracle), Treasury.AssetType.Default);
         treasury.listAssetAsBondable(address(token));
 
         // Mint tokens.

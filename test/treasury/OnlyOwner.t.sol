@@ -23,7 +23,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
 
         // List asset as bondable + redeemable.
         treasury.listAssetAsBondable(asset);
@@ -55,7 +55,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.withdrawAsset(address(1), address(2), 1);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.registerAsset(address(1), address(2));
+        treasury.registerAsset(address(1), address(2), Treasury.AssetType.Default);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         treasury.deregisterAsset(address(1));
@@ -145,15 +145,18 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetRegistered(asset, address(oracle));
+        emit AssetRegistered(asset, address(oracle), Treasury.AssetType.Default);
 
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
 
         // Function should be idempotent.
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
 
         // Check that asset is supported.
         assertEq(treasury.registeredAssets(0), asset);
+
+        // Check that asset type is set correctly
+        assertEq(uint(treasury.typeOfAsset(asset)), uint(Treasury.AssetType.Default));
 
         // Check that asset's oracle is correct.
         assertEq(treasury.oraclePerAsset(asset), address(oracle));
@@ -164,7 +167,55 @@ contract TreasuryOnlyOwner is TreasuryTest {
         } catch {
             // Fails due to IndexOutOfBounds.
         }
+        
+        // Deregister asset
+        treasury.deregisterAsset(asset);
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit AssetRegistered(asset, address(oracle), Treasury.AssetType.Stable);
+
+        // Register asset with different asset type
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Stable);
+
+        // Check that asset type is set correctly
+        assertEq(uint(treasury.typeOfAsset(asset)), uint(Treasury.AssetType.Stable));
+
+        treasury.deregisterAsset(asset);
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit AssetRegistered(asset, address(oracle), Treasury.AssetType.Ecological);
+        
+        // Register asset with different asset type
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Ecological);
+
+        // Check that asset type is set correctly
+        assertEq(uint(treasury.typeOfAsset(asset)), uint(Treasury.AssetType.Ecological));
     }
+
+     function testRegisterAssetWithType(uint assetType) public {
+        vm.assume(assetType <= 2);
+
+        address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
+
+        OracleMock oracle = new OracleMock();
+        oracle.setDataAndValid(1, true);
+
+        // Expect event emission.
+        vm.expectEmit(true, true, true, true);
+        emit AssetRegistered(asset, address(oracle), Treasury.AssetType(assetType));
+
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType(assetType));
+
+        // Check that asset is supported.
+        assertEq(treasury.registeredAssets(0), asset);
+
+        // Check that asset type is set correctly
+        assertEq(uint(treasury.typeOfAsset(asset)), assetType);
+    }
+
+    
 
     function testRegisterAssetCanNotUpdateOracle() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
@@ -175,9 +226,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(1, true);
 
-        treasury.registerAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1), Treasury.AssetType.Default);
 
-        try treasury.registerAsset(asset, address(oracle2)) {
+        try treasury.registerAsset(asset, address(oracle2), Treasury.AssetType.Default) {
             revert();
         } catch {
             // Fails due to not being able to update oracle through the
@@ -196,7 +247,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         vm.expectRevert(
             Errors.StalePriceDeliveredByOracle(asset, address(oracle))
         );
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
     }
 
     function testRegisterAssetDoesNotAcceptOraclePriceOfZero() public {
@@ -210,7 +261,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         vm.expectRevert(
             Errors.StalePriceDeliveredByOracle(asset, address(oracle))
         );
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
     }
 
     function testDeregisterAsset() public {
@@ -218,7 +269,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
@@ -245,7 +296,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1), Treasury.AssetType.Default);
 
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(2, true);
@@ -269,7 +320,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1), Treasury.AssetType.Default);
 
         // Create second oracle being invalid but data non-zero.
         OracleMock oracle2 = new OracleMock();
@@ -288,7 +339,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle1));
+        treasury.registerAsset(asset, address(oracle1), Treasury.AssetType.Default);
 
         // Create second oracle being vali but data zero.
         OracleMock oracle2 = new OracleMock();
@@ -310,7 +361,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
 
         // Check that asset is not listed as bondable.
         assertTrue(!treasury.isAssetBondable(asset));
@@ -333,7 +384,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
         treasury.listAssetAsBondable(asset);
 
         // Expect event emission.
@@ -364,7 +415,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
 
         // Check that asset is not listes as redeemable.
         assertTrue(!treasury.isAssetRedeemable(asset));
@@ -387,7 +438,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerAsset(asset, address(oracle));
+        treasury.registerAsset(asset, address(oracle), Treasury.AssetType.Default);
         treasury.listAssetAsRedeemable(asset);
 
         // Expect event emission.

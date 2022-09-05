@@ -93,7 +93,7 @@ contract Treasury is
     /// @notice Event emitted when an asset is registered
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    event AssetRegistered(address indexed asset, address indexed oracle);
+    event AssetRegistered(address indexed asset, address indexed oracle, AssetType assetType);
 
     /// @notice Event emitted when an asset is deregistered.
     /// @param asset The address of the asset.
@@ -192,9 +192,14 @@ contract Treasury is
     /// @dev Addresses are of type ERC20.
     address[] public registeredAssets;
 
+    /// @notice The type of each ERC20-based asset registered by the treasury
+    /// @dev    Changeable by owner
+    /// @dev    Address in registeredAssets => Asset Type (enum)
+    mapping(address => AssetType) public typeOfAsset;
+
     /// @notice The mapping of oracles providing the price for an asset.
     /// @dev Changeable by owner.
-    /// @dev Address in supportedAssets => address of type IOracle.
+    /// @dev Address in registeredAssets => address of type IOracle.
     mapping(address => address) public oraclePerAsset;
 
     /// @notice Mapping of bondable assets.
@@ -204,6 +209,15 @@ contract Treasury is
     /// @notice Mapping of redeemable assets.
     /// @dev Changeable by owner.
     mapping(address => bool) public isAssetRedeemable;
+
+    /// @notice Each ERC20-based asset is of a certain type, either it is a regular
+    ///         token, a stable token or an ecological asset (e.g. fractionalized
+    ///         GeoNFTs).
+    enum AssetType {
+        Default,
+        Stable,
+        Ecological
+    }
 
     //--------------------------------------------------------------------------
     // Constructor
@@ -405,7 +419,8 @@ contract Treasury is
     /// @dev Only callable by owner.
     /// @param asset The address of the asset.
     /// @param oracle The address of the asset's oracle.
-    function registerAsset(address asset, address oracle) external onlyOwner {
+    /// @param assetType The type of the asset
+    function registerAsset(address asset, address oracle, AssetType assetType) external onlyOwner {
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(asset.code.length != 0);
@@ -431,12 +446,16 @@ contract Treasury is
             revert Treasury__StalePriceDeliveredByOracle(asset, oracle);
         }
 
+        // Revert if the asset type is invalid
+        require(uint(assetType) <= 2);
+
         // Add asset and oracle to storage.
         registeredAssets.push(asset);
         oraclePerAsset[asset] = oracle;
+        typeOfAsset[asset] = assetType;
 
         // Notify off-chain services.
-        emit AssetRegistered(asset, oracle);
+        emit AssetRegistered(asset, oracle, assetType);
     }
 
     /// @notice Deregisters an asset.
@@ -451,6 +470,7 @@ contract Treasury is
 
         // Remove asset's oracle.
         delete oraclePerAsset[asset];
+        delete typeOfAsset[asset];
 
         // Remove asset from registeredAssets array.
         uint len = registeredAssets.length;

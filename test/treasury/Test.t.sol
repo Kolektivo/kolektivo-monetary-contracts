@@ -78,7 +78,7 @@ abstract contract TreasuryTest is Test {
 
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
-    event AssetRegistered(address indexed asset, address indexed oracle);
+    event AssetRegistered(address indexed asset, address indexed oracle, Treasury.AssetType assetType);
     event AssetDeregistered(address indexed asset);
     event AssetOracleUpdated(
         address indexed asset,

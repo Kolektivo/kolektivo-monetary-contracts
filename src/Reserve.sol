@@ -194,6 +194,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @inheritdoc IReserve
     mapping(bytes32 => address) public oraclePerERC721Id;
 
+    /// @inheritdoc IReserve
+    mapping(address => AssetType) public typeOfAsset;
+
     //----------------------------------
     // Bonding & Redeeming Mappings
 
@@ -304,6 +307,16 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @inheritdoc IReserve
     function registeredERC721IdsSize() external view returns (uint) {
         return registeredERC721Ids.length;
+    }
+
+    /// @inheritdoc IReserve
+    function allRegisteredERC20s() external view returns (address[] memory) {
+        return registeredERC20s;
+    }
+
+    /// @inheritdoc IReserve
+    function allRegisteredERC721Ids() external view returns (ERC721Id[] memory) {
+        return registeredERC721Ids;
     }
 
     /// @inheritdoc IERC721Receiver
@@ -592,7 +605,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Asset Management
 
     /// @inheritdoc IReserve
-    function registerERC20(address erc20, address oracle) external onlyOwner {
+    function registerERC20(address erc20, address oracle, AssetType assetType) external onlyOwner {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's SafeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -611,12 +624,16 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Check oracle's validity.
         require(_oracleIsValid(oracle));
 
+        // Revert if the asset type is invalid
+        require(uint(assetType) <= 2);
+
         // Add erc20 and oracle to mappings.
         registeredERC20s.push(erc20);
         oraclePerERC20[erc20] = oracle;
+        typeOfAsset[erc20] = assetType;
 
         // Notify off-chain services.
-        emit ERC20Registered(erc20);
+        emit ERC20Registered(erc20, assetType);
         emit SetERC20Oracle(erc20, address(0), oracle);
     }
 
@@ -666,6 +683,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Remove erc20's oracle and notify off-chain services.
         emit SetERC20Oracle(erc20, oraclePerERC20[erc20], address(0));
         delete oraclePerERC20[erc20];
+        delete typeOfAsset[erc20];
 
         // Remove erc20 from the registeredERC20s array.
         uint len = registeredERC20s.length;

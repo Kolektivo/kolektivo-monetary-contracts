@@ -87,7 +87,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @dev Modifier to guarantee function is only callable with registered
     ///      ERC721Id instances.
     modifier isRegisteredERC721Id(address erc721, uint id) {
-        if (oraclePerERC721Id[_hashOfERC721Id(erc721, id)] == address(0)) {
+        if (oraclePerERC721Id[erc721][id] == address(0)) {
             revert Reserve__ERC721IdNotRegistered();
         }
         _;
@@ -105,7 +105,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @dev Modifier to guarantee function is only callable with bondable
     ///      ERC721Id instances.
     modifier isBondableERC721Id(address erc721, uint id) {
-        if (!isERC721IdBondable[_hashOfERC721Id(erc721, id)]) {
+        if (!isERC721IdBondable[erc721][id]) {
             revert Reserve__ERC721IdNotBondable();
         }
         _;
@@ -123,7 +123,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @dev Modifier to guarantee function is only callable with redeemable
     ///      ERC721Id instances.
     modifier isRedeemableERC721Id(address erc721, uint id) {
-        if (!isERC721IdRedeemable[_hashOfERC721Id(erc721, id)]) {
+        if (!isERC721IdRedeemable[erc721][id]) {
             revert Reserve__ERC721IdNotRedeemable();
         }
         _;
@@ -192,7 +192,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => address) public oraclePerERC20;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => address) public oraclePerERC721Id;
+    mapping(address => mapping(uint => address)) public oraclePerERC721Id;
 
     /// @inheritdoc IReserve
     mapping(address => AssetType) public typeOfAsset;
@@ -204,13 +204,13 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => bool) public isERC20Bondable;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => bool) public isERC721IdBondable;
+    mapping (address => mapping(uint => bool)) public isERC721IdBondable;
 
     /// @inheritdoc IReserve
     mapping(address => bool) public isERC20Redeemable;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => bool) public isERC721IdRedeemable;
+    mapping (address => mapping(uint => bool)) public isERC721IdRedeemable;
 
     /// @inheritdoc IReserve
     mapping(address => uint) public bondingLimitPerERC20;
@@ -225,7 +225,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => uint) public bondingDiscountPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => uint) public bondingDiscountPerERC721Id;
+    mapping (address => mapping(uint => uint)) public bondingDiscountPerERC721Id;
 
     //----------------------------------
     // Vesting Mappings
@@ -234,7 +234,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => uint) public bondingVestingDurationPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(bytes32 => uint) public bondingVestingDurationPerERC721Id;
+    mapping (address => mapping(uint => uint)) public bondingVestingDurationPerERC721Id;
 
     //----------------------------------
     // Reserve Management
@@ -288,15 +288,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @inheritdoc IReserve
     function token() external view returns (address) {
         return address(_token);
-    }
-
-    /// @inheritdoc IReserve
-    function hashOfERC721Id(address erc721, uint id)
-        external
-        pure
-        returns (bytes32)
-    {
-        return _hashOfERC721Id(erc721, id);
     }
 
     /// @inheritdoc IReserve
@@ -642,13 +633,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         external
         onlyOwner
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
         // Make sure that erc721Id's code is non-empty.
         // @todo Does solmate check this?
         require(erc721.code.length != 0);
 
-        address oldOracle = oraclePerERC721Id[erc721IdHash];
+        address oldOracle = oraclePerERC721Id[erc721][id];
 
         // Do nothing if erc721Id is already registered and oracles are the same.
         if (oldOracle == oracle) {
@@ -664,7 +653,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
         // Add erc721Id and oracle to mappings.
         registeredERC721Ids.push(ERC721Id(erc721, id));
-        oraclePerERC721Id[erc721IdHash] = oracle;
+        oraclePerERC721Id[erc721][id] = oracle;
 
         // Notify off-chain services.
         emit ERC721IdRegistered(erc721, id);
@@ -705,23 +694,21 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function deregisterERC721Id(address erc721, uint id) external onlyOwner {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
         // Do nothing if erc721 is already not deregistered.
         // Note that we do not use the isRegisteredERC721Id modifier to be
         // idempotent.
-        if (oraclePerERC721Id[erc721IdHash] == address(0)) {
+        if (oraclePerERC721Id[erc721][id] == address(0)) {
             return;
         }
 
         // Remove erc721Id's oracle and notify off-chain services.
-        emit SetERC721IdOracle(erc721, id, oraclePerERC721Id[erc721IdHash], address(0));
-        delete oraclePerERC721Id[erc721IdHash];
+        emit SetERC721IdOracle(erc721, id, oraclePerERC721Id[erc721][id], address(0));
+        delete oraclePerERC721Id[erc721][id];
 
         // Remove erc721Id from the registeredERC721Ids array.
         uint len = registeredERC721Ids.length;
         for (uint i; i < len; ) {
-            if (erc721IdHash == _hashOfERC721Id(registeredERC721Ids[i].erc721, registeredERC721Ids[i].id)) {
+            if (erc721 == registeredERC721Ids[i].erc721 && id == registeredERC721Ids[i].id) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
                     registeredERC721Ids[i] = registeredERC721Ids[len - 1];
@@ -764,10 +751,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
         // Cache old oracle.
-        address oldOracle = oraclePerERC721Id[erc721IdHash];
+        address oldOracle = oraclePerERC721Id[erc721][id];
 
         // Do nothing if new oracle is same as old oracle.
         if (oldOracle == oracle) {
@@ -778,7 +763,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         require(_oracleIsValid(oracle));
 
         // Update erc721Id's oracle and notify off-chain services.
-        oraclePerERC721Id[erc721IdHash] = oracle;
+        oraclePerERC721Id[erc721][id] = oracle;
         emit SetERC721IdOracle(erc721, id, oldOracle, oracle);
     }
 
@@ -811,9 +796,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
-        isERC721IdBondable[erc721IdHash] = true;
+        
+        isERC721IdBondable[erc721][id] = true;
         emit ERC721IdListedAsBondable(erc721, id);
     }
 
@@ -823,9 +807,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
-        isERC721IdBondable[erc721IdHash] = false;
+        
+        isERC721IdBondable[erc721][id] = false;
         emit ERC721IdDelistedAsBondable(erc721, id);
     }
 
@@ -855,9 +838,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
-        isERC721IdRedeemable[erc721IdHash] = true;
+        
+        isERC721IdRedeemable[erc721][id] = true;
         emit ERC721IdListedAsRedeemable(erc721, id);
     }
 
@@ -867,9 +849,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
-        isERC721IdRedeemable[erc721IdHash] = false;
+        
+        isERC721IdRedeemable[erc721][id] = false;
         emit ERC721IdDelistedAsRedeemable(erc721, id);
     }
 
@@ -923,13 +904,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         external
         onlyOwner
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
-        uint oldDiscount = bondingDiscountPerERC721Id[erc721IdHash];
+        
+        uint oldDiscount = bondingDiscountPerERC721Id[erc721][id];
 
         if (discount != oldDiscount) {
             emit SetERC721IdBondingDiscount(erc721, id, oldDiscount, discount);
-            bondingDiscountPerERC721Id[erc721IdHash] = discount;
+            bondingDiscountPerERC721Id[erc721][id] = discount;
         }
     }
 
@@ -971,9 +951,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address erc721, uint id,
         uint vestingDuration
     ) external onlyOwner {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
-        uint oldVestingDuration = bondingVestingDurationPerERC721Id[erc721IdHash];
+        
+        uint oldVestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
 
         if (vestingDuration != oldVestingDuration) {
             emit SetERC721IdBondingVesting(
@@ -981,7 +960,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 oldVestingDuration,
                 vestingDuration
             );
-            bondingVestingDurationPerERC721Id[erc721IdHash] = vestingDuration;
+            bondingVestingDurationPerERC721Id[erc721][id] = vestingDuration;
         }
     }
 
@@ -1058,7 +1037,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         _token.burn(msg.sender, amount);
 
         // Notify off-chain services.
-        emit DebtPayed(amount);
+        emit DebtPaid(amount);
     }
 
     //--------------------------------------------------------------------------
@@ -1108,8 +1087,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         validRecipient(to)
         onBeforeUpdateBacking(true)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
+        
         // Fetch erc721Id.
         ERC721(erc721).safeTransferFrom(
             from,
@@ -1118,10 +1096,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         );
 
         // Compute amount of tokens to mint.
-        uint amount = _computeMintAmountGivenERC721Id(erc721IdHash);
+        uint amount = _computeMintAmountGivenERC721Id(erc721, id);
 
         // Mint tokens.
-        _commitTokenMintGivenERC721Id(erc721IdHash, to, amount);
+        _commitTokenMintGivenERC721Id(erc721, id, to, amount);
 
         // Notify off-chain services.
         emit BondedERC721(erc721, id, amount);
@@ -1174,7 +1152,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     function _redeemERC721Id(
-        address erc721, uint id,
+        address erc721, 
+        uint id,
         address from,
         address to
     )
@@ -1185,10 +1164,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         validRecipient(to)
         onBeforeUpdateBacking(true)
     {
-        bytes32 erc721IdHash = _hashOfERC721Id(erc721, id);
-
         // Query erc721Id's price oracle.
-        uint priceWad = _priceOfERC721Id(erc721IdHash);
+        uint priceWad = _priceOfERC721Id(erc721, id);
 
         // Calculate the amount of tokens to burn.
         uint tokenAmount = (priceWad / _priceOfToken()) * 1e18;
@@ -1228,7 +1205,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return toMint;
     }
 
-    function _computeMintAmountGivenERC721Id(bytes32 erc721IdHash)
+    function _computeMintAmountGivenERC721Id(address erc721, uint id)
         private
         view
         returns (uint)
@@ -1237,10 +1214,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // amount of tokens bonded is always 1.
 
         // Calculate the number of tokens to mint (no discount applied yet).
-        uint toMint = (_priceOfERC721Id(erc721IdHash) * 1e18) / _priceOfToken();
+        uint toMint = (_priceOfERC721Id(erc721, id) * 1e18) / _priceOfToken();
 
         // Apply discount.
-        toMint = _applyBondingDiscountForERC721Id(erc721IdHash, toMint);
+        toMint = _applyBondingDiscountForERC721Id(erc721, id, toMint);
 
         return toMint;
     }
@@ -1322,7 +1299,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         for (uint i; i < len; ) {
             erc721 = registeredERC721Ids[i].erc721;
             id = registeredERC721Ids[i].id;
-            erc721IdHash = _hashOfERC721Id(erc721, id);
 
             // Continue/Break if reserve is not the owner of that erc721Id.
             if (ERC721(erc721).ownerOf(id) != address(this)) {
@@ -1335,7 +1311,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             }
 
             // Add erc721Id's price to the total valuation.
-            totalWad += _priceOfERC721Id(erc721IdHash);
+            totalWad += _priceOfERC721Id(erc721, id);
 
             unchecked { ++i; }
         }
@@ -1382,7 +1358,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return price;
     }
 
-    function _priceOfERC721Id(bytes32 erc721IdHash)
+    function _priceOfERC721Id(address erc721, uint id)
         private
         view
         returns (uint)
@@ -1390,7 +1366,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Note that the price is returned in 18 decimal precision.
         uint price;
         bool valid;
-        (price, valid) = IOracle(oraclePerERC721Id[erc721IdHash]).getData();
+        (price, valid) = IOracle(oraclePerERC721Id[erc721][id]).getData();
 
         if (!valid || price == 0) {
             // Revert if oracle is invalid or price is zero.
@@ -1428,11 +1404,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     function _commitTokenMintGivenERC721Id(
-        bytes32 erc721IdHash,
+        address erc721,
+        uint id,
         address to,
         uint amount
     ) private {
-        uint vestingDuration = bondingVestingDurationPerERC721Id[erc721IdHash];
+        uint vestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
 
         if (vestingDuration == 0) {
             // No vesting, mint tokens directly to user.
@@ -1466,27 +1443,15 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             : amount + (amount * discount) / BPS;
     }
 
-    function _applyBondingDiscountForERC721Id(bytes32 erc721IdHash, uint amount)
+    function _applyBondingDiscountForERC721Id(address erc721, uint id, uint amount)
         private
         view
         returns (uint)
     {
-        uint discount = bondingDiscountPerERC721Id[erc721IdHash];
+        uint discount = bondingDiscountPerERC721Id[erc721][id];
 
         return discount == 0
             ? amount
             : amount + (amount * discount) / BPS;
     }
-
-    //----------------------------------
-    // ERC721Id Helper Functions
-
-    function _hashOfERC721Id(address erc721, uint id)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(erc721, id));
-    }
-
 }

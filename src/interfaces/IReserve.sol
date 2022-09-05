@@ -159,9 +159,9 @@ interface IReserve {
     /// @param tokenAmount The amount of tokens incurred as new debt.
     event DebtIncurred(uint tokenAmount);
 
-    /// @notice Event emitted when debt payed.
-    /// @param tokenAmount The amount of token payed as debt.
-    event DebtPayed(uint tokenAmount);
+    /// @notice Event emitted when debt paid.
+    /// @param tokenAmount The amount of token paid as debt.
+    event DebtPaid(uint tokenAmount);
 
     //----------------------------------
     // Asset Management
@@ -733,15 +733,6 @@ interface IReserve {
     /// @notice Returns the token address the reserve is backing.
     function token() external view returns (address);
 
-    /// @notice Returns the hash identifier gor given ERC721Id instance.
-    /// @param erc721 The ERC721 token address.
-    /// @param id The id of the corresponding NFT.
-    /// @return The hash identifier for given ERC721Id instance.
-    function hashOfERC721Id(address erc721, uint id)
-        external
-        pure
-        returns (bytes32);
-
     /// @notice Returns the registered ERC20 token address at given index.
     function registeredERC20s(uint index) external view returns (address);
 
@@ -789,10 +780,11 @@ interface IReserve {
     function oraclePerERC20(address erc20) external view returns (address);
 
     /// @notice Returns the price oracle for the ERC721Id instance, identified
-    ///         through given hash.
-    /// @param erc721IdHash The ERC721Id instance's hash.
+    ///         through given address and id.
+    /// @param erc721 The ERC721 token's address.
+    /// @param id     The NFTs corresponding id.
     /// @return The ERC721Id instance's price oracle address of type IOracle.
-    function oraclePerERC721Id(bytes32 erc721IdHash)
+    function oraclePerERC721Id(address erc721, uint id)
         external
         view
         returns (address);
@@ -806,10 +798,11 @@ interface IReserve {
     function isERC20Bondable(address erc20) external view returns (bool);
 
     /// @notice Returns whether the ERC721Id instance, identified through
-    ///         given hash, is bondable.
-    /// @param erc721IdHash The ERC721Id instance's hash
+    ///         given address and id, is bondable.
+    /// @param erc721 The ERC721 token's address.
+    /// @param id     The NFTs corresponding id.
     /// @return Whether the ERC721Id instance is bondable.
-    function isERC721IdBondable(bytes32 erc721IdHash)
+    function isERC721IdBondable(address erc721, uint id)
         external
         view
         returns (bool);
@@ -820,10 +813,11 @@ interface IReserve {
     function isERC20Redeemable(address erc20) external view returns (bool);
 
     /// @notice Returns whether the ERC721Id instance, identified through given
-    ///         hash, is redeemable.
-    /// @param erc721IdHash The ERC721Id instance's hash.
+    ///         address and id, is redeemable.
+    /// @param erc721 The ERC721 token's address.
+    /// @param id     The NFTs corresponding id.
     /// @return Whether the ERC721Id instance is redeemable.
-    function isERC721IdRedeemable(bytes32 erc721IdHash)
+    function isERC721IdRedeemable(address erc721, uint id)
         external
         view
         returns (bool);
@@ -850,11 +844,12 @@ interface IReserve {
     function bondingDiscountPerERC20(address erc20) external view returns (uint);
 
     /// @notice Returns the bonding discount percentage, denominated in bps,
-    ///         for the ERC721Id instance, identified through given hash.
-    /// @param erc721IdHash The ERC721Id instance's hash.
+    ///         for the ERC721Id instance, identified through given address and id.
+    /// @param erc721 The ERC721 token's address.
+    /// @param id     The NFTs corresponding id.
     /// @return The bonding discount percentage, denomintated in bps, for given
     ///         ERC721Id instance.
-    function bondingDiscountPerERC721Id(bytes32 erc721IdHash)
+    function bondingDiscountPerERC721Id(address erc721, uint id)
         external
         view
         returns (uint);
@@ -872,10 +867,11 @@ interface IReserve {
         returns (uint);
 
     /// @notice Returns the bonding vesting duration for the ERC721Id instance,
-    ///         identified through given hash.
-    /// @param erc721IdHash The ERC721Id instance's hash.
+    ///         identified through address and id.
+    /// @param erc721 The ERC721 token's address.
+    /// @param id     The NFTs corresponding id.
     /// @return The bonding vesting duration for given ERC721Id instance.
-    function bondingVestingDurationPerERC721Id(bytes32 erc721IdHash)
+    function bondingVestingDurationPerERC721Id(address erc721, uint id)
         external
         view
         returns (uint);

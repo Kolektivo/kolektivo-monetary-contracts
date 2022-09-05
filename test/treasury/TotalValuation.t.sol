@@ -45,7 +45,7 @@ contract TreasuryTotalValuation is TreasuryTest {
         OracleMock o1 = new OracleMock();
         o1.setDataAndValid(1e18, true);
         ERC20Mock t1 = new ERC20Mock("T1", "Token 1", uint8(20));
-        treasury.registerAsset(address(t1), address(o1), Treasury.AssetType.Default);
+        treasury.registerERC20(address(t1), address(o1), Treasury.AssetType.Default);
         t1.mint(address(treasury), 1e20); // 1 USD
 
         // Asset 2:
@@ -54,7 +54,7 @@ contract TreasuryTotalValuation is TreasuryTest {
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(2e18, true);
         ERC20Mock t2 = new ERC20Mock("T2", "Token 2", uint8(5));
-        treasury.registerAsset(address(t2), address(o2), Treasury.AssetType.Default);
+        treasury.registerERC20(address(t2), address(o2), Treasury.AssetType.Default);
         t2.mint(address(treasury), 1e5); // 2 USD
 
         assertEq(treasury.totalValuation(), 3e18);
@@ -90,7 +90,7 @@ contract TreasuryTotalValuation is TreasuryTest {
             ERC20Mock token = new ERC20Mock("TST", "TEST", uint8(18));
 
             // Register token and mint balance.
-            treasury.registerAsset(address(token), address(oracle), Treasury.AssetType.Default);
+            treasury.registerERC20(address(token), address(oracle), Treasury.AssetType.Default);
             token.mint(address(treasury), balance);
 
             // Add asset to array.

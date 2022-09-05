@@ -44,8 +44,8 @@ contract TreasuryBonding is TreasuryTest {
         oracle.setDataAndValid(price, true);
 
         // Let treasury support token for bonding.
-        treasury.registerAsset(address(token), address(oracle), Treasury.AssetType.Default);
-        treasury.listAssetAsBondable(address(token));
+        treasury.registerERC20(address(token), address(oracle), Treasury.AssetType.Default);
+        treasury.listERC20AsBondable(address(token));
 
         // Mint tokens.
         token.approve(address(treasury), type(uint).max);
@@ -72,7 +72,7 @@ contract TreasuryBonding is TreasuryTest {
         oracle.setValid(false);
 
         // Fails with StalePriceDeliveredByOracle.
-        treasury.bond(address(token), amount);
+        treasury.bondERC20(address(token), amount);
     }
 
     function testFailBondingDisabledIfOraclePriceIsZero(uint amount)
@@ -87,7 +87,7 @@ contract TreasuryBonding is TreasuryTest {
         oracle.setData(0);
 
         // Fails with StalePriceDeliveredByOracle.
-        treasury.bond(address(token), amount);
+        treasury.bondERC20(address(token), amount);
     }
 
     function testFailRedeemDisabledIfOracleInvalid(uint amount)
@@ -99,16 +99,16 @@ contract TreasuryBonding is TreasuryTest {
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
-        treasury.listAssetAsRedeemable(address(token));
+        treasury.listERC20AsRedeemable(address(token));
 
         // Bond tokens.
-        treasury.bond(address(token), amount);
+        treasury.bondERC20(address(token), amount);
 
         // Set token's oracle to invalid.
         oracle.setValid(false);
 
         // Fails with StalePriceDelivered.
-        treasury.redeem(address(token), amount);
+        treasury.redeemERC20(address(token), amount);
     }
 
     function testFailRedeemDisabledIfOraclePriceIsZero(uint amount)
@@ -120,16 +120,16 @@ contract TreasuryBonding is TreasuryTest {
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
-        treasury.listAssetAsRedeemable(address(token));
+        treasury.listERC20AsRedeemable(address(token));
 
         // Bond tokens.
-        treasury.bond(address(token), amount);
+        treasury.bondERC20(address(token), amount);
 
         // Set oracle's price to zero.
         oracle.setData(0);
 
         // Fails with StalePriceDelivered.
-        treasury.redeem(address(token), amount);
+        treasury.redeemERC20(address(token), amount);
     }
 
     //----------------------------------
@@ -144,14 +144,14 @@ contract TreasuryBonding is TreasuryTest {
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
-        treasury.listAssetAsRedeemable(address(token));
+        treasury.listERC20AsRedeemable(address(token));
 
         // Bond tokens.
-        treasury.bond(address(token), amount);
+        treasury.bondERC20(address(token), amount);
 
         // Redeem all tokens.
         // Fails with a Division by 0 in ElasticReceiptToken.
-        treasury.redeem(address(token), amount);
+        treasury.redeemERC20(address(token), amount);
     }
 
     function testBondingAndRedeeming(uint amount)
@@ -163,14 +163,14 @@ contract TreasuryBonding is TreasuryTest {
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
 
         // Mark token as redeemable.
-        treasury.listAssetAsRedeemable(address(token));
+        treasury.listERC20AsRedeemable(address(token));
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetsBonded(address(this), address(token), amount);
+        emit ERC20sBonded(address(this), address(token), amount);
 
         // Bond tokens.
-        treasury.bond(address(token), amount);
+        treasury.bondERC20(address(token), amount);
 
         // Check that address(this) received amount of KTT tokens.
         assertEq(treasury.balanceOf(address(this)), amount);
@@ -192,9 +192,9 @@ contract TreasuryBonding is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit AssetsRedeemed(address(this), address(token), tokensUnbonded);
+        emit ERC20sRedeemed(address(this), address(token), tokensUnbonded);
 
-        treasury.redeem(address(token), tokensUnbonded);
+        treasury.redeemERC20(address(token), tokensUnbonded);
 
         // Check that address(this) received the tokens unbonded.
         assertEq(token.balanceOf(address(this)), tokensUnbonded);
@@ -219,7 +219,7 @@ contract TreasuryBonding is TreasuryTest {
         (t1, o1) = setUpForBonding(ONE_USD, 1e20, 20);
 
         // Bond t1.
-        treasury.bond(address(t1), 1e20);
+        treasury.bondERC20(address(t1), 1e20);
 
         // Check that address(this) received amount of KTT tokens.
         assertEq(treasury.balanceOf(address(this)), 1e18);
@@ -240,7 +240,7 @@ contract TreasuryBonding is TreasuryTest {
         (t2, o2) = setUpForBonding(ONE_USD * 2, 2e9, 9);
 
         // Bond t2.
-        treasury.bond(address(t2), 2e9);
+        treasury.bondERC20(address(t2), 2e9);
 
         // Check that address(this) received amount of KTT tokens.
         assertEq(treasury.balanceOf(address(this)), 1e18 + (2e18 * 2));
@@ -260,10 +260,10 @@ contract TreasuryBonding is TreasuryTest {
 
         if (redeemT1) {
             // List t1 as redeemable.
-            treasury.listAssetAsRedeemable(address(t1));
+            treasury.listERC20AsRedeemable(address(t1));
 
             // address(this) redeem t1.
-            treasury.redeem(address(t1), 1e18);
+            treasury.redeemERC20(address(t1), 1e18);
 
             // Check that address(this) received the t1 redeemed.
             assertEq(t1.balanceOf(address(this)), 1e20);
@@ -276,10 +276,10 @@ contract TreasuryBonding is TreasuryTest {
             assertEq(treasury.totalSupply(), 2e18 * 2);
         } else {
             // Mark t2 as redeemable.
-            treasury.listAssetAsRedeemable(address(t2));
+            treasury.listERC20AsRedeemable(address(t2));
 
             // address(this) redeem t2.
-            treasury.redeem(address(t2), 2e18 * 2);
+            treasury.redeemERC20(address(t2), 2e18 * 2);
 
             // Check that address(this) received the t1 redeemed.
             assertEq(t2.balanceOf(address(this)), 2e9);

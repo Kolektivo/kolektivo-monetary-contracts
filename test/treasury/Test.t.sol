@@ -20,47 +20,47 @@ library Errors {
     bytes internal constant InvalidRecipient
         = abi.encodeWithSignature("InvalidRecipient()");
 
-    function AssetIsNotBondable(address asset)
+    function ERC20IsNotBondable(address erc20)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "Treasury__AssetIsNotBondable(address)",
-            asset
+            "Treasury__ERC20IsNotBondable(address)",
+            erc20
         );
     }
 
-    function AssetIsNotRedeemable(address asset)
+    function ERC20IsNotRedeemable(address erc20)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "Treasury__AssetIsNotRedeemable(address)",
-            asset
+            "Treasury__ERC20IsNotRedeemable(address)",
+            erc20
         );
     }
 
-    function AssetIsNotRegistered(address asset)
+    function ERC20IsNotRegistered(address erc20)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "Treasury__AssetIsNotRegistered(address)",
-            asset
+            "Treasury__ERC20IsNotRegistered(address)",
+            erc20
         );
     }
 
-    function StalePriceDeliveredByOracle(address asset, address oracle)
+    function StalePriceDeliveredByOracle(address erc20, address oracle)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "Treasury__StalePriceDeliveredByOracle(address,address)",
-            asset,
+            "Treasury__StaleERC20PriceDeliveredByOracle(address,address)",
+            erc20,
             oracle
         );
     }
@@ -78,25 +78,25 @@ abstract contract TreasuryTest is Test {
 
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
-    event AssetRegistered(address indexed asset, address indexed oracle, Treasury.AssetType assetType);
-    event AssetDeregistered(address indexed asset);
-    event AssetOracleUpdated(
-        address indexed asset,
-        address indexed oldOracle,
-        address indexed newOracle
+    event ERC20Registered(address indexed erc20, address indexed oracle, Treasury.AssetType assetType);
+    event ERC20Unregistered(address indexed erc20);
+    event ERC20OracleUpdated(
+        address indexed erc20,
+        address oldOracle,
+        address newOracle
     );
-    event AssetListedAsBondable(address indexed asset);
-    event AssetListedAsRedeemable(address indexed asset);
-    event AssetDelistedAsBondable(address indexed asset);
-    event AssetDelistedAsRedeemable(address indexed asset);
-    event AssetsBonded(
+    event ERC20ListedAsBondable(address indexed erc20);
+    event ERC20ListedAsRedeemable(address indexed erc20);
+    event ERC20DelistedAsBondable(address indexed erc20);
+    event ERC20DelistedAsRedeemable(address indexed erc20);
+    event ERC20sBonded(
         address indexed who,
-        address indexed asset,
+        address indexed erc20,
         uint kttsMinted
     );
-    event AssetsRedeemed(
+    event ERC20sRedeemed(
         address indexed who,
-        address indexed asset,
+        address indexed erc20,
         uint kttsBurned
     );
 

@@ -17,7 +17,6 @@ import {TSOwnable} from "solrocket/TSOwnable.sol";
  * @author byterocket
  */
 contract ReserveToken is ERC20, TSOwnable {
-
     //--------------------------------------------------------------------------
     // Errors
 
@@ -37,8 +36,7 @@ contract ReserveToken is ERC20, TSOwnable {
     /// @param oldMintBurner The old mintBurner address.
     /// @param newMintBurner The new mintBurner address.
     event SetMintBurner(
-        address indexed oldMintBurner,
-        address indexed newMintBurner
+        address indexed oldMintBurner, address indexed newMintBurner
     );
 
     //--------------------------------------------------------------------------
@@ -53,7 +51,7 @@ contract ReserveToken is ERC20, TSOwnable {
     }
 
     /// @dev Modifier to guarantee token amount is valid.
-    modifier validAmount(uint amount) {
+    modifier validAmount(uint256 amount) {
         if (amount == 0) {
             revert ReserveToken__InvalidAmount();
         }
@@ -89,7 +87,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Mints an amount of KOL tokens to some address.
     /// @dev Only callable by mintBurner address.
-    function mint(address to, uint amount)
+    function mint(address to, uint256 amount)
         external
         validRecipient(to)
         validAmount(amount)
@@ -100,7 +98,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Burns an amount of KOL tokens from some address.
     /// @dev Only callable by mintBurner address.
-    function burn(address from, uint amount)
+    function burn(address from, uint256 amount)
         external
         validAmount(amount)
         onlyMintBurner
@@ -126,18 +124,18 @@ contract ReserveToken is ERC20, TSOwnable {
     // Note that the functions are overidden in order to enforce the validAmount
     // and validRecipient modifiers.
 
-    function approve(address spender, uint amount)
+    function approve(address spender, uint256 amount)
         public
-        override(ERC20)
+        override (ERC20)
         validRecipient(spender)
         returns (bool)
     {
         return super.approve(spender, amount);
     }
 
-    function transfer(address to, uint amount)
+    function transfer(address to, uint256 amount)
         public
-        override(ERC20)
+        override (ERC20)
         validRecipient(to)
         validAmount(amount)
         returns (bool)
@@ -145,14 +143,13 @@ contract ReserveToken is ERC20, TSOwnable {
         return super.transfer(to, amount);
     }
 
-    function transferFrom(address from, address to, uint amount)
+    function transferFrom(address from, address to, uint256 amount)
         public
-        override(ERC20)
+        override (ERC20)
         validRecipient(to)
         validAmount(amount)
         returns (bool)
     {
         return super.transferFrom(from, to, amount);
     }
-
 }

@@ -13,39 +13,36 @@ import {VestingVault} from "./VestingVault.sol";
  * @author byterocket
  */
 contract LinearVestingVault is VestingVault {
-
-    constructor(address token_) VestingVault(token_) {
-        // NO-OP
+    constructor(address token_) VestingVault(token_) { // NO-OP
     }
 
-    function depositFor(address recipient, uint amount, uint vestingDuration)
+    function depositFor(
+        address recipient,
+        uint256 amount,
+        uint256 vestingDuration
+    )
         external
-        override(VestingVault)
-    {
-        // Fetch tokens.
-
+        override (VestingVault)
+    { // Fetch tokens.
     }
 
-    function claim() external override(VestingVault) {
-
-    }
+    function claim() external override (VestingVault) {}
 
     function vestedFor(address recipient)
         external
-        override(VestingVault)
         view
-        returns (uint)
+        override (VestingVault)
+        returns (uint256)
     {
         return 0;
     }
 
     function unvestedFor(address recipient)
         external
-        override(VestingVault)
         view
-        returns (uint)
+        override (VestingVault)
+        returns (uint256)
     {
         return 0;
     }
-
 }

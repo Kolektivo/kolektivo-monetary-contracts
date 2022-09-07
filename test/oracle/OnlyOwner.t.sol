@@ -7,7 +7,6 @@ import "./Test.t.sol";
  * @dev onlyOwner Function Tests.
  */
 contract OracleOnlyOwner is OracleTest {
-
     function testOnlyOwnerFunctionsNotPubliclyCallable(address caller) public {
         if (caller == oracle.owner()) {
             return;
@@ -53,8 +52,8 @@ contract OracleOnlyOwner is OracleTest {
         assertTrue(oracle.isValid() == to);
     }
 
-    function testSetMinimumProviders(uint to) public {
-        uint before = oracle.minimumProviders();
+    function testSetMinimumProviders(uint256 to) public {
+        uint256 before = oracle.minimumProviders();
 
         if (to == 0) {
             // Fails due to minimum providers of zero not allowed.
@@ -79,7 +78,7 @@ contract OracleOnlyOwner is OracleTest {
         pushValidReport(p1, 10);
 
         // Expect correct data being delivered from oracle.
-        uint data;
+        uint256 data;
         bool valid;
         (data, valid) = oracle.getData();
         assertEq(data, 10);
@@ -136,5 +135,4 @@ contract OracleOnlyOwner is OracleTest {
         vm.expectRevert(Errors.InvalidProvider(p1));
         oracle.pushReport(1);
     }
-
 }

@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {Oracle} from "../src/Oracle.sol";
+import { Oracle } from "../src/Oracle.sol";
 
 /**
  * @title Oracle Deployment Script
@@ -17,17 +17,17 @@ import {Oracle} from "../src/Oracle.sol";
  *      - TRUSTED_OWNER
  */
 contract DeployOracle is Script {
-
     Oracle oracle;
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint reportExpirationTime
-            = vm.envUint("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME");
-        uint reportDelay
-            = vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
-        uint minimumProviders
-            = vm.envUint("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS");
+        uint reportExpirationTime = vm.envUint(
+            "DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME"
+        );
+        uint reportDelay = vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
+        uint minimumProviders = vm.envUint(
+            "DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS"
+        );
 
         // Check settings.
         require(
@@ -65,6 +65,10 @@ contract DeployOracle is Script {
         // Log the deployed oracle contract address.
         console2.log("Deployment of Oracle at address", address(oracle));
 
+        if (oracle.owner() != oracle.pendingOwner()) {
+            return;
+        }
+
         // Initiate owner switch.
         vm.startBroadcast();
         {
@@ -79,10 +83,6 @@ contract DeployOracle is Script {
         );
 
         // Log successful initiation of the owner switch.
-        console2.log(
-            "Owner switch succesfully initiated to address",
-            newOwner
-        );
+        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
-
 }

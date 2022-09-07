@@ -2,27 +2,25 @@
 pragma solidity 0.8.10;
 
 // External Interfaces.
-import {IERC20Metadata} from "./interfaces/_external/IERC20Metadata.sol";
-import {IERC721Receiver} from "./interfaces/_external/IERC721Receiver.sol";
+import { IERC20Metadata } from "./interfaces/_external/IERC20Metadata.sol";
+import { IERC721Receiver } from "./interfaces/_external/IERC721Receiver.sol";
 
 // External Contracts.
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {ERC721} from "solmate/tokens/ERC721.sol";
-import {TSOwnable} from "solrocket/TSOwnable.sol";
+import { ERC20 } from "solmate/tokens/ERC20.sol";
+import { ERC721 } from "solmate/tokens/ERC721.sol";
+import { TSOwnable } from "solrocket/TSOwnable.sol";
 
 // External Libraries.
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import { SafeTransferLib } from "solmate/utils/SafeTransferLib.sol";
 
 // Internal Interfaces.
-import {IOracle} from "./interfaces/IOracle.sol";
+import { IOracle } from "./interfaces/IOracle.sol";
 
 // Internal Contracts.
-import {
-    ElasticReceiptToken
-} from "./ElasticReceiptToken.sol";
+import { ElasticReceiptToken } from "./ElasticReceiptToken.sol";
 
 // Internal Libraries.
-import {Wad} from "./lib/Wad.sol";
+import { Wad } from "./lib/Wad.sol";
 
 /**
  * @title Treasury
@@ -40,11 +38,7 @@ import {Wad} from "./lib/Wad.sol";
  *
  * @author byterocket
  */
-contract Treasury is
-    ElasticReceiptToken,
-    TSOwnable,
-    IERC721Receiver
-{
+contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
@@ -71,7 +65,7 @@ contract Treasury is
     /// @notice Function is only callable for registered erc20's.
     /// @param erc20 The address of the erc20 token.
     error Treasury__ERC20IsNotRegistered(address erc20);
-    
+
     /// @notice Function is only callable for registered erc721Id's.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
@@ -80,13 +74,20 @@ contract Treasury is
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the asset's oracle.
-    error Treasury__StaleERC20PriceDeliveredByOracle(address erc20, address oracle);
+    error Treasury__StaleERC20PriceDeliveredByOracle(
+        address erc20,
+        address oracle
+    );
 
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param oracle The address of the asset's oracle.
-    error Treasury__StaleERC721IdPriceDeliveredByOracle(address erc721, uint id, address oracle);
+    error Treasury__StaleERC721IdPriceDeliveredByOracle(
+        address erc721,
+        uint id,
+        address oracle
+    );
 
     //--------------------------------------------------------------------------
     // Events
@@ -129,13 +130,21 @@ contract Treasury is
     /// @notice Event emitted when an erc20 is registered
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the asset's oracle.
-    event ERC20Registered(address indexed erc20, address indexed oracle, AssetType assetType);
+    event ERC20Registered(
+        address indexed erc20,
+        address indexed oracle,
+        AssetType assetType
+    );
 
     /// @notice Event emitted when an erc721Id is registered
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param oracle The address of the asset's oracle.
-    event ERC721IdRegistered(address indexed erc721, uint indexed id, address indexed oracle);
+    event ERC721IdRegistered(
+        address indexed erc721,
+        uint indexed id,
+        address indexed oracle
+    );
 
     /// @notice Event emitted when an erc20 is unregistered.
     /// @param erc20 The address of the erc20 token.
@@ -162,7 +171,7 @@ contract Treasury is
     /// @param oldOracle The address of the asset's old oracle.
     /// @param newOracle The address of the asset's new oracle.
     event ERC721IdOracleUpdated(
-        address indexed erc721, 
+        address indexed erc721,
         uint indexed id,
         address oldOracle,
         address newOracle
@@ -231,7 +240,6 @@ contract Treasury is
         uint indexed id,
         uint kttsMinted
     );
-
 
     /// @notice Event emitted when erc20's are redeemed.
     /// @param who The address of the user.
@@ -303,7 +311,7 @@ contract Treasury is
         _;
     }
 
-        /// @notice Modifier to guarantee function is only callable with redeemable
+    /// @notice Modifier to guarantee function is only callable with redeemable
     ///         assets.
     modifier isRedeemableERC721Id(address erc721, uint id) {
         if (!isERC721IdRedeemable[erc721][id]) {
@@ -345,7 +353,7 @@ contract Treasury is
 
     /// @notice The mapping of oracles providing the price for an erc721Id.
     /// @dev Changeable by owner.
-    /// @dev address in registeredERC721Ids => uint id in 
+    /// @dev address in registeredERC721Ids => uint id in
     //       registeredERC721Ids => address of type IOracle.
     mapping(address => mapping(uint => address)) public oraclePerERC721Id;
 
@@ -390,6 +398,23 @@ contract Treasury is
         ElasticReceiptToken("Kolektivo Treasury Token", "KTT", uint8(18))
     {
         // NO-OP
+    }
+
+    //--------------------------------------------------------------------------
+    // View Functions
+
+    /// @notice Returns the array of all registered erc20 assets
+    function allRegisteredERC20s() external view returns (address[] memory) {
+        return registeredERC20s;
+    }
+
+    /// @notice Returns the array of all registered erc721Id assets
+    function allRegisteredERC721Ids()
+        external
+        view
+        returns (ERC721Id[] memory)
+    {
+        return registeredERC721Ids;
     }
 
     //--------------------------------------------------------------------------
@@ -495,7 +520,7 @@ contract Treasury is
         onlyOwner
     {
         uint kttWad = _queryERC721IdPrice(erc721, id);
-        
+
         // Burn KTTs from msg.sender.
         // Note to update the KTT amount which could have changed due to
         // rebasing.
@@ -522,7 +547,7 @@ contract Treasury is
     function onERC721Received(
         address,
         address,
-        uint256,
+        uint,
         bytes calldata
     ) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
@@ -544,11 +569,7 @@ contract Treasury is
         return _erc20Value() + _erc721IdValue();
     }
 
-    function _erc20Value()
-        internal
-        view
-        returns (uint)
-    {
+    function _erc20Value() internal view returns (uint) {
         // Declare variables outside of loop to save gas.
         address erc20;
         uint erc20Balance;
@@ -567,7 +588,9 @@ contract Treasury is
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked { ++i; }
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
@@ -577,18 +600,16 @@ contract Treasury is
             erc20BalanceWad = Wad.convertToWad(erc20, erc20Balance);
             totalWad += (erc20BalanceWad * _queryERC20Price(erc20)) / 1e18;
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Return the total valuation of erc20's in the treasury.
         return totalWad;
     }
 
-    function _erc721IdValue()
-        internal
-        view
-        returns (uint)
-    {
+    function _erc721IdValue() internal view returns (uint) {
         // Declare variables outside of loop to save gas.
         address erc721;
         uint id;
@@ -607,7 +628,9 @@ contract Treasury is
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked { ++i; }
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
@@ -615,7 +638,9 @@ contract Treasury is
             // Add the erc721Id's valuation to the total valuation
             totalWad += _queryERC721IdPrice(erc721, id);
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Return the total valuation of erc721Id's in the treasury.
@@ -638,7 +663,10 @@ contract Treasury is
         onlyOwner
     {
         bool success;
-        (success, /*returnData*/) = target.call(callData);
+        (
+            success, /*returnData*/
+
+        ) = target.call(callData);
         require(success);
     }
 
@@ -657,12 +685,11 @@ contract Treasury is
     /// @param erc20 The address of the erc20 token.
     /// @param recipient The recipient address.
     /// @param amount The amount of the erc20 to withdraw.
-    function withdrawERC20(address erc20, address recipient, uint amount)
-        external
-        validAmount(amount)
-        validRecipient(recipient)
-        onlyOwner
-    {
+    function withdrawERC20(
+        address erc20,
+        address recipient,
+        uint amount
+    ) external validAmount(amount) validRecipient(recipient) onlyOwner {
         // @todo Add Event!
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
@@ -690,11 +717,11 @@ contract Treasury is
     /// @param erc721 The erc721 token to bond.
     /// @param id     The id of the corresponding nft.
     /// @param recipient The recipient address.
-    function withdrawERC721Id(address erc721, uint id, address recipient)
-        external
-        validRecipient(recipient)
-        onlyOwner
-    {
+    function withdrawERC721Id(
+        address erc721,
+        uint id,
+        address recipient
+    ) external validRecipient(recipient) onlyOwner {
         // @todo Add Event!
         // Make sure that erc721's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
@@ -715,7 +742,11 @@ contract Treasury is
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the asset's oracle.
     /// @param assetType The type of the asset
-    function registerERC20(address erc20, address oracle, AssetType assetType) external onlyOwner {
+    function registerERC20(
+        address erc20,
+        address oracle,
+        AssetType assetType
+    ) external onlyOwner {
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -758,7 +789,11 @@ contract Treasury is
     /// @param erc721 The erc721 token to bond.
     /// @param id     The id of the corresponding nft.
     /// @param oracle The address of the asset's oracle.
-    function registerERC721Id(address erc721, uint id, address oracle) external onlyOwner {
+    function registerERC721Id(
+        address erc721,
+        uint id,
+        address oracle
+    ) external onlyOwner {
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc721.code.length != 0);
@@ -781,7 +816,11 @@ contract Treasury is
 
         // Do not accept invalid oracle response or price of zero.
         if (!valid || priceWad == 0) {
-            revert Treasury__StaleERC721IdPriceDeliveredByOracle(erc721, id, oracle);
+            revert Treasury__StaleERC721IdPriceDeliveredByOracle(
+                erc721,
+                id,
+                oracle
+            );
         }
 
         // Add asset and oracle to storage.
@@ -820,7 +859,9 @@ contract Treasury is
                 break;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -841,7 +882,10 @@ contract Treasury is
         // Remove asset from registeredERC20s array.
         uint len = registeredERC721Ids.length;
         for (uint i; i < len; ) {
-            if (erc721 == registeredERC721Ids[i].erc721 && id == registeredERC721Ids[i].id) {
+            if (
+                erc721 == registeredERC721Ids[i].erc721 &&
+                id == registeredERC721Ids[i].id
+            ) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
                     registeredERC721Ids[i] = registeredERC721Ids[len - 1];
@@ -852,7 +896,9 @@ contract Treasury is
                 break;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -893,11 +939,11 @@ contract Treasury is
     /// @param erc721 The erc721 token to bond.
     /// @param id     The id of the corresponding nft.
     /// @param oracle The new asset's oracle.
-    function updateERC721IdOracle(address erc721, uint id, address oracle)
-        external
-        isRegisteredERC721Id(erc721, id)
-        onlyOwner
-    {   
+    function updateERC721IdOracle(
+        address erc721,
+        uint id,
+        address oracle
+    ) external isRegisteredERC721Id(erc721, id) onlyOwner {
         // Cache old oracle.
         address oldOracle = oraclePerERC721Id[erc721][id];
 
@@ -913,7 +959,11 @@ contract Treasury is
 
         // Do not accept invalid oracle response or price of zero.
         if (!valid || priceWad == 0) {
-            revert Treasury__StaleERC721IdPriceDeliveredByOracle(erc721, id, oracle);
+            revert Treasury__StaleERC721IdPriceDeliveredByOracle(
+                erc721,
+                id,
+                oracle
+            );
         }
 
         // Update erc20's oracle and notify off-chain services.
@@ -1104,7 +1154,11 @@ contract Treasury is
 
     /// @dev Query's the price for given asset from the asset's oracle.
     ///      Reverts in case the oracle or delivered price is invalid.
-    function _queryERC721IdPrice(address erc721, uint id) private view returns (uint) {
+    function _queryERC721IdPrice(address erc721, uint id)
+        private
+        view
+        returns (uint)
+    {
         address oracle = oraclePerERC721Id[erc721][id];
         assert(oracle != address(0));
 
@@ -1115,7 +1169,11 @@ contract Treasury is
 
         // Revert if oracle is invalid or price is zero.
         if (!valid || priceWad == 0) {
-            revert Treasury__StaleERC721IdPriceDeliveredByOracle(erc721, id, oracle);
+            revert Treasury__StaleERC721IdPriceDeliveredByOracle(
+                erc721,
+                id,
+                oracle
+            );
         }
 
         return priceWad;

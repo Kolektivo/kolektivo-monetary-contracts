@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface IReserve {
-
     /// @notice An ERC721Id defines one specific ERC721 NFT token.
     ///         It is composed of the ERC721 contract address and the token's
     ///         id.
@@ -138,7 +137,7 @@ interface IReserve {
     /// @param oldOracle The ERC721Id instance's old price oracle.
     /// @param newOracle The ERC721Id instance's new price oracle.
     event SetERC721IdOracle(
-        address erc721, 
+        address erc721,
         uint id,
         address indexed oldOracle,
         address indexed newOracle
@@ -262,7 +261,7 @@ interface IReserve {
     /// @param oldDiscount The ERC721Id instance's old bonding discount.
     /// @param newDiscount The ERC721Id instance's new bonding discount.
     event SetERC721IdBondingDiscount(
-        address erc721, 
+        address erc721,
         uint id,
         uint oldDiscount,
         uint newDiscount
@@ -299,7 +298,7 @@ interface IReserve {
     /// @param newVestingDuration The ERC721Id instance's new bonding vesting
     ///                           duration.
     event SetERC721IdBondingVesting(
-        address erc721, 
+        address erc721,
         uint id,
         uint oldVestingDuration,
         uint newVestingDuration
@@ -333,7 +332,11 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @param oracle The ERC20 token's price oracle of type IOracle.
     /// @param assetType The asset type of the ERC20 token
-    function registerERC20(address erc20, address oracle, AssetType assetType) external;
+    function registerERC20(
+        address erc20,
+        address oracle,
+        AssetType assetType
+    ) external;
 
     /// @notice Registers given ERC721Id instance with given oracle.
     /// @dev Only callable by owner.
@@ -341,8 +344,8 @@ interface IReserve {
     /// @param id The id of the corresponding NFT.
     /// @param oracle The ERC721Id instance's price oracle of type IOracle.
     function registerERC721Id(
-        address erc721, 
-        uint id, 
+        address erc721,
+        uint id,
         address oracle
     ) external;
 
@@ -369,7 +372,7 @@ interface IReserve {
     /// @param id The id of the corresponding NFT.
     /// @param oracle The new ERC721Id instance's price oracle of type IOracle.
     function updateOracleForERC721Id(
-        address erc721, 
+        address erc721,
         uint id,
         address oracle
     ) external;
@@ -460,7 +463,7 @@ interface IReserve {
     /// @param id The id of the corresponding NFT.
     /// @param discount The bonding discount for the ERC721Id instance.
     function setBondingDiscountForERC721Id(
-        address erc721, 
+        address erc721,
         uint id,
         uint discount
     ) external;
@@ -487,7 +490,7 @@ interface IReserve {
     /// @param vestingDuration The bonding vesting duration for the ERC721Id
     ///        instance.
     function setBondingVestingForERC721Id(
-        address erc721, 
+        address erc721,
         uint id,
         uint vestingDuration
     ) external;
@@ -507,8 +510,11 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @param recipient The recipient address for the withdrawed ERC20 tokens.
     /// @param amount The amount of the asset to withdraw.
-    function withdrawERC20(address erc20, address recipient, uint amount)
-        external;
+    function withdrawERC20(
+        address erc20,
+        address recipient,
+        uint amount
+    ) external;
 
     /// @notice Withdraws given ERC721Id instance to given recipient.
     /// @dev Reverts in case the minimum backing requirement is exceeded.
@@ -517,8 +523,11 @@ interface IReserve {
     /// @param id The id of the corresponding NFT.
     /// @param recipient The recipient address for the withdrawed ERC721Id
     ///                  instance.
-    function withdrawERC721Id(address erc721, uint id, address recipient)
-        external;
+    function withdrawERC721Id(
+        address erc721,
+        uint id,
+        address recipient
+    ) external;
 
     /// @notice Incurs debt by minting tokens to the caller.
     /// @dev Reverts in case the minimum backing requirement is exceeded.
@@ -545,15 +554,22 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @param from The address to fetch ERC20 tokens from.
     /// @param amount The amount of ERC20 tokens to bond.
-    function bondERC20From(address erc20, address from, uint amount) external;
+    function bondERC20From(
+        address erc20,
+        address from,
+        uint amount
+    ) external;
 
     /// @notice Bonds given amount of ERC20 tokens from the caller and mints
     ///         corresponding reserve tokens to given recipient.
     /// @param erc20 The ERC20 token address.
     /// @param recipient The recipient address for the reserve tokens.
     /// @param amount The amount of ERC20 tokens to bond.
-    function bondERC20To(address erc20, address recipient, uint amount)
-        external;
+    function bondERC20To(
+        address erc20,
+        address recipient,
+        uint amount
+    ) external;
 
     /// @notice Bonds given amount of ERC20 tokens from given address and mints
     ///         corresponding reserve tokens to given recipient.
@@ -590,8 +606,11 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @param from The address to fetch ERC20 tokens from.
     /// @param recipient The recipient address for the reserve tokens.
-    function bondERC20AllFromTo(address erc20, address from, address recipient)
-        external;
+    function bondERC20AllFromTo(
+        address erc20,
+        address from,
+        address recipient
+    ) external;
 
     /// @notice Bonds given ERC721Id instance from caller and mints
     ///         corresponding reserve tokens to the caller.
@@ -604,15 +623,22 @@ interface IReserve {
     /// @param erc721 The ERC721 token address.
     /// @param id The id of the corresponding NFT.
     /// @param from The address to fetch the ERC721Id instance from.
-    function bondERC721IdFrom(address erc721, uint id, address from) external;
+    function bondERC721IdFrom(
+        address erc721,
+        uint id,
+        address from
+    ) external;
 
     /// @notice Bonds given ERC721Id instance from caller and mints
     ///         corresponding reserve tokens to given recipient.
     /// @param erc721 The ERC721 token address.
     /// @param id The id of the corresponding NFT.
     /// @param recipient The recipient address for the reserve tokens.
-    function bondERC721IdTo(address erc721, uint id, address recipient)
-        external;
+    function bondERC721IdTo(
+        address erc721,
+        uint id,
+        address recipient
+    ) external;
 
     /// @notice Bonds given ERC721Id instance from given address and mints
     ///         corresponding reserve tokens to given recipient.
@@ -621,7 +647,7 @@ interface IReserve {
     /// @param from The address to fetch the ERC721Id instance from.
     /// @param recipient The recipient address for the reserve tokens.
     function bondERC721IdFromTo(
-        address erc721, 
+        address erc721,
         uint id,
         address from,
         address recipient
@@ -638,16 +664,22 @@ interface IReserve {
     /// @param erc20 The ERC20 token to redeem.
     /// @param from The address to fetch the reserve tokens from.
     /// @param tokenAmount The amount of reserve tokens to burn.
-    function redeemERC20From(address erc20, address from, uint tokenAmount)
-        external;
+    function redeemERC20From(
+        address erc20,
+        address from,
+        uint tokenAmount
+    ) external;
 
     /// @notice Redeems some amount of given ERC20 token to given recipient and
     ///         burns given amount of reserve tokens from the caller.
     /// @param erc20 The ERC20 token to redeem.
     /// @param recipient The recipient address for the redeemed ERC20 tokens.
     /// @param tokenAmount The amount of reserve tokens to burn.
-    function redeemERC20To(address erc20, address recipient, uint tokenAmount)
-        external;
+    function redeemERC20To(
+        address erc20,
+        address recipient,
+        uint tokenAmount
+    ) external;
 
     /// @notice Redeems some amount of given ERC20 token to given recipient and
     ///         burns given amount of reserve tokens from given address.
@@ -701,8 +733,11 @@ interface IReserve {
     /// @param erc721 The ERC721 token address.
     /// @param id The id of the corresponding NFT.
     /// @param from The address to fetch the ERC721Id instance from.
-    function redeemERC721IdFrom(address erc721, uint id, address from)
-        external;
+    function redeemERC721IdFrom(
+        address erc721,
+        uint id,
+        address from
+    ) external;
 
     /// @notice Redeems given ERC721Id instance to given recipient and burns
     ///         corresponding amount of reserve tokens from the caller.
@@ -710,8 +745,11 @@ interface IReserve {
     /// @param id The id of the corresponding NFT.
     /// @param recipient The recipient address for the redeemed ERC721Id
     ///                  instance.
-    function redeemERC721IdTo(address erc721, uint id, address recipient)
-        external;
+    function redeemERC721IdTo(
+        address erc721,
+        uint id,
+        address recipient
+    ) external;
 
     /// @notice Redeems given ERC721Id instance to given recipient and burns
     ///         corresponding amount of reserve tokens from the caller.
@@ -721,7 +759,7 @@ interface IReserve {
     /// @param recipient The recipient address for the redeemed ERC721Id
     ///                  instance.
     function redeemERC721IdFromTo(
-        address erc721, 
+        address erc721,
         uint id,
         address from,
         address recipient
@@ -741,12 +779,6 @@ interface IReserve {
         external
         view
         returns (address, uint);
-
-    /// @notice Returns the number of registered ERC20 tokens.
-    function registeredERC20sSize() external view returns (uint);
-
-    /// @notice Returns the number of registered ERC721Id instances.
-    function registeredERC721IdsSize() external view returns (uint);
 
     /// @notice Returns the registered ERC20 tokens.
     function allRegisteredERC20s() external view returns (address[] memory);
@@ -841,7 +873,10 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @return The bonding discount percentage, denomintated in bps, for
     ///         given ERC20 token address.
-    function bondingDiscountPerERC20(address erc20) external view returns (uint);
+    function bondingDiscountPerERC20(address erc20)
+        external
+        view
+        returns (uint);
 
     /// @notice Returns the bonding discount percentage, denominated in bps,
     ///         for the ERC721Id instance, identified through given address and id.
@@ -888,6 +923,12 @@ interface IReserve {
     /// @return uint Reserve assets valuation in USD with 18 decimal precision.
     /// @return uint Token supply's valuation in USD with 18 decimal precision.
     /// @return uint BPS of supply backed by reserve.
-    function reserveStatus() external view returns (uint, uint, uint);
-
+    function reserveStatus()
+        external
+        view
+        returns (
+            uint,
+            uint,
+            uint
+        );
 }

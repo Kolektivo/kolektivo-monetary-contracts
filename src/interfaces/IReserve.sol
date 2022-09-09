@@ -331,7 +331,7 @@ interface IReserve {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param oracle The ERC20 token's price oracle of type IOracle.
-    /// @param assetType The asset type of the ERC20 token
+    /// @param assetType The asset type of the ERC20 token.
     function registerERC20(
         address erc20,
         address oracle,

@@ -93,7 +93,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     }
 
     /// @dev Modifier to guarantee token amount is valid.
-    modifier validAmount(uint256 amount) {
+    modifier validAmount(uint amount) {
         if (amount == 0) {
             revert InvalidAmount();
         }
@@ -111,42 +111,42 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     // Constants
 
     /// @dev Math constant.
-    uint256 private constant MAX_UINT = type(uint256).max;
+    uint private constant MAX_UINT = type(uint).max;
 
     /// @dev The max supply target allowed.
     /// @dev Note that this constant is internal in order for downstream
     ////     contracts to enforce this constraint directly.
-    uint256 internal constant MAX_SUPPLY = 1000000000e18;
+    uint internal constant MAX_SUPPLY = 1_000_000_000e18;
 
     /// @dev The total amount of bits is a multiple of MAX_SUPPLY so that
     ///      BITS_PER_UNDERLYING is an integer.
     ///      Use the highest value that fits in a uint for max granularity.
-    uint256 private constant TOTAL_BITS = MAX_UINT - (MAX_UINT % MAX_SUPPLY);
+    uint private constant TOTAL_BITS = MAX_UINT - (MAX_UINT % MAX_SUPPLY);
 
     /// @dev Initial conversion rate of bits per unit of denomination.
-    uint256 private constant BITS_PER_UNDERLYING = TOTAL_BITS / MAX_SUPPLY;
+    uint private constant BITS_PER_UNDERLYING = TOTAL_BITS / MAX_SUPPLY;
 
     //--------------------------------------------------------------------------
     // Internal Storage
 
     /// @dev The rebase counter, i.e. the number of rebases executed since
     ///      inception.
-    uint256 private _epoch;
+    uint private _epoch;
 
     /// @dev The amount of bits one token is composed of, i.e. the bits-token
     ///      conversion rate.
-    uint256 private _bitsPerToken;
+    uint private _bitsPerToken;
 
     /// @dev The total supply of tokens. In each token balance mutating
     ///      function the token supply is synced with the supply target
     ///      given by the downstream implemented _supplyTarget function.
-    uint256 private _totalTokenSupply;
+    uint private _totalTokenSupply;
 
     /// @dev The user balances, denominated in bits.
-    mapping(address => uint256) private _accountBits;
+    mapping(address => uint) private _accountBits;
 
     /// @dev The user allowances, denominated in tokens.
-    mapping(address => mapping(address => uint256)) private _tokenAllowances;
+    mapping(address => mapping(address => uint)) private _tokenAllowances;
 
     //--------------------------------------------------------------------------
     // ERC20 Storage
@@ -167,14 +167,16 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     string public constant EIP712_REVISION = "1";
 
     /// @notice The EIP-712 domain hash.
-    bytes32 public immutable EIP712_DOMAIN = keccak256(
-        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-    );
+    bytes32 public immutable EIP712_DOMAIN =
+        keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        );
 
     /// @notice The EIP-2612 permit hash.
-    bytes32 public immutable PERMIT_TYPEHASH = keccak256(
-        "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
-    );
+    bytes32 public immutable PERMIT_TYPEHASH =
+        keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
 
     /// @dev Number of EIP-2612 permits per address.
     mapping(address => uint256) private _nonces;
@@ -203,13 +205,13 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @dev The supply target MUST never be zero or higher than MAX_SUPPLY,
     ///      otherwise no supply adjustment can be executed.
     /// @dev Has to be implemented in downstream contract.
-    function _supplyTarget() internal virtual returns (uint256);
+    function _supplyTarget() internal virtual returns (uint);
 
     //--------------------------------------------------------------------------
     // Public ERC20-like Mutating Functions
 
     /// @inheritdoc IERC20
-    function transfer(address to, uint256 tokens)
+    function transfer(address to, uint tokens)
         public
         override (IERC20)
         validRecipient(to)
@@ -217,7 +219,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         onAfterRebase
         returns (bool)
     {
-        uint256 bits = _tokensToBits(tokens);
+        uint bits = _tokensToBits(tokens);
 
         _transfer(msg.sender, to, tokens, bits);
 
@@ -225,7 +227,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     }
 
     /// @inheritdoc IERC20
-    function transferFrom(address from, address to, uint256 tokens)
+    function transferFrom(address from, address to, uint tokens)
         public
         override (IERC20)
         validRecipient(from)
@@ -234,7 +236,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         onAfterRebase
         returns (bool)
     {
-        uint256 bits = _tokensToBits(tokens);
+        uint bits = _tokensToBits(tokens);
 
         _useAllowance(from, msg.sender, tokens);
         _transfer(from, to, tokens, bits);
@@ -250,8 +252,8 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         onAfterRebase
         returns (bool)
     {
-        uint256 bits = _accountBits[msg.sender];
-        uint256 tokens = _bitsToTokens(bits);
+        uint bits = _accountBits[msg.sender];
+        uint tokens = _bitsToTokens(bits);
 
         _transfer(msg.sender, to, tokens, bits);
 
@@ -267,8 +269,8 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         onAfterRebase
         returns (bool)
     {
-        uint256 bits = _accountBits[from];
-        uint256 tokens = _bitsToTokens(bits);
+        uint bits = _accountBits[from];
+        uint tokens = _bitsToTokens(bits);
 
         // Note that a transfer of zero tokens is valid to handle dust.
         if (tokens == 0) {
@@ -286,7 +288,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     }
 
     /// @inheritdoc IERC20
-    function approve(address spender, uint256 tokens)
+    function approve(address spender, uint tokens)
         public
         override (IERC20)
         validRecipient(spender)
@@ -303,15 +305,13 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @param spender The address of the spender.
     /// @param tokens The amount of tokens to increase allowance by.
     /// @return True if successful.
-    function increaseAllowance(address spender, uint256 tokens)
+    function increaseAllowance(address spender, uint tokens)
         public
         returns (bool)
     {
         _tokenAllowances[msg.sender][spender] += tokens;
 
-        emit Approval(
-            msg.sender, spender, _tokenAllowances[msg.sender][spender]
-            );
+        emit Approval(msg.sender, spender, _tokenAllowances[msg.sender][spender]);
         return true;
     }
 
@@ -320,7 +320,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @param spender The address of the spender.
     /// @param tokens The amount of tokens to decrease allowance by.
     /// @return True if successful.
-    function decreaseAllowance(address spender, uint256 tokens)
+    function decreaseAllowance(address spender, uint tokens)
         public
         returns (bool)
     {
@@ -330,9 +330,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
             _tokenAllowances[msg.sender][spender] -= tokens;
         }
 
-        emit Approval(
-            msg.sender, spender, _tokenAllowances[msg.sender][spender]
-            );
+        emit Approval(msg.sender, spender, _tokenAllowances[msg.sender][spender]);
         return true;
     }
 
@@ -352,8 +350,8 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     function permit(
         address owner,
         address spender,
-        uint256 value,
-        uint256 deadline,
+        uint value,
+        uint deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
@@ -371,7 +369,14 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
                         "\x19\x01",
                         DOMAIN_SEPARATOR(),
                         keccak256(
-                            abi.encode(PERMIT_TYPEHASH, owner, spender, value, _nonces[owner]++, deadline)
+                            abi.encode(
+                                PERMIT_TYPEHASH,
+                                owner,
+                                spender,
+                                value,
+                                _nonces[owner]++,
+                                deadline
+                            )
                         )
                     )
                 ),
@@ -395,28 +400,28 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     function allowance(address owner_, address spender)
         public
         view
-        returns (uint256)
+        returns (uint)
     {
         return _tokenAllowances[owner_][spender];
     }
 
     /// @inheritdoc IERC20
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public view returns (uint) {
         return _totalTokenSupply;
     }
 
     /// @inheritdoc IERC20
-    function balanceOf(address who) public view returns (uint256) {
+    function balanceOf(address who) public view returns (uint) {
         return _accountBits[who] / _bitsPerToken;
     }
 
     /// @inheritdoc IRebasingERC20
-    function scaledTotalSupply() public view returns (uint256) {
+    function scaledTotalSupply() public view returns (uint) {
         return _activeBits();
     }
 
     /// @inheritdoc IRebasingERC20
-    function scaledBalanceOf(address who) public view returns (uint256) {
+    function scaledBalanceOf(address who) public view returns (uint) {
         return _accountBits[who];
     }
 
@@ -430,30 +435,30 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @notice Returns the EIP-712 domain separator hash.
     /// @return The EIP-712 domain separator hash.
     function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                EIP712_DOMAIN,
-                keccak256(bytes(name)),
-                keccak256(bytes(EIP712_REVISION)),
-                block.chainid,
-                address(this)
-            )
-        );
+        return
+            keccak256(
+                abi.encode(
+                    EIP712_DOMAIN,
+                    keccak256(bytes(name)),
+                    keccak256(bytes(EIP712_REVISION)),
+                    block.chainid,
+                    address(this)
+                )
+            );
     }
 
     //--------------------------------------------------------------------------
     // Internal View Functions
 
     /// @dev Convert tokens (elastic amount) to bits (fixed amount).
-    function _tokensToBits(uint256 tokens) internal view returns (uint256) {
-        return
-            _bitsPerToken == 0
+    function _tokensToBits(uint tokens) internal view returns (uint) {
+        return _bitsPerToken == 0
             ? tokens * BITS_PER_UNDERLYING
             : tokens * _bitsPerToken;
     }
 
     /// @dev Convert bits (fixed amount) to tokens (elastic amount).
-    function _bitsToTokens(uint256 bits) internal view returns (uint256) {
+    function _bitsToTokens(uint bits) internal view returns (uint) {
         return bits / _bitsPerToken;
     }
 
@@ -463,7 +468,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @dev Mints an amount of tokens to some address.
     /// @dev It's assumed that the downstream contract increases its supply
     ///      target by precisely the token amount minted!
-    function _mint(address to, uint256 tokens)
+    function _mint(address to, uint tokens)
         internal
         validRecipient(to)
         validAmount(tokens)
@@ -475,8 +480,8 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         }
 
         // Get amount of bits to mint and new total amount of active bits.
-        uint256 bitsNeeded = _tokensToBits(tokens);
-        uint256 newActiveBits = _activeBits() + bitsNeeded;
+        uint bitsNeeded = _tokensToBits(tokens);
+        uint newActiveBits = _activeBits() + bitsNeeded;
 
         // Increase total token supply and adjust conversion rate only if no
         // conversion rate defined yet. Otherwise the conversion rate should
@@ -502,17 +507,15 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @dev It's assumed that the downstream contract decreases its supply
     ///      target by precisely the token amount burned!
     /// @dev It's not possible to burn all tokens.
-    function _burn(address from, uint256 tokens)
+    function _burn(address from, uint tokens)
         internal
         validRecipient(from)
         validAmount(tokens)
-        returns (
-            // onAfterRebase
-            uint256
-        )
+        // onAfterRebase
+        returns (uint)
     {
         // Cache the bit amount of tokens and execute rebase.
-        uint256 bits = _tokensToBits(tokens);
+        uint bits = _tokensToBits(tokens);
         _rebase();
 
         // Re-calculate the token amount and transfer them to zero address.
@@ -540,7 +543,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     ///      Fetches the current supply target from the downstream contract and
     ///      updates the bit-tokens conversion rate and the total token supply.
     function _rebase() private {
-        uint256 supplyTarget = _supplyTarget();
+        uint supplyTarget = _supplyTarget();
 
         // Do not adjust supply if target is outside of valid supply range.
         // Note to not revert as this would make transfer's impossible.
@@ -559,13 +562,13 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
 
     /// @dev Internal function returning the total amount of active bits,
     ///      i.e. all bits not held by zero address.
-    function _activeBits() private view returns (uint256) {
+    function _activeBits() private view returns (uint) {
         return TOTAL_BITS - _accountBits[address(0)];
     }
 
     /// @dev Internal function to transfer bits.
     ///      Note that the bits and tokens are expected to be pre-calculated.
-    function _transfer(address from, address to, uint256 tokens, uint256 bits)
+    function _transfer(address from, address to, uint tokens, uint bits)
         private
     {
         _accountBits[from] -= bits;
@@ -580,11 +583,11 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
 
     /// @dev Internal function to decrease ERC20 allowance.
     ///      Note that the allowance denomination is in tokens.
-    function _useAllowance(address owner_, address spender, uint256 tokens)
+    function _useAllowance(address owner_, address spender, uint tokens)
         private
     {
         // Note that an allowance of max uint is interpreted as infinite.
-        if (_tokenAllowances[owner_][spender] != type(uint256).max) {
+        if (_tokenAllowances[owner_][spender] != type(uint).max) {
             _tokenAllowances[owner_][spender] -= tokens;
         }
     }

@@ -9,11 +9,11 @@ pragma solidity 0.8.10;
  * @author byterocket
  */
 library GeoCoordinates {
-    int32 private constant MAX_LATITUDE = 180000000;
-    int32 private constant MIN_LATITUDE = -180000000;
+    int32 private constant MAX_LATITUDE = 180_000_000;
+    int32 private constant MIN_LATITUDE = -180_000_000;
 
-    int32 private constant MAX_LONGITUDE = 90000000;
-    int32 private constant MIN_LONGITUDE = -90000000;
+    int32 private constant MAX_LONGITUDE = 90_000_000;
+    int32 private constant MIN_LONGITUDE = -90_000_000;
 
     /// @notice Returns whether the given latitude coordinate is valid.
     /// @param latitude The latitude coordinate.

@@ -51,7 +51,7 @@ contract ReserveToken is ERC20, TSOwnable {
     }
 
     /// @dev Modifier to guarantee token amount is valid.
-    modifier validAmount(uint256 amount) {
+    modifier validAmount(uint amount) {
         if (amount == 0) {
             revert ReserveToken__InvalidAmount();
         }
@@ -87,7 +87,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Mints an amount of KOL tokens to some address.
     /// @dev Only callable by mintBurner address.
-    function mint(address to, uint256 amount)
+    function mint(address to, uint amount)
         external
         validRecipient(to)
         validAmount(amount)
@@ -98,7 +98,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Burns an amount of KOL tokens from some address.
     /// @dev Only callable by mintBurner address.
-    function burn(address from, uint256 amount)
+    function burn(address from, uint amount)
         external
         validAmount(amount)
         onlyMintBurner
@@ -124,7 +124,7 @@ contract ReserveToken is ERC20, TSOwnable {
     // Note that the functions are overidden in order to enforce the validAmount
     // and validRecipient modifiers.
 
-    function approve(address spender, uint256 amount)
+    function approve(address spender, uint amount)
         public
         override (ERC20)
         validRecipient(spender)
@@ -133,7 +133,7 @@ contract ReserveToken is ERC20, TSOwnable {
         return super.approve(spender, amount);
     }
 
-    function transfer(address to, uint256 amount)
+    function transfer(address to, uint amount)
         public
         override (ERC20)
         validRecipient(to)
@@ -143,7 +143,7 @@ contract ReserveToken is ERC20, TSOwnable {
         return super.transfer(to, amount);
     }
 
-    function transferFrom(address from, address to, uint256 amount)
+    function transferFrom(address from, address to, uint amount)
         public
         override (ERC20)
         validRecipient(to)

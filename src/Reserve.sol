@@ -2,25 +2,24 @@
 pragma solidity 0.8.10;
 
 // External Interfaces.
-import { IERC20 } from "./interfaces/_external/IERC20.sol";
-import { IERC721Receiver } from "./interfaces/_external/IERC721Receiver.sol";
+import {IERC20} from "./interfaces/_external/IERC20.sol";
+import {IERC721Receiver} from "./interfaces/_external/IERC721Receiver.sol";
 
 // External Contracts.
-import { ERC20 } from "solmate/tokens/ERC20.sol";
-import { ERC721 } from "solmate/tokens/ERC721.sol";
-import { TSOwnable } from "solrocket/TSOwnable.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
+import {ERC721} from "solmate/tokens/ERC721.sol";
+import {TSOwnable} from "solrocket/TSOwnable.sol";
 
 // External Libraries.
-import { SafeTransferLib } from "solmate/utils/SafeTransferLib.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 // Internal Interfaces.
-import { IOracle } from "./interfaces/IOracle.sol";
-import { IVestingVault } from "./interfaces/IVestingVault.sol";
-import { IReserve } from "./interfaces/IReserve.sol";
+import {IOracle} from "./interfaces/IOracle.sol";
+import {IVestingVault} from "./interfaces/IVestingVault.sol";
+import {IReserve} from "./interfaces/IReserve.sol";
 
 // Internal Libraries.
-import { Wad } from "./lib/Wad.sol";
-import { console } from "forge-std/console.sol";
+import {Wad} from "./lib/Wad.sol";
 
 interface IERC20MintBurn is IERC20 {
     function mint(address to, uint amount) external;
@@ -164,7 +163,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Constants and Immutables
 
     /// @dev 10,000 bps are 100%.
-    uint private constant BPS = 10000;
+    uint private constant BPS = 10_000;
 
     /// @dev Needs to have 18 decimal precision.
     IERC20MintBurn private immutable _token;
@@ -551,10 +550,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @inheritdoc IReserve
     function executeTx(address target, bytes memory data) external onlyOwner {
         bool success;
-        (
-            success, /*returnData*/
-
-        ) = target.call(data);
+        (success, /*returnData*/) = target.call(data);
         require(success);
     }
 
@@ -599,7 +595,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Check oracle's validity.
         require(_oracleIsValid(oracle));
 
-        // Revert if the asset type is invalid
+        // Revert if asset type is invalid.
         require(uint(assetType) <= 2);
 
         // Add erc20 and oracle to mappings.
@@ -619,7 +615,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address oracle
     ) external onlyOwner {
         // Make sure that erc721Id's code is non-empty.
-        // @todo Does solmate check this?
         require(erc721.code.length != 0);
 
         address oldOracle = oraclePerERC721Id[erc721][id];
@@ -654,8 +649,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             return;
         }
 
-        // Remove erc20's oracle and notify off-chain services.
+        // Notify off-chain services.
         emit SetERC20Oracle(erc20, oraclePerERC20[erc20], address(0));
+
+        // Remove erc20's oracle and asset type.
         delete oraclePerERC20[erc20];
         delete typeOfAsset[erc20];
 
@@ -673,15 +670,13 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 break;
             }
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
     }
 
     /// @inheritdoc IReserve
     function deregisterERC721Id(address erc721, uint id) external onlyOwner {
-        // Do nothing if erc721 is already not deregistered.
+        // Do nothing if erc721 is already deregistered.
         // Note that we do not use the isRegisteredERC721Id modifier to be
         // idempotent.
         if (oraclePerERC721Id[erc721][id] == address(0)) {
@@ -714,9 +709,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 break;
             }
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
     }
 
@@ -1219,9 +1212,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint reserveValuation = _reserveValuation();
         uint supplyValuation = _supplyValuation();
 
-        uint backing = supplyValuation == 0
-            ? BPS
-            : (reserveValuation * BPS) / supplyValuation;
+        uint backing =
+            supplyValuation == 0
+                ? BPS
+                : (reserveValuation * BPS) / supplyValuation;
 
         return (reserveValuation, supplyValuation, backing);
     }
@@ -1259,9 +1253,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked {
-                        ++i;
-                    }
+                    unchecked { ++i; }
                     continue;
                 }
             }
@@ -1269,9 +1261,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             // Add asset's valuation to the total valuation.
             totalWad += (balanceWad * _priceOfERC20(erc20)) / 1e18;
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         return totalWad;
@@ -1298,9 +1288,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked {
-                        ++i;
-                    }
+                    unchecked { ++i; }
                     continue;
                 }
             }
@@ -1308,9 +1296,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             // Add erc721Id's price to the total valuation.
             totalWad += _priceOfERC721Id(erc721, id);
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         return totalWad;
@@ -1427,7 +1413,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     {
         uint discount = bondingDiscountPerERC20[erc20];
 
-        return discount == 0 ? amount : amount + (amount * discount) / BPS;
+        return discount == 0
+            ? amount
+            : amount + (amount * discount) / BPS;
     }
 
     function _applyBondingDiscountForERC721Id(
@@ -1437,6 +1425,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     ) private view returns (uint) {
         uint discount = bondingDiscountPerERC721Id[erc721][id];
 
-        return discount == 0 ? amount : amount + (amount * discount) / BPS;
+        return discount == 0
+            ? amount
+            : amount + (amount * discount) / BPS;
     }
 }

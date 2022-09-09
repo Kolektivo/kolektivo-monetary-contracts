@@ -2,10 +2,10 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { ReserveToken } from "../../src/ReserveToken.sol";
-import { Oracle } from "../../src/Oracle.sol";
+import {ReserveToken} from "../../src/ReserveToken.sol";
+import {Oracle} from "../../src/Oracle.sol";
 
-import { Reserve } from "../../src/Reserve.sol";
+import {Reserve} from "../../src/Reserve.sol";
 
 /**
  * @dev Setups the testnet contracts. NEEDS TO BE RUN ONLY ONCE.

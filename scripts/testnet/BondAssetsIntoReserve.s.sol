@@ -2,13 +2,13 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { Reserve } from "../../src/Reserve.sol";
-import { ReserveToken } from "../../src/ReserveToken.sol";
-import { IReserve } from "../../src/interfaces/IReserve.sol";
-import { Treasury } from "../../src/Treasury.sol";
-import { Oracle } from "../../src/Oracle.sol";
+import {Reserve} from "../../src/Reserve.sol";
+import {ReserveToken} from "../../src/ReserveToken.sol";
+import {IReserve} from "../../src/interfaces/IReserve.sol";
+import {Treasury} from "../../src/Treasury.sol";
+import {Oracle} from "../../src/Oracle.sol";
 
-import { ERC20Mock } from "../../test/utils/mocks/ERC20Mock.sol";
+import {ERC20Mock} from "../../test/utils/mocks/ERC20Mock.sol";
 
 /**
  * @dev Mints ERC20Mock tokens and approves them to the Reserve.

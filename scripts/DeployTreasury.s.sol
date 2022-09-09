@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { Treasury } from "../src/Treasury.sol";
+import {Treasury} from "../src/Treasury.sol";
 
 /**
  * @title Treasury Deployment Script
@@ -33,10 +33,6 @@ contract DeployTreasury is Script {
 
         // Log the deployed treasury contract address.
         console2.log("Deployment of Treasury at address", address(treasury));
-
-        if (treasury.owner() != treasury.pendingOwner()) {
-            return;
-        }
 
         // Initiate owner switch.
         vm.startBroadcast();

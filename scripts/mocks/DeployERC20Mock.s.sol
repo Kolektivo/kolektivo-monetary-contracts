@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { ERC20Mock } from "../../test/utils/mocks/ERC20Mock.sol";
+import {ERC20Mock} from "../../test/utils/mocks/ERC20Mock.sol";
 
 /**
  * @title ERC20Mock Deployment Script

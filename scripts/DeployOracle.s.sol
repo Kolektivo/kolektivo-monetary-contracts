@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { Oracle } from "../src/Oracle.sol";
+import {Oracle} from "../src/Oracle.sol";
 
 /**
  * @title Oracle Deployment Script
@@ -64,10 +64,6 @@ contract DeployOracle is Script {
 
         // Log the deployed oracle contract address.
         console2.log("Deployment of Oracle at address", address(oracle));
-
-        if (oracle.owner() != oracle.pendingOwner()) {
-            return;
-        }
 
         // Initiate owner switch.
         vm.startBroadcast();

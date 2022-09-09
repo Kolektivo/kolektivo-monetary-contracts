@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { Reserve } from "../src/Reserve.sol";
+import {Reserve} from "../src/Reserve.sol";
 
 /**
  * @title Reserve Deployment Script
@@ -60,10 +60,6 @@ contract DeployReserve is Script {
 
         // Log the deployed Reserve contract address.
         console2.log("Deployment of Reserve at address", address(reserve));
-
-        if (reserve.owner() != reserve.pendingOwner()) {
-            return;
-        }
 
         // Initiate owner switch.
         vm.startBroadcast();

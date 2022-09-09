@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { GeoNFT } from "../src/GeoNFT.sol";
+import {GeoNFT} from "../src/GeoNFT.sol";
 
 /**
  * @title GeoNFT Deployment Script
@@ -49,10 +49,6 @@ contract DeployGeoNFT is Script {
 
         // Log the deployed GeoNFT contract address.
         console2.log("Deployment of GeoNFT at address", address(nft));
-
-        if (nft.owner() != nft.pendingOwner()) {
-            return;
-        }
 
         // Initiate owner switch.
         vm.startBroadcast();

@@ -2,8 +2,8 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { Reserve } from "../../src/Reserve.sol";
-import { Oracle } from "../../src/Oracle.sol";
+import {Reserve} from "../../src/Reserve.sol";
+import {Oracle} from "../../src/Oracle.sol";
 
 /**
  * @dev Mints ERC20Mock tokens and approves them to the Reserve.

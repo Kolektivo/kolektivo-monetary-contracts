@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import { ReserveToken } from "../src/ReserveToken.sol";
+import {ReserveToken} from "../src/ReserveToken.sol";
 
 /**
  * @title ReserveToken Deployment Script
@@ -58,10 +58,6 @@ contract DeployReserveToken is Script {
 
         // Log the deployed ReserveToken contract address.
         console2.log("Deployment of ReserveToken at address", address(token));
-
-        if (token.owner() != token.pendingOwner()) {
-            return;
-        }
 
         // Initiate owner switch.
         vm.startBroadcast();

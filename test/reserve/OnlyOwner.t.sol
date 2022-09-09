@@ -10,7 +10,7 @@ contract ReserveOnlyOwner is ReserveTest {
 
         vm.startPrank(caller);
 
-        IReserve.ERC721Id memory erc721Id = IReserve.ERC721Id(address(1), 1);
+        address erc721 = address(1);
 
         //----------------------------------
         // Bond Functions
@@ -43,16 +43,16 @@ contract ReserveOnlyOwner is ReserveTest {
         // Bond ERC721Id Functions
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.bondERC721Id(erc721Id);
+        reserve.bondERC721Id(address(erc721), DEFAULT_ERC721_ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.bondERC721IdFrom(erc721Id, address(1));
+        reserve.bondERC721IdFrom(address(erc721), DEFAULT_ERC721_ID, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.bondERC721IdTo(erc721Id, address(1));
+        reserve.bondERC721IdTo(address(erc721), DEFAULT_ERC721_ID, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.bondERC721IdFromTo(erc721Id, address(1), address(1));
+        reserve.bondERC721IdFromTo(address(erc721), DEFAULT_ERC721_ID, address(1), address(1));
 
         //----------------------------------
         // Redeem Functions
@@ -88,16 +88,16 @@ contract ReserveOnlyOwner is ReserveTest {
         // redeem ERC721Id Functions
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.redeemERC721Id(erc721Id);
+        reserve.redeemERC721Id(address(erc721), DEFAULT_ERC721_ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.redeemERC721IdFrom(erc721Id, address(1));
+        reserve.redeemERC721IdFrom(address(erc721), DEFAULT_ERC721_ID, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.redeemERC721IdTo(erc721Id, address(1));
+        reserve.redeemERC721IdTo(address(erc721), DEFAULT_ERC721_ID, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.redeemERC721IdFromTo(erc721Id, address(1), address(1));
+        reserve.redeemERC721IdFromTo(address(erc721), DEFAULT_ERC721_ID, address(1), address(1));
 
         //----------------------------------
         // Emergency Functions
@@ -117,11 +117,11 @@ contract ReserveOnlyOwner is ReserveTest {
         // Asset Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.registerERC20(address(token), address(tokenOracle));
+        reserve.registerERC20(address(token), address(tokenOracle), IReserve.AssetType.Default);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.registerERC721Id(
-            DEFAULT_ERC721ID,
+            DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID,
             address(defaultERC721IdOracle)
         );
 
@@ -129,14 +129,14 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.deregisterERC20(address(token));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.deregisterERC721Id(DEFAULT_ERC721ID);
+        reserve.deregisterERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.updateOracleForERC20(address(token), address(tokenOracle));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.updateOracleForERC721Id(
-            DEFAULT_ERC721ID,
+            DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID,
             address(defaultERC721IdOracle)
         );
 
@@ -147,13 +147,13 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.listERC20AsBondable(address(token));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.listERC721IdAsBondable(DEFAULT_ERC721ID);
+        reserve.listERC721IdAsBondable(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.listERC20AsRedeemable(address(token));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721ID);
+        reserve.listERC721IdAsRedeemable(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.setERC20BondingLimit(address(token), 1e18);
@@ -168,7 +168,7 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.setBondingDiscountForERC20(address(token), 1e18);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setBondingDiscountForERC721Id(DEFAULT_ERC721ID, 1e18);
+        reserve.setBondingDiscountForERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, 1e18);
 
         //----------------------------------
         // Vesting Management
@@ -180,7 +180,7 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.setBondingVestingForERC20(address(token), 1 hours);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.setBondingVestingForERC721Id(DEFAULT_ERC721ID, 1 hours);
+        reserve.setBondingVestingForERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, 1 hours);
 
         //---------------------------------
         // Reserve Management
@@ -192,7 +192,7 @@ contract ReserveOnlyOwner is ReserveTest {
         reserve.withdrawERC20(address(1), address(1), 1);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(1));
+        reserve.withdrawERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.incurDebt(1e18);
@@ -251,12 +251,12 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         // @todo Check event emission.
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
         assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
         // Check that function is idempotent.
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
         assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
@@ -266,6 +266,23 @@ contract ReserveOnlyOwner is ReserveTest {
         vm.expectRevert(bytes(""));
         reserve.registeredERC20s(1);
     }
+
+    function testRegisterERC20WithAssetType(uint assetType) public {
+        vm.assume(assetType <= 2);
+
+        ERC20Mock erc20 = new ERC20Mock("MOCK", "Mock Token", uint8(18));
+        OracleMock o = new OracleMock();
+        o.setDataAndValid(1e18, true);
+
+        // @todo Check event emission.
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType(assetType));
+        assertEq(reserve.registeredERC20s(0), address(erc20));
+        assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
+
+        // Check that asset type is set correctly
+        assertEq(uint(reserve.typeOfAsset(address(erc20))), assetType);
+    }
+
     function testRegisterERC20_NotAcceptedIf_TokenCodeIsZero() public {
         address erc20 = address(0); // erc20 has no code
 
@@ -273,7 +290,7 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(erc20, address(0));
+        reserve.registerERC20(erc20, address(0), IReserve.AssetType.Default);
     }
 
     function testRegisterERC20_NotAcceptedIf_AlreadyRegistered() public {
@@ -281,14 +298,14 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         // Reverts if erc20 is added again with a different oracle.
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(address(erc20), address(o2));
+        reserve.registerERC20(address(erc20), address(o2), IReserve.AssetType.Default);
     }
 
     function testRegisterERC20_NotAcceptedIf_OracleInvalid() public {
@@ -297,39 +314,36 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, false); // Oracle is invalid
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         o.setDataAndValid(0, true); // Oracle's price is zero
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
     }
 
     function testRegisterERC721() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         // @todo Check event emission
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         (address addedERC721, uint addedId) = reserve.registeredERC721Ids(0);
-        assertEq(addedERC721, erc721Id.erc721);
-        assertEq(addedId, erc721Id.id);
-        assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o));
+        assertEq(addedERC721, address(erc721));
+        assertEq(addedId, DEFAULT_ERC721_ID);
+        assertEq(reserve.oraclePerERC721Id(address(erc721), DEFAULT_ERC721_ID), address(o));
 
         // Check that function is idempotent.
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         (addedERC721, addedId) = reserve.registeredERC721Ids(0);
-        assertEq(addedERC721, erc721Id.erc721);
-        assertEq(addedId, erc721Id.id);
-        assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o));
+        assertEq(addedERC721, address(erc721));
+        assertEq(addedId, DEFAULT_ERC721_ID);
+        assertEq(reserve.oraclePerERC721Id(address(erc721), DEFAULT_ERC721_ID), address(o));
 
         // Reverts due to IndexOutOfBounds.
         // This indicates that the erc721Id was not added again, i.e. that the
@@ -339,53 +353,46 @@ contract ReserveOnlyOwner is ReserveTest {
     }
 
     function testRegisterERC721_NotAcceptedIf_TokenCodeIsZero() public {
-        IReserve.ERC721Id memory erc721Id = IReserve.ERC721Id(
-            address(0), // ERC721 code is empty
-            1
-        );
+        address erc721 = address(0); // ERC721 code is empty
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(erc721, DEFAULT_ERC721_ID, address(o));
     }
 
     function testRegisterERC721_NotAcceptedIf_AlreadyRegistered() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         // Reverts is ERC721Id is added again with different oracle.
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC721Id(erc721Id, address(o2));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o2));
     }
 
     function testRegisterERC721_NotAcceptedIf_OracleInvalid() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, false); // Oracle is invalid
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         o.setDataAndValid(0, true); // Oracle's price is zero
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
     }
 
     function testDeregisterERC20() public {
@@ -393,7 +400,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         // @todo Check event emission.
         reserve.deregisterERC20(address(erc20));
@@ -412,29 +419,26 @@ contract ReserveOnlyOwner is ReserveTest {
 
     function testDeregisterERC721Id() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         // @todo Check event emission
-        reserve.deregisterERC721Id(erc721Id);
+        reserve.deregisterERC721Id(address(erc721), DEFAULT_ERC721_ID);
 
         vm.expectRevert(bytes("")); // Empty require statement
         reserve.registeredERC721Ids(0);
-        assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(0));
+        assertEq(reserve.oraclePerERC721Id(address(erc721), DEFAULT_ERC721_ID), address(0));
 
         // Check that function is idempotent.
-        reserve.deregisterERC721Id(erc721Id);
+        reserve.deregisterERC721Id(address(erc721), DEFAULT_ERC721_ID);
 
         vm.expectRevert(bytes("")); // Empty require statement
         reserve.registeredERC721Ids(0);
-        assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(0));
+        assertEq(reserve.oraclePerERC721Id(address(erc721), DEFAULT_ERC721_ID), address(0));
     }
 
     function testUpdateOracleForERC20() public {
@@ -442,7 +446,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
@@ -472,7 +476,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, false); // Oracle is invalid
@@ -488,64 +492,57 @@ contract ReserveOnlyOwner is ReserveTest {
 
     function testUpdateOracleForERC721Id() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
 
         // @todo Check event emission.
-        reserve.updateOracleForERC721Id(erc721Id, address(o2));
-        assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o2));
+        reserve.updateOracleForERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o2));
+        assertEq(reserve.oraclePerERC721Id(address(erc721), DEFAULT_ERC721_ID), address(o2));
 
         // Check that function is idempotent.
-        reserve.updateOracleForERC721Id(erc721Id, address(o2));
-        assertEq(reserve.oraclePerERC721Id(erc721IdHash), address(o2));
+        reserve.updateOracleForERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o2));
+        assertEq(reserve.oraclePerERC721Id(address(erc721), DEFAULT_ERC721_ID), address(o2));
     }
 
     function testUpdateOracleForERC721Id_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(Errors.ERC721IdNotRegistered);
-        reserve.updateOracleForERC721Id(erc721Id, address(o));
+        reserve.updateOracleForERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
     }
 
     function testUpdateOracleForERC721Id_NotAcceptedIf_OracleInvalid() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, false); // Oracle is invalid
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.updateOracleForERC721Id(erc721Id, address(o2));
+        reserve.updateOracleForERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o2));
 
         o2.setDataAndValid(0, true); // Oracle's price is zero
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.updateOracleForERC721Id(erc721Id, address(o2));
+        reserve.updateOracleForERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o2));
     }
 
     //----------------------------------
@@ -556,7 +553,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         // Set erc20 as being listed for bonding.
         // @todo Check event emission.
@@ -589,47 +586,42 @@ contract ReserveOnlyOwner is ReserveTest {
 
     function testListERC721IdAsBondable() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         // Set erc721Id as being listed as bondable.
         // @todo Check event emission.
-        reserve.listERC721IdAsBondable(erc721Id);
-        assertEq(reserve.isERC721IdBondable(erc721IdHash), true);
+        reserve.listERC721IdAsBondable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdBondable(address(erc721), DEFAULT_ERC721_ID), true);
 
         // Check that function is idempotent.
-        reserve.listERC721IdAsBondable(erc721Id);
-        assertEq(reserve.isERC721IdBondable(erc721IdHash), true);
+        reserve.listERC721IdAsBondable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdBondable(address(erc721), DEFAULT_ERC721_ID), true);
 
         // Set erc721Id as being delisted as bondable.
-        reserve.delistERC721IdAsBondable(erc721Id);
-        assertEq(reserve.isERC721IdBondable(erc721IdHash), false);
+        reserve.delistERC721IdAsBondable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdBondable(address(erc721), DEFAULT_ERC721_ID), false);
 
         // Check that function is idempotent.
-        reserve.delistERC721IdAsBondable(erc721Id);
-        assertEq(reserve.isERC721IdBondable(erc721IdHash), false);
+        reserve.delistERC721IdAsBondable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdBondable(address(erc721), DEFAULT_ERC721_ID), false);
     }
 
     function testListERC721IdAsBondable_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(Errors.ERC721IdNotRegistered);
-        reserve.listERC721IdAsBondable(erc721Id);
+        reserve.listERC721IdAsBondable(address(erc721), DEFAULT_ERC721_ID);
     }
 
     function testListERC20AsRedeemable() public {
@@ -637,7 +629,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
 
         // Set erc20 as being listed as redeemable.
         // @todo Check event emission.
@@ -681,62 +673,55 @@ contract ReserveOnlyOwner is ReserveTest {
 
     function testListERC721IdAsRedeemable() public {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC721Id(erc721Id, address(o));
+        reserve.registerERC721Id(address(erc721), DEFAULT_ERC721_ID, address(o));
 
         // Set erc721Id as being listed as redeemable.
         // @todo Check event emission.
-        reserve.listERC721IdAsRedeemable(erc721Id);
-        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), true);
+        reserve.listERC721IdAsRedeemable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdRedeemable(address(erc721), DEFAULT_ERC721_ID), true);
 
         // Check that function is idempotent.
-        reserve.listERC721IdAsRedeemable(erc721Id);
-        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), true);
+        reserve.listERC721IdAsRedeemable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdRedeemable(address(erc721), DEFAULT_ERC721_ID), true);
 
         // Set erc721Id as being delisted as redeemable.
-        reserve.delistERC721IdAsRedeemable(erc721Id);
-        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), false);
+        reserve.delistERC721IdAsRedeemable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdRedeemable(address(erc721), DEFAULT_ERC721_ID), false);
 
         // Check that function is idempotent.
-        reserve.delistERC721IdAsRedeemable(erc721Id);
-        assertEq(reserve.isERC721IdRedeemable(erc721IdHash), false);
+        reserve.delistERC721IdAsRedeemable(address(erc721), DEFAULT_ERC721_ID);
+        assertEq(reserve.isERC721IdRedeemable(address(erc721), DEFAULT_ERC721_ID), false);
     }
 
     function testListERC721IdAsRedeemable_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(Errors.ERC721IdNotRegistered);
-        reserve.listERC721IdAsRedeemable(erc721Id);
+        reserve.listERC721IdAsRedeemable(address(erc721), DEFAULT_ERC721_ID);
     }
 
     function testDelistERC721IdAsRedeemable_NotAcceptedIf_ERC721IdNotRegistered()
         public
     {
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(Errors.ERC721IdNotRegistered);
-        reserve.delistERC721IdAsRedeemable(erc721Id);
+        reserve.delistERC721IdAsRedeemable(address(erc721), DEFAULT_ERC721_ID);
     }
 
     function testSetERC20BondingLimit(uint limit) public {
@@ -784,18 +769,15 @@ contract ReserveOnlyOwner is ReserveTest {
     function testSetBondingDiscountForERC721Id(uint discount) public {
         // Note that erc721Id does not need to be supported.
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         // @todo Check event emission.
-        reserve.setBondingDiscountForERC721Id(erc721Id, discount);
-        assertEq(reserve.bondingDiscountPerERC721Id(erc721IdHash), discount);
+        reserve.setBondingDiscountForERC721Id(address(erc721), DEFAULT_ERC721_ID, discount);
+        assertEq(reserve.bondingDiscountPerERC721Id(address(erc721), DEFAULT_ERC721_ID), discount);
 
         // Check that function is idempotent.
-        reserve.setBondingDiscountForERC721Id(erc721Id, discount);
-        assertEq(reserve.bondingDiscountPerERC721Id(erc721IdHash), discount);
+        reserve.setBondingDiscountForERC721Id(address(erc721), DEFAULT_ERC721_ID, discount);
+        assertEq(reserve.bondingDiscountPerERC721Id(address(erc721), DEFAULT_ERC721_ID), discount);
     }
 
     //----------------------------------
@@ -837,15 +819,12 @@ contract ReserveOnlyOwner is ReserveTest {
     function testSetBondingVestingForERC721Id(uint vestingDuration) public {
         // Note that erc721Id does not need to be supported.
         ERC721Mock erc721 = new ERC721Mock();
-        erc721.mint(address(this), 1);
-        IReserve.ERC721Id memory erc721Id
-            = IReserve.ERC721Id(address(erc721), 1);
-        bytes32 erc721IdHash = reserve.hashOfERC721Id(erc721Id);
+        erc721.mint(address(this), DEFAULT_ERC721_ID);
 
         // @todo Check event emission.
-        reserve.setBondingVestingForERC721Id(erc721Id, vestingDuration);
+        reserve.setBondingVestingForERC721Id(address(erc721), DEFAULT_ERC721_ID, vestingDuration);
         assertEq(
-            reserve.bondingVestingDurationPerERC721Id(erc721IdHash),
+            reserve.bondingVestingDurationPerERC721Id(address(erc721), DEFAULT_ERC721_ID),
             vestingDuration
         );
     }
@@ -898,10 +877,10 @@ contract ReserveOnlyOwner is ReserveTest {
 
     function testWithdrawERC721Id_FailsIf_InvalidRecipient() public {
         vm.expectRevert(Errors.InvalidRecipient);
-        reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(0));
+        reserve.withdrawERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(0));
 
         vm.expectRevert(Errors.InvalidRecipient);
-        reserve.withdrawERC721Id(DEFAULT_ERC721ID, address(reserve));
+        reserve.withdrawERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, address(reserve));
     }
 
     function testWithdrawERC721Id(bool toEOA) public {
@@ -911,19 +890,19 @@ contract ReserveOnlyOwner is ReserveTest {
             // Withdraw to EOA.
             recipient = address(1);
 
-            // Send DEFAULT_ERC721ID to reserve.
+            // Send DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID to reserve.
             nft.safeTransferFrom(address(this), address(reserve), 1);
 
-            reserve.withdrawERC721Id(DEFAULT_ERC721ID, recipient);
+            reserve.withdrawERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, recipient);
             assertEq(nft.ownerOf(1), recipient);
         } else {
             // Withdraw to contract that implements onERC721Receiver.
             recipient = address(this);
 
-            // Send DEFAULT_ERC721ID to reserve.
+            // Send DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID to reserve.
             nft.safeTransferFrom(address(this), address(reserve), 1);
 
-            reserve.withdrawERC721Id(DEFAULT_ERC721ID, recipient);
+            reserve.withdrawERC721Id(DEFAULT_ERC721_ADDRESS, DEFAULT_ERC721_ID, recipient);
             assertEq(nft.ownerOf(1), recipient);
         }
     }

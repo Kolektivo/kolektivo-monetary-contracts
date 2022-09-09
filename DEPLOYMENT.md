@@ -15,6 +15,7 @@ Define the deployment arguments for the contract in the `.env` file.
 Source the `.env` file with `source xxx.env`, e.g. `source dev.env`.
 
 Run:
+
 ```
 forge script scripts/Deploy<Contract>.s.sol \
     --rpc-url $RPC_URL                      \
@@ -25,6 +26,7 @@ forge script scripts/Deploy<Contract>.s.sol \
 ```
 
 If successful, the deployed contract's address is shown in the logs:
+
 ```
 == Logs ==
   Deployment of Treasury at address, 0x0165878a594ca255338adfa4d48449f69242eb8f
@@ -41,16 +43,20 @@ Note that the alfajores Celo testnet does not implement EIP1559 and the
 `--legacy` flag needs to be appended to the deploy commands.
 
 | Kolektivo Contracts    | Address                                    |
-|------------------------|--------------------------------------------|
-| Treasury               | 0x7521197233BD9235D2E39ad8D3D77c2843b2E837 |
-| Reserve                | 0x61f99350eb8a181693639dF40F0C25371844fc32 |
-| Reserve Token          | 0x65F0B6a36B850a12B06E5492dF4e13659A996796 |
-| Geo NFT                | 0xc7D7407684c121d92f50440fC50353aefF6617b8 |
-| Oracle: Treasury Token | 0x526Ab68ce3BEd2913d2B7e37EcaEc0f4ab81Df91 |
-| Oracle: Reserve Token  | 0xD37aAd04CEbe9675010d05d7D0B33b15f2ED2443 |
+| ---------------------- | ------------------------------------------ |
+| Treasury               | 0x030Cd6F06FFf3728ac7bF50EF7b2a38DFD517237 |
+| Reserve                | 0xBccd7dA2A8065C588caFD210c33FC08b00d36Df9 |
+| Reserve Token          | 0x6f10D2FbcBEa5908bc0d4ed3656E61c29Db9c324 |
+| Geo NFT                | 0x7E914eC3F65E1dc1B27258ffAE6B21Cc67330BA0 |
+| Oracle: Treasury Token | 0xED282D1EAbd32C3740Ee82fa1A95bd885A69f3bB |
+| Oracle: Reserve Token  | 0xA6B5122385c8aF4a42E9e9217301217B9cdDbC49 |
 
-| Other Contracts          | Address                                    |
-|--------------------------|--------------------------------------------|
-| ERC20 Mock Token         | 0xD5A8842F698D6170661376880b5aE20C17fD1FC3 |
-| Oracle: ERC20 Mock Token | 0x917443A163adC3BeBFCb5ffD3a9D8161bE503D79 |
-| Oracle: GeoNFT 1         | 0x38Bac6587302e06Bd84dca779c5Cb25483177667 |
+| Other Contracts            | Address                                    |
+| -------------------------- | ------------------------------------------ |
+| ERC20 Mock Token 1         | 0x434f234916Bbf0190BE3f058DeD9d8889953c4b4 |
+| ERC20 Mock Token 2         | 0xd4482BAEa5c6426687a8F66de80bb857fE1942f1 |
+| ERC20 Mock Token 3         | 0x290DB975a9Aa2cb6e34FC0A09794945B383d7cCE |
+| Oracle: ERC20 Mock Token 1 | 0x2066a9c878c26FA29D4fd923031C3C40375d1c0D |
+| Oracle: ERC20 Mock Token 2 | 0xce37a77D34f05325Ff1CC0744edb2845349307F7 |
+| Oracle: ERC20 Mock Token 3 | 0x923b14F630beA5ED3D47338469c111D6d082B3E8 |
+| Oracle: GeoNFT 1           | 0xFeF224e7fdFf2279AE42c33Fb47397A89503186b |

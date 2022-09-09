@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {ReserveToken} from "../src/ReserveToken.sol";
+import { ReserveToken } from "../src/ReserveToken.sol";
 
 /**
  * @title ReserveToken Deployment Script
@@ -18,17 +18,15 @@ import {ReserveToken} from "../src/ReserveToken.sol";
  *      - TRUSTED_OWNER
  */
 contract DeployReserveToken is Script {
-
     ReserveToken token;
 
     function run() external {
         // Read deployment settings from environment variables.
-        string memory name
-            = vm.envString("DEPLOYMENT_RESERVE_TOKEN_NAME");
-        string memory symbol
-            = vm.envString("DEPLOYMENT_RESERVE_TOKEN_SYMBOL");
-        address mintBurner
-            = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER");
+        string memory name = vm.envString("DEPLOYMENT_RESERVE_TOKEN_NAME");
+        string memory symbol = vm.envString("DEPLOYMENT_RESERVE_TOKEN_SYMBOL");
+        address mintBurner = vm.envAddress(
+            "DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER"
+        );
 
         // Check settings.
         require(
@@ -61,6 +59,10 @@ contract DeployReserveToken is Script {
         // Log the deployed ReserveToken contract address.
         console2.log("Deployment of ReserveToken at address", address(token));
 
+        if (token.owner() != token.pendingOwner()) {
+            return;
+        }
+
         // Initiate owner switch.
         vm.startBroadcast();
         {
@@ -75,10 +77,6 @@ contract DeployReserveToken is Script {
         );
 
         // Log successful initiation of the owner switch.
-        console2.log(
-            "Owner switch succesfully initiated to address",
-            newOwner
-        );
+        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
-
 }

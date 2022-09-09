@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {GeoNFT} from "../src/GeoNFT.sol";
+import { GeoNFT } from "../src/GeoNFT.sol";
 
 /**
  * @title GeoNFT Deployment Script
@@ -16,15 +16,12 @@ import {GeoNFT} from "../src/GeoNFT.sol";
  *      - TRUSTED_OWNER
  */
 contract DeployGeoNFT is Script {
-
     GeoNFT nft;
 
     function run() external {
         // Read deployment settings from environment variables.
-        string memory name
-            = vm.envString("DEPLOYMENT_GEONFT_NAME");
-        string memory symbol
-            = vm.envString("DEPLOYMENT_GEONFT_SYMBOL");
+        string memory name = vm.envString("DEPLOYMENT_GEONFT_NAME");
+        string memory symbol = vm.envString("DEPLOYMENT_GEONFT_SYMBOL");
 
         // Check settings.
         require(
@@ -53,6 +50,10 @@ contract DeployGeoNFT is Script {
         // Log the deployed GeoNFT contract address.
         console2.log("Deployment of GeoNFT at address", address(nft));
 
+        if (nft.owner() != nft.pendingOwner()) {
+            return;
+        }
+
         // Initiate owner switch.
         vm.startBroadcast();
         {
@@ -67,10 +68,6 @@ contract DeployGeoNFT is Script {
         );
 
         // Log successful initiation of the owner switch.
-        console2.log(
-            "Owner switch succesfully initiated to address",
-            newOwner
-        );
+        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
-
 }

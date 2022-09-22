@@ -162,6 +162,26 @@ interface IReserve {
     /// @param tokenAmount The amount of token paid as debt.
     event DebtPaid(uint tokenAmount);
 
+    /// @notice Event emitted when ERC20 tokens are withdrawn.
+    /// @param erc20 The ERC20 token address.
+    /// @param recipient The address that received the withdrawn tokens
+    /// @param erc20sWithdrawn The amount of ERC20 tokens withdrawn.
+    event WithdrewERC20(
+        address indexed erc20,
+        address indexed recipient,
+        uint erc20sWithdrawn
+    );
+
+    /// @notice Event emitted when an ERC721Id is withdrawn.
+    /// @param erc721 The ERC721 token address.
+    /// @param id The id of the corresponding NFT.
+    /// @param recipient The address that received the withdrawn tokens
+    event WithdrewERC721Id(
+        address indexed erc721,
+        uint indexed id,
+        address indexed recipient
+    );
+
     //----------------------------------
     // Asset Management
 
@@ -496,6 +516,57 @@ interface IReserve {
     ) external;
 
     //---------------------------------
+    // Bundle Functions
+
+    /// @notice Bundles the listing of a new ERC20 bond together with
+    ///         setting it's limit so it can be done in one tx.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param limit The bonding limit for the ERC20 token.
+    /// @param discount The bonding discount for the ERC20 token.
+    /// @param vestingDuration The vesting duration for the ERC20 token.
+    function setupAndListERC20Bond(
+        address erc20, 
+        uint limit, 
+        uint discount, 
+        uint vestingDuration
+    ) external;
+
+    /// @notice Bundles the listing of a new ERC20 redemption together
+    ///         with setting it's limit so it can be done in one tx.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param limit The redeem limit for the ERC20 token.
+    function setupAndListERC20Redemption(
+        address erc20, 
+        uint limit
+    ) external;
+
+    /// @notice Bundles the listing of a new ERC721Id bond together
+    ///          with setting it's limit so it can be done in one tx.
+    /// @dev Only callable by owner.
+    /// @param erc721 The ERC721 token address.
+    /// @param id The id of the corresponding NFT.
+    /// @param discount The bonding discount for the ERC721Id.
+    /// @param vestingDuration The vesting duration for the ERC721Id.
+    function setupAndListERC721IdBond(
+        address erc721, 
+        uint id,
+        uint discount, 
+        uint vestingDuration
+    ) external;
+
+    /// @notice Bundles the listing of a new ERC721Id redemption together
+    ///          with setting it's limit so it can be done in one tx.
+    /// @dev Only callable by owner.
+    /// @param erc721 The ERC721 token address.
+    /// @param id The id of the corresponding NFT.
+    function setupAndListERC721IdRedemption(
+        address erc721, 
+        uint id
+    ) external;
+
+    //---------------------------------
     // Reserve Management
 
     /// @notice Sets the minimum backing requirement percentage, denominated
@@ -787,7 +858,7 @@ interface IReserve {
     function allRegisteredERC721Ids() external view returns (ERC721Id[] memory);
 
     /// @notice Returns the type of a registered erc20 asset.
-    function typeOfAsset(address erc20) external view returns (AssetType);
+    function assetTypeOfERC20(address erc20) external view returns (AssetType);
 
     //----------------------------------
     // Vesting View Functions

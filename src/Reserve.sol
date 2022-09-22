@@ -196,7 +196,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => mapping(uint => address)) public oraclePerERC721Id;
 
     /// @inheritdoc IReserve
-    mapping(address => AssetType) public typeOfAsset;
+    mapping(address => AssetType) public assetTypeOfERC20;
 
     //----------------------------------
     // Bonding & Redeeming Mappings
@@ -601,7 +601,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Add erc20 and oracle to mappings.
         registeredERC20s.push(erc20);
         oraclePerERC20[erc20] = oracle;
-        typeOfAsset[erc20] = assetType;
+        assetTypeOfERC20[erc20] = assetType;
 
         // Notify off-chain services.
         emit ERC20Registered(erc20, assetType);
@@ -654,7 +654,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
         // Remove erc20's oracle and asset type.
         delete oraclePerERC20[erc20];
-        delete typeOfAsset[erc20];
+        delete assetTypeOfERC20[erc20];
 
         // Remove erc20 from the registeredERC20s array.
         uint len = registeredERC20s.length;
@@ -762,7 +762,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function listERC20AsBondable(address erc20)
-        external
+        public
         onlyOwner
         isRegisteredERC20(erc20)
     {
@@ -782,7 +782,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function listERC721IdAsBondable(address erc721, uint id)
-        external
+        public
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
@@ -802,7 +802,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function listERC20AsRedeemable(address erc20)
-        external
+        public
         onlyOwner
         isRegisteredERC20(erc20)
     {
@@ -822,7 +822,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function listERC721IdAsRedeemable(address erc721, uint id)
-        external
+        public
         onlyOwner
         isRegisteredERC721Id(erc721, id)
     {
@@ -842,7 +842,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function setERC20BondingLimit(address erc20, uint limit)
-        external
+        public
         onlyOwner
     {
         uint oldLimit = bondingLimitPerERC20[erc20];
@@ -854,7 +854,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function setERC20RedeemLimit(address erc20, uint limit) external onlyOwner {
+    function setERC20RedeemLimit(address erc20, uint limit) public onlyOwner {
         uint oldLimit = redeemLimitPerERC20[erc20];
 
         if (limit != oldLimit) {
@@ -868,7 +868,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function setBondingDiscountForERC20(address erc20, uint discount)
-        external
+        public
         onlyOwner
     {
         uint oldDiscount = bondingDiscountPerERC20[erc20];
@@ -884,7 +884,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address erc721,
         uint id,
         uint discount
-    ) external onlyOwner {
+    ) public onlyOwner {
         uint oldDiscount = bondingDiscountPerERC721Id[erc721][id];
 
         if (discount != oldDiscount) {
@@ -915,7 +915,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @inheritdoc IReserve
     function setBondingVestingForERC20(address erc20, uint vestingDuration)
-        external
+        public
         onlyOwner
     {
         uint oldVestingDuration = bondingVestingDurationPerERC20[erc20];
@@ -935,7 +935,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address erc721,
         uint id,
         uint vestingDuration
-    ) external onlyOwner {
+    ) public onlyOwner {
         uint oldVestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
 
         if (vestingDuration != oldVestingDuration) {
@@ -946,6 +946,87 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 vestingDuration
             );
             bondingVestingDurationPerERC721Id[erc721][id] = vestingDuration;
+        }
+    }
+
+    //----------------------------------
+    // Bundle Functions
+
+    /// @inheritdoc IReserve
+    function setupAndListERC20Bond(
+        address erc20, 
+        uint limit, 
+        uint discount, 
+        uint vestingDuration
+    ) external onlyOwner {
+        // List ERC20 as bondable if it isn't already
+        if(!isERC20Bondable[erc20]) {
+            listERC20AsBondable(erc20);
+        }
+
+        // Set the ERC20's limit if it isn't already
+        if(bondingLimitPerERC20[erc20] != limit) {
+            setERC20BondingLimit(erc20, limit);
+        }
+
+        // Set the ERC20's discount if it isn't already
+        if(bondingDiscountPerERC20[erc20] != discount) {
+            setBondingDiscountForERC20(erc20, discount);
+        }
+
+        // Set the ERC20's vesting duration if it isn't already
+        if(bondingVestingDurationPerERC20[erc20] != vestingDuration) {
+            setBondingVestingForERC20(erc20, vestingDuration);
+        }
+    }
+
+    /// @inheritdoc IReserve
+     function setupAndListERC20Redemption(
+        address erc20, 
+        uint limit
+    ) external onlyOwner {
+        // List ERC20 as redeemable if it isn't already
+        if(!isERC20Redeemable[erc20]) {
+            listERC20AsRedeemable(erc20);
+        }
+
+        // Set the ERC20's limit if it isn't already
+        if(redeemLimitPerERC20[erc20] != limit) {
+            setERC20RedeemLimit(erc20, limit);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setupAndListERC721IdBond(
+        address erc721, 
+        uint id,
+        uint discount, 
+        uint vestingDuration
+    ) external onlyOwner {
+        // List ERC721Id as bondable if it isn't already
+        if(!isERC721IdBondable[erc721][id]) {
+            listERC721IdAsBondable(erc721, id);
+        }
+
+        // Set the ERC721Id's discount if it isn't already
+        if(bondingDiscountPerERC721Id[erc721][id] != discount) {
+            setBondingDiscountForERC721Id(erc721, id, discount);
+        }
+
+        // Set the ERC721Id's vesting duration if it isn't already
+        if(bondingVestingDurationPerERC721Id[erc721][id] != vestingDuration) {
+            setBondingVestingForERC721Id(erc721, id, vestingDuration);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setupAndListERC721IdRedemption(
+        address erc721, 
+        uint id
+    ) external onlyOwner {
+        // List ERC721Id as redeemable if it isn't already
+        if(!isERC721IdRedeemable[erc721][id]) {
+            listERC721IdAsRedeemable(erc721, id);
         }
     }
 
@@ -975,7 +1056,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onlyOwner
         onBeforeUpdateBacking(true)
     {
-        // @todo Add Event!
         // Make sure that erc20's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -983,6 +1063,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Transfer erc20 tokens to recipient.
         // Fails if balance is not sufficient.
         ERC20(erc20).safeTransfer(recipient, amount);
+
+        // Notify off-chain services.
+        emit WithdrewERC20(erc20, recipient, amount);
     }
 
     /// @inheritdoc IReserve
@@ -991,8 +1074,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         uint id,
         address recipient
     ) external validRecipient(recipient) onlyOwner onBeforeUpdateBacking(true) {
-        // @todo Add Event!
         ERC721(erc721).safeTransferFrom(address(this), recipient, id);
+        
+        // Notify off-chain services.
+        emit WithdrewERC721Id(erc721, id, recipient);
     }
 
     /// @inheritdoc IReserve

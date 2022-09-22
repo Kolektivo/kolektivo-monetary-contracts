@@ -280,7 +280,7 @@ contract ReserveOnlyOwner is ReserveTest {
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
         // Check that asset type is set correctly
-        assertEq(uint(reserve.typeOfAsset(address(erc20))), assetType);
+        assertEq(uint(reserve.assetTypeOfERC20(address(erc20))), assetType);
     }
 
     function testRegisterERC20_NotAcceptedIf_TokenCodeIsZero() public {

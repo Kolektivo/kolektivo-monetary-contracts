@@ -44,19 +44,20 @@ Note that the alfajores Celo testnet does not implement EIP1559 and the
 
 | Kolektivo Contracts    | Address                                    |
 | ---------------------- | ------------------------------------------ |
-| Treasury               | 0x030Cd6F06FFf3728ac7bF50EF7b2a38DFD517237 |
-| Reserve                | 0xBccd7dA2A8065C588caFD210c33FC08b00d36Df9 |
-| Reserve Token          | 0x6f10D2FbcBEa5908bc0d4ed3656E61c29Db9c324 |
-| Geo NFT                | 0x7E914eC3F65E1dc1B27258ffAE6B21Cc67330BA0 |
-| Oracle: Treasury Token | 0xED282D1EAbd32C3740Ee82fa1A95bd885A69f3bB |
-| Oracle: Reserve Token  | 0xA6B5122385c8aF4a42E9e9217301217B9cdDbC49 |
+| Treasury               | 0xEAc68B2e33fA3dbde9bABf3edF17ed3437f3D992 |
+| Reserve                | 0x9f4995f6a797Dd932A5301f22cA88104e7e42366 |
+| Reserve Token          | 0x799aC807A4163899c09086A6C69490f6AecD65Cb |
+| Geo NFT                | 0x3d088f32d7d83FD7868620f76C80604106b74702 |
+| Oracle: Treasury Token | 0x07aDaa5739fF6d730CB9D59991072b17a70D9813 |
+| Oracle: Reserve Token  | 0x8684e1f9da7036adFF3D95BA54Db9Ef0F503f5D4 |
 
 | Other Contracts            | Address                                    |
 | -------------------------- | ------------------------------------------ |
-| ERC20 Mock Token 1         | 0x434f234916Bbf0190BE3f058DeD9d8889953c4b4 |
-| ERC20 Mock Token 2         | 0xd4482BAEa5c6426687a8F66de80bb857fE1942f1 |
-| ERC20 Mock Token 3         | 0x290DB975a9Aa2cb6e34FC0A09794945B383d7cCE |
-| Oracle: ERC20 Mock Token 1 | 0x2066a9c878c26FA29D4fd923031C3C40375d1c0D |
-| Oracle: ERC20 Mock Token 2 | 0xce37a77D34f05325Ff1CC0744edb2845349307F7 |
-| Oracle: ERC20 Mock Token 3 | 0x923b14F630beA5ED3D47338469c111D6d082B3E8 |
-| Oracle: GeoNFT 1           | 0xFeF224e7fdFf2279AE42c33Fb47397A89503186b |
+| ERC20 Mock Token 1         | 0x8E7Af361418CDAb43333c6Bd0fA6906285C0E272 |
+| ERC20 Mock Token 2         | 0x57f046C697B15D0933605F12152c5d96cB6f9cc5 |
+| ERC20 Mock Token 3         | 0x32dB9295556D2B5193FD404253a4a3fD206B754b |
+| Oracle: ERC20 Mock Token 1 | 0x8e44992e836A742Cdcde08346DB6ECEac86C5C41 |
+| Oracle: ERC20 Mock Token 2 | 0x1A9617212f01846961256717781214F9956512Be |
+| Oracle: ERC20 Mock Token 3 | 0xBbD9C2bB9901464ef92dbEf3E2DE98b744bA49D5 |
+| Oracle: GeoNFT 1           | 0x4CF7C83253B850BC50dC641aB7D4136aE934f77f |
+| Oracle: GeoNFT 2           | 0x5dfD0c7d607a08F07F3041a86338404442615127 |

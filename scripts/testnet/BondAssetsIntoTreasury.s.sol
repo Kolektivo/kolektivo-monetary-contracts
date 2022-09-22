@@ -4,7 +4,7 @@ import "forge-std/Script.sol";
 
 import {Treasury} from "../../src/Treasury.sol";
 import {Oracle} from "../../src/Oracle.sol";
-
+import {GeoNFT} from "../../src/GeoNFT.sol";
 import {ERC20Mock} from "../../test/utils/mocks/ERC20Mock.sol";
 
 /**
@@ -18,18 +18,20 @@ import {ERC20Mock} from "../../test/utils/mocks/ERC20Mock.sol";
  */
 contract BondAssetsIntoTreasury is Script {
     // Note that the addresses are copied from the DEPLOYMENT.md doc file.
-    Treasury treasury = Treasury(0x030Cd6F06FFf3728ac7bF50EF7b2a38DFD517237);
-    ERC20Mock token1 = ERC20Mock(0x434f234916Bbf0190BE3f058DeD9d8889953c4b4);
-    ERC20Mock token2 = ERC20Mock(0xd4482BAEa5c6426687a8F66de80bb857fE1942f1);
-    ERC20Mock token3 = ERC20Mock(0x290DB975a9Aa2cb6e34FC0A09794945B383d7cCE);
+    Treasury treasury = Treasury(0xEAc68B2e33fA3dbde9bABf3edF17ed3437f3D992);
+    ERC20Mock token1 = ERC20Mock(0x8E7Af361418CDAb43333c6Bd0fA6906285C0E272);
+    ERC20Mock token2 = ERC20Mock(0x57f046C697B15D0933605F12152c5d96cB6f9cc5);
+    ERC20Mock token3 = ERC20Mock(0x32dB9295556D2B5193FD404253a4a3fD206B754b);
+    GeoNFT geoNFT = GeoNFT(0x3d088f32d7d83FD7868620f76C80604106b74702);
 
     Treasury.AssetType assetTypeToken1 = Treasury.AssetType.Default;
     Treasury.AssetType assetTypeToken2 = Treasury.AssetType.Stable;
     Treasury.AssetType assetTypeToken3 = Treasury.AssetType.Ecological;
 
-    Oracle token1Oracle = Oracle(0x2066a9c878c26FA29D4fd923031C3C40375d1c0D);
-    Oracle token2Oracle = Oracle(0xce37a77D34f05325Ff1CC0744edb2845349307F7);
-    Oracle token3Oracle = Oracle(0x923b14F630beA5ED3D47338469c111D6d082B3E8);
+    Oracle token1Oracle = Oracle(0x8e44992e836A742Cdcde08346DB6ECEac86C5C41);
+    Oracle token2Oracle = Oracle(0x1A9617212f01846961256717781214F9956512Be);
+    Oracle token3Oracle = Oracle(0xBbD9C2bB9901464ef92dbEf3E2DE98b744bA49D5);
+    Oracle geoNFT1Oracle = Oracle(0x4CF7C83253B850BC50dC641aB7D4136aE934f77f);
 
     uint token1Amount = 617e18; // 617
     uint token2Amount = 150_000e18; // 150k
@@ -38,6 +40,7 @@ contract BondAssetsIntoTreasury is Script {
     uint token1Price = 413_764e16; // $4,137.64
     uint token2Price = 1e18; // $1
     uint token3Price = 5e16; // $0.05
+    uint geoNFT1Price = 17_518e18; // $17,518
 
     function run() external {
         vm.startBroadcast();
@@ -46,17 +49,20 @@ contract BondAssetsIntoTreasury is Script {
             token1Oracle.pushReport(token1Price);
             token2Oracle.pushReport(token2Price);
             token3Oracle.pushReport(token3Price);
+            geoNFT1Oracle.pushReport(geoNFT1Price);
 
             // Mint tokens to msg.sender, i.e. the address with which's
             // private key the script is executed.
             token1.mint(msg.sender, token1Amount);
             token2.mint(msg.sender, token2Amount);
             token3.mint(msg.sender, token3Amount);
+            geoNFT.mint(msg.sender, 1, 1, "Test GeoNFT #1");
 
             // Approve tokens to Treasury.
             token1.approve(address(treasury), type(uint).max);
             token2.approve(address(treasury), type(uint).max);
             token3.approve(address(treasury), type(uint).max);
+            geoNFT.approve(address(treasury), 1);
 
             // Register token inside the Treasury.
             treasury.registerERC20(
@@ -74,16 +80,23 @@ contract BondAssetsIntoTreasury is Script {
                 address(token3Oracle),
                 assetTypeToken3
             );
+            treasury.registerERC721Id(
+                address(geoNFT),
+                1,
+                address(geoNFT1Oracle)
+            );
 
             // List token as bondable inside the Treasury.
             treasury.listERC20AsBondable(address(token1));
             treasury.listERC20AsBondable(address(token2));
             treasury.listERC20AsBondable(address(token3));
+            treasury.listERC721IdAsBondable(address(geoNFT), 1);
 
             // Bond tokens into Treasury.
             treasury.bondERC20(address(token1), token1Amount);
             treasury.bondERC20(address(token2), token2Amount);
             treasury.bondERC20(address(token3), token3Amount);
+            treasury.bondERC721Id(address(geoNFT), 1);
         }
         vm.stopBroadcast();
 
@@ -95,7 +108,8 @@ contract BondAssetsIntoTreasury is Script {
                     (token2Price * token2Amount) /
                     1e18 +
                     (token3Price * token3Amount) /
-                    1e18,
+                    1e18 + 
+                    geoNFT1Price,
             "BondAssetsIntoTreasury: Invalid amount of treasury tokens received through bonding"
         );
         require(
@@ -108,6 +122,10 @@ contract BondAssetsIntoTreasury is Script {
         );
         require(
             token3.balanceOf(address(treasury)) == token3Amount,
+            "BondAssetsIntoTreasury: Treasury fetched wrong amount of tokens during bonding"
+        );
+        require(
+            geoNFT.ownerOf(1) == address(treasury), 
             "BondAssetsIntoTreasury: Treasury fetched wrong amount of tokens during bonding"
         );
 
@@ -130,7 +148,8 @@ contract BondAssetsIntoTreasury is Script {
                     (token2Price * token2Amount) /
                     1e18 +
                     (token3Price * token3Amount) /
-                    1e18,
+                    1e18 +
+                    geoNFT1Price,
             "BondAssetsIntoTreasury: Invalid amount of treasury tokens after rebase"
         );
     }

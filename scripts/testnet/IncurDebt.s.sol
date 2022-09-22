@@ -13,10 +13,10 @@ import {Oracle} from "../../src/Oracle.sol";
  */
 contract BondAssetsIntoReserve is Script {
     // Note that the addresses are copied from the DEPLOYMENT.md doc file.
-    Reserve reserve = Reserve(0xBccd7dA2A8065C588caFD210c33FC08b00d36Df9);
+    Reserve reserve = Reserve(0x9f4995f6a797Dd932A5301f22cA88104e7e42366);
 
     Oracle reserveTokenOracle =
-        Oracle(0xA6B5122385c8aF4a42E9e9217301217B9cdDbC49);
+        Oracle(0x8684e1f9da7036adFF3D95BA54Db9Ef0F503f5D4);
 
     uint desiredBackingAmount = 8100; // %
 

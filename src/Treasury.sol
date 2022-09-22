@@ -89,6 +89,16 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param id The id of the corresponding NFT.
     error Treasury__ERC721IdIsNotRegistered(address erc721, uint id);
 
+    /// @notice Function is only callable when the erc20's bonding limit
+    ///         hasn't been exceeded yet
+    /// @param erc20 The address of the erc20 token.
+    error Treasury__ERC20BondingLimitExceeded(address erc20);
+
+    /// @notice Function is only callable when the erc20's redeem limit
+    ///         hasn't been exceeded yet
+    /// @param erc20 The address of the erc20 token.
+    error Treasury__ERC20RedeemLimitExceeded(address erc20);
+
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the asset's oracle.
@@ -183,6 +193,16 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         address newOracle
     );
 
+    /// @notice Event emitted when an erc20 is withdrawn.
+    /// @param erc20 The address of the erc20 token.
+    /// @param recipient The address that received the withdrawn tokens
+    /// @param erc20sWithdrawn The amount of ERC20 tokens withdrawn.
+    event ERC20Withdrawn(
+        address indexed erc20,
+        address indexed recipient,
+        uint erc20sWithdrawn
+    );
+
     /// @notice Event emitted when an erc721Id's oracle is updated.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
@@ -193,6 +213,17 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         uint indexed id,
         address oldOracle,
         address newOracle
+    );
+
+
+    /// @notice Event emitted when an erc721Id is withdrawn.
+    /// @param erc721 The address of the erc721 token.
+    /// @param id The id of the corresponding NFT.
+    /// @param recipient The address that received the withdrawn tokens
+    event ERC721IdWithdrawn(
+        address indexed erc721,
+        uint indexed id,
+        address indexed recipient
     );
 
     //--------------
@@ -233,6 +264,26 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     event ERC721IdDelistedAsRedeemable(address indexed erc721, uint indexed id);
+
+    /// @notice Event emitted when ERC20 token's bonding limit set.
+    /// @param erc20 The ERC20 token address.
+    /// @param oldLimit The ERC20 token's old bonding limit.
+    /// @param newLimit The ERC20 token's new bonding limit.
+    event SetERC20BondingLimit(
+        address indexed erc20,
+        uint oldLimit,
+        uint newLimit
+    );
+
+    /// @notice Event emitted when ERC20 token's redeem limit set.
+    /// @param erc20 The ERC20 token address.
+    /// @param oldLimit The ERC20 token's old redeem limit.
+    /// @param newLimit The ERC20 token's new redeem limit.
+    event SetERC20RedeemLimit(
+        address indexed erc20,
+        uint oldLimit,
+        uint newLimit
+    );
 
     //----------------------------------
     // User Events
@@ -338,7 +389,18 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         _;
     }
 
-    // @todo marvin: Bonding limit?
+    /// @notice Modifier to guarantee function is only callable if the
+    ///         bonding limit hasn't been exceeded.
+    modifier isNotExceedingERC20BondingLimit(address erc20, uint amount) {
+        uint balance = ERC20(erc20).balanceOf(address(this));
+        uint limit = bondingLimitPerERC20[erc20];
+
+        // Note that a limit of zero is interpreted as no limit given.
+        if (limit != 0 && balance + amount > limit) {
+            revert Treasury__ERC20BondingLimitExceeded(erc20);
+        }
+        _;
+    }
 
     //--------------------------------------------------------------------------
     // Storage
@@ -391,6 +453,16 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Changeable by owner.
     mapping(address => mapping(uint => bool)) public isERC721IdRedeemable;
 
+    /// @notice Mapping of the bonding limit for given erc20.
+    /// @dev A limit of zero is treated as infinite, i.e. no limit set.
+    /// @dev Changeable by owner.
+    mapping(address => uint) public bondingLimitPerERC20;
+
+    /// @notice Mapping of the redeem limit for given erc20.
+    /// @dev A limit of zero is treated as infinite, i.e. no limit set.
+    /// @dev Changeable by owner.
+    mapping(address => uint) public redeemLimitPerERC20;
+
     //--------------------------------------------------------------------------
     // Constructor
 
@@ -430,6 +502,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         // Note that if an erc20 is bondable, it is also supported.
         // isRegistered(erc20)
         isBondableERC20(erc20)
+        isNotExceedingERC20BondingLimit(erc20, amount)
         validAmount(amount)
         onlyOwner
     {
@@ -498,6 +571,13 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
         // Adjust to decimal precision of the erc20.
         uint withdrawable = Wad.convertFromWad(erc20, withdrawableWad);
+        
+        // Revert if redeem limit exceeded.
+        uint limit = redeemLimitPerERC20[erc20];
+        uint balance = ERC20(erc20).balanceOf(address(this));
+        if (balance - withdrawable < limit) {
+            revert Treasury__ERC20RedeemLimitExceeded(erc20);
+        }
 
         // Send the erc20's to msg.sender.
         ERC20(erc20).safeTransfer(msg.sender, withdrawable);
@@ -606,7 +686,6 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         address recipient,
         uint amount
     ) external validAmount(amount) validRecipient(recipient) onlyOwner {
-        // @todo Add Event!
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -614,6 +693,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         // Transfer asset amount to recipient.
         // Fails if balance not sufficient.
         ERC20(erc20).safeTransfer(recipient, amount);
+
+        // Notify off-chain services.
+        emit ERC20Withdrawn(erc20, recipient, amount);
 
         // Initiate rebase.
         // Note that the possible loss in USD valuation is therefore synched to
@@ -638,7 +720,6 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         uint id,
         address recipient
     ) external validRecipient(recipient) onlyOwner {
-        // @todo Add Event!
         // Make sure that erc721's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc721.code.length != 0);
@@ -646,6 +727,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         // Transfer asset amount to recipient.
         // Fails if balance not sufficient.
         ERC721(erc721).safeTransferFrom(address(this), recipient, id);
+
+        // Notify off-chain services.
+        emit ERC721IdWithdrawn(erc721, id, recipient);
 
         // Initiate rebase.
         // Note that the possible loss in USD valuation is therefore synched to
@@ -892,7 +976,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token to list as bondable.
     function listERC20AsBondable(address erc20)
-        external
+        public
         isRegisteredERC20(erc20)
         onlyOwner
     {
@@ -912,7 +996,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
     function listERC721IdAsBondable(address erc721, uint id)
-        external
+        public
         isRegisteredERC721Id(erc721, id)
         onlyOwner
     {
@@ -970,7 +1054,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token to list as redeemable.
     function listERC20AsRedeemable(address erc20)
-        external
+        public
         isRegisteredERC20(erc20)
         onlyOwner
     {
@@ -990,7 +1074,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
     function listERC721IdAsRedeemable(address erc721, uint id)
-        external
+        public
         isRegisteredERC721Id(erc721, id)
         onlyOwner
     {
@@ -1042,6 +1126,80 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         // services.
         isERC721IdRedeemable[erc721][id] = false;
         emit ERC721IdDelistedAsRedeemable(erc721, id);
+    }
+
+    /// @notice Sets the maximum balance of given ERC20 token allowed in the
+    ///         reserve.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param limit The upper balance limit for the ERC20 token.
+    function setERC20BondingLimit(address erc20, uint limit)
+        public
+        onlyOwner
+    {
+        uint oldLimit = bondingLimitPerERC20[erc20];
+
+        if (limit != oldLimit) {
+            emit SetERC20BondingLimit(erc20, oldLimit, limit);
+            bondingLimitPerERC20[erc20] = limit;
+        }
+    }
+
+    /// @notice Sets the minimum balance of given ERC20 token allowed in the
+    ///         reserve.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param limit The lower balance limit for the ERC20 token.
+    function setERC20RedeemLimit(address erc20, uint limit) public onlyOwner {
+        uint oldLimit = redeemLimitPerERC20[erc20];
+
+        if (limit != oldLimit) {
+            emit SetERC20RedeemLimit(erc20, oldLimit, limit);
+            redeemLimitPerERC20[erc20] = limit;
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // Bundle Functions
+
+    /// @notice Bundles the listing of a new ERC20 bond together with
+    ///         setting it's limit so it can be done in one tx.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param limit The bonding limit for the ERC20 token.
+    function setupAndListERC20Bond(
+        address erc20, 
+        uint limit
+    ) external onlyOwner {
+        // List ERC20 as bondable if it isn't already
+        if(!isERC20Bondable[erc20]) {
+            listERC20AsBondable(erc20);
+        }
+
+        // Set the ERC20's limit if it isn't already
+        if(bondingLimitPerERC20[erc20] != limit) {
+            setERC20BondingLimit(erc20, limit);
+        }
+    }
+
+    /// @notice Bundles the listing of a new ERC20 redemption together
+    ///         with setting it's limit so it can be done in one tx.
+    /// @dev Only callable by owner.
+    /// @param erc20 The ERC20 token address.
+    /// @param limit The redeem limit for the ERC20 token.
+     function setupAndListERC20Redemption(
+        address erc20, 
+        uint limit
+    ) external onlyOwner {
+        // List ERC20 as redeemable if it isn't already
+        if(!isERC20Redeemable[erc20]) {
+            listERC20AsRedeemable(erc20);
+        }
+
+        // Set the ERC20's limit if it isn't already
+        if(redeemLimitPerERC20[erc20] != limit) {
+            setERC20RedeemLimit(erc20, limit);
+        }
     }
 
     //--------------------------------------------------------------------------

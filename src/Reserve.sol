@@ -198,6 +198,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @inheritdoc IReserve
     mapping(address => AssetType) public assetTypeOfERC20;
 
+    /// @inheritdoc IReserve
+    mapping(address => RiskLevel) public riskLevelOfERC20;
+
     //----------------------------------
     // Bonding & Redeeming Mappings
 
@@ -575,7 +578,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     function registerERC20(
         address erc20,
         address oracle,
-        AssetType assetType
+        AssetType assetType,
+        RiskLevel riskLevel
     ) external onlyOwner {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's SafeTransferLib does not include this check.
@@ -596,15 +600,19 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         require(_oracleIsValid(oracle));
 
         // Revert if asset type is invalid.
-        require(uint(assetType) <= 2);
+        require(uint(assetType) <= uint(type(AssetType).max));
+
+        // Revert if risk level is invalid.
+        require(uint(riskLevel) <= uint(type(RiskLevel).max));
 
         // Add erc20 and oracle to mappings.
         registeredERC20s.push(erc20);
         oraclePerERC20[erc20] = oracle;
         assetTypeOfERC20[erc20] = assetType;
+        riskLevelOfERC20[erc20] = riskLevel;
 
         // Notify off-chain services.
-        emit ERC20Registered(erc20, assetType);
+        emit ERC20Registered(erc20, assetType, riskLevel);
         emit SetERC20Oracle(erc20, address(0), oracle);
     }
 
@@ -655,6 +663,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Remove erc20's oracle and asset type.
         delete oraclePerERC20[erc20];
         delete assetTypeOfERC20[erc20];
+        delete riskLevelOfERC20[erc20];
 
         // Remove erc20 from the registeredERC20s array.
         uint len = registeredERC20s.length;

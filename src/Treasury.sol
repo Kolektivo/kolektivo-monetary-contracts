@@ -50,6 +50,15 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         Ecological
     }
 
+    /// @notice Each ERC20-based asset has a certain risk level, either low,
+    ///         medium or high, depending on how liquid its market is and the
+    ///         type of the asset.
+    enum RiskLevel {
+        Low,
+        Medium,
+        High
+    }
+
     /// @notice For some actions, an ERC721Id needs to be stored into a one object
     //          instead of in separate variables, e.g. in the registeredERC721Ids-array
     struct ERC721Id {
@@ -158,10 +167,13 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Event emitted when an erc20 is registered
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the asset's oracle.
+    /// @param assetType The type of the asset
+    /// @param riskLevel The level of risk associated to the token
     event ERC20Registered(
         address indexed erc20,
         address indexed oracle,
-        AssetType assetType
+        AssetType assetType,
+        RiskLevel riskLevel
     );
 
     /// @notice Event emitted when an erc721Id is registered
@@ -174,14 +186,14 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         address indexed oracle
     );
 
-    /// @notice Event emitted when an erc20 is unregistered.
+    /// @notice Event emitted when an erc20 is deregistered.
     /// @param erc20 The address of the erc20 token.
-    event ERC20Unregistered(address indexed erc20);
+    event ERC20Deregistered(address indexed erc20);
 
-    /// @notice Event emitted when an erc721Id is unregistered.
+    /// @notice Event emitted when an erc721Id is deregistered.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    event ERC721IdUnregistered(address indexed erc721, uint indexed id);
+    event ERC721IdDeregistered(address indexed erc721, uint indexed id);
 
     /// @notice Event emitted when an erc20's oracle is updated.
     /// @param erc20 The address of the erc20 token.
@@ -421,10 +433,15 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev ERC721Ids are of type ERC721Id, containing the address and id.
     ERC721Id[] public registeredERC721Ids;
 
-    /// @notice The type of each ERC20-based asset registered by the treasury.
+    /// @notice The type of each ERC20-based asset registered in the treasury.
     /// @dev Changeable by owner.
     /// @dev Address in registeredERC20s => Asset Type (enum).
     mapping(address => AssetType) public assetTypeOfERC20;
+
+    /// @notice The risk level ERC20-based asset registered in the treasury.
+    /// @dev Changeable by owner.
+    /// @dev Address in registeredERC20s => Risk Level (enum).
+    mapping(address => RiskLevel) public riskLevelOfERC20;
 
     /// @notice The mapping of oracles providing the price for an erc20.
     /// @dev Changeable by owner.
@@ -742,10 +759,12 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the erc20's oracle.
     /// @param assetType The type of the asset
+    /// @param riskLevel The level  of risk of the asset
     function registerERC20(
         address erc20,
         address oracle,
-        AssetType assetType
+        AssetType assetType,
+        RiskLevel riskLevel
     ) external onlyOwner {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
@@ -774,15 +793,19 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         }
 
         // Revert if asset type is invalid.
-        require(uint(assetType) <= 2);
+        require(uint(assetType) <= uint(type(AssetType).max));
+
+        // Revert if risk level is invalid.
+        require(uint(riskLevel) <= uint(type(RiskLevel).max));
 
         // Add erc20 and its oracle and asset type to storage.
         registeredERC20s.push(erc20);
         oraclePerERC20[erc20] = oracle;
         assetTypeOfERC20[erc20] = assetType;
+        riskLevelOfERC20[erc20] = riskLevel;
 
         // Notify off-chain services.
-        emit ERC20Registered(erc20, oracle, assetType);
+        emit ERC20Registered(erc20, oracle, assetType, riskLevel);
     }
 
     /// @notice Registers a new erc721Id.
@@ -833,10 +856,10 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         emit ERC721IdRegistered(erc721, id, oracle);
     }
 
-    /// @notice Unregisters an erc20.
+    /// @notice Deregisters an erc20.
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token.
-    function unregisterERC20(address erc20) external onlyOwner {
+    function deregisterERC20(address erc20) external onlyOwner {
         // Do nothing if erc20 is already not supported.
         // Note that we do not use the isRegistered modifier to be idempotent.
         if (oraclePerERC20[erc20] == address(0)) {
@@ -846,6 +869,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         // Remove erc20's oracle.
         delete oraclePerERC20[erc20];
         delete assetTypeOfERC20[erc20];
+        delete riskLevelOfERC20[erc20];
 
         // Remove erc20 from registeredERC20s array.
         uint len = registeredERC20s.length;
@@ -857,7 +881,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
                 }
                 registeredERC20s.pop();
 
-                emit ERC20Unregistered(erc20);
+                emit ERC20Deregistered(erc20);
                 break;
             }
 
@@ -865,11 +889,11 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         }
     }
 
-    /// @notice Unregisters an erc721Id.
+    /// @notice Deregisters an erc721Id.
     /// @dev Only callable by owner.
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
-    function unregisterERC721Id(address erc721, uint id) external onlyOwner {
+    function deregisterERC721Id(address erc721, uint id) external onlyOwner {
         // Do nothing if erc721Id is already not supported.
         // Note that we do not use the isRegistered modifier to be idempotent.
         if (oraclePerERC721Id[erc721][id] == address(0)) {
@@ -892,7 +916,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
                 }
                 registeredERC721Ids.pop();
 
-                emit ERC721IdUnregistered(erc721, id);
+                emit ERC721IdDeregistered(erc721, id);
                 break;
             }
 

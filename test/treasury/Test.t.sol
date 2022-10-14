@@ -78,8 +78,8 @@ abstract contract TreasuryTest is Test {
 
     // Events copied from SuT.
     // Note that the Event declarations are needed to test for emission.
-    event ERC20Registered(address indexed erc20, address indexed oracle, Treasury.AssetType assetType);
-    event ERC20Unregistered(address indexed erc20);
+    event ERC20Registered(address indexed erc20, address indexed oracle, Treasury.AssetType assetType, Treasury.RiskLevel riskLevel);
+    event ERC20Deregistered(address indexed erc20);
     event ERC20OracleUpdated(
         address indexed erc20,
         address oldOracle,

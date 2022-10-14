@@ -119,7 +119,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20Wad.approve(address(reserve), erc20WadAmount);
 
         // Register erc20 in reserve and list as bondable/redeemable.
-        reserve.registerERC20(address(erc20Wad), address(oWad), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20Wad), address(oWad), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
         reserve.listERC20AsBondable(address(erc20Wad));
         reserve.listERC20AsRedeemable(address(erc20Wad));
 
@@ -148,7 +148,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20NonWad.approve(address(reserve), erc20NonWadAmount);
 
         // Register erc20 in reserve and list as bondable/redeemable.
-        reserve.registerERC20(address(erc20NonWad), address(oNonWad), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20NonWad), address(oNonWad), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
         reserve.listERC20AsBondable(address(erc20NonWad));
         reserve.listERC20AsRedeemable(address(erc20NonWad));
 
@@ -246,7 +246,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20Wad.approve(address(reserve), erc20WadAmount);
 
         // Register erc20 in reserve and list as bondable/redeemable.
-        reserve.registerERC20(address(erc20Wad), address(oWad), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20Wad), address(oWad), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
         reserve.listERC20AsBondable(address(erc20Wad));
         reserve.listERC20AsRedeemable(address(erc20Wad));
 
@@ -279,7 +279,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         erc20NonWad.approve(address(reserve), erc20NonWadAmount);
 
         // Register erc20 in reserve and list as bondable/redeemable.
-        reserve.registerERC20(address(erc20NonWad), address(oNonWad), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20NonWad), address(oNonWad), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
         reserve.listERC20AsBondable(address(erc20NonWad));
         reserve.listERC20AsRedeemable(address(erc20NonWad));
 
@@ -351,7 +351,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         o.setDataAndValid(price, true);
 
         // Register erc20 in reserve.
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         // List erc20 as bondable/redeemable.
         reserve.listERC20AsBondable(address(erc20));

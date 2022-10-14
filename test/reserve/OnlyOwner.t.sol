@@ -117,7 +117,7 @@ contract ReserveOnlyOwner is ReserveTest {
         // Asset Management
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        reserve.registerERC20(address(token), address(tokenOracle), IReserve.AssetType.Default);
+        reserve.registerERC20(address(token), address(tokenOracle), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         reserve.registerERC721Id(
@@ -251,12 +251,12 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         // @todo Check event emission.
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
         assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
         // Check that function is idempotent.
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
         assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
@@ -275,7 +275,7 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         // @todo Check event emission.
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType(assetType));
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType(assetType), IReserve.RiskLevel.Low);
         assertEq(reserve.registeredERC20s(0), address(erc20));
         assertEq(reserve.oraclePerERC20(address(erc20)), address(o));
 
@@ -290,7 +290,7 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(erc20, address(0), IReserve.AssetType.Default);
+        reserve.registerERC20(erc20, address(0), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
     }
 
     function testRegisterERC20_NotAcceptedIf_AlreadyRegistered() public {
@@ -298,14 +298,14 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         // Reverts if erc20 is added again with a different oracle.
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(address(erc20), address(o2), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o2), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
     }
 
     function testRegisterERC20_NotAcceptedIf_OracleInvalid() public {
@@ -314,12 +314,12 @@ contract ReserveOnlyOwner is ReserveTest {
         o.setDataAndValid(1e18, false); // Oracle is invalid
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         o.setDataAndValid(0, true); // Oracle's price is zero
 
         vm.expectRevert(bytes("")); // Empty require statement
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
     }
 
     function testRegisterERC721() public {
@@ -400,7 +400,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         // @todo Check event emission.
         reserve.deregisterERC20(address(erc20));
@@ -446,7 +446,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, true);
@@ -476,7 +476,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         OracleMock o2 = new OracleMock();
         o2.setDataAndValid(1e18, false); // Oracle is invalid
@@ -553,7 +553,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         // Set erc20 as being listed for bonding.
         // @todo Check event emission.
@@ -629,7 +629,7 @@ contract ReserveOnlyOwner is ReserveTest {
         OracleMock o = new OracleMock();
         o.setDataAndValid(1e18, true);
 
-        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default);
+        reserve.registerERC20(address(erc20), address(o), IReserve.AssetType.Default, IReserve.RiskLevel.Low);
 
         // Set erc20 as being listed as redeemable.
         // @todo Check event emission.

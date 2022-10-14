@@ -21,6 +21,15 @@ interface IReserve {
         Ecological
     }
 
+    /// @notice Each ERC20-based asset has a certain risk level, either low,
+    ///         medium or high, depending on how liquid its market is and the
+    ///         type of the asset.
+    enum RiskLevel {
+        Low,
+        Medium,
+        High
+    }
+
     //--------------------------------------------------------------------------
     // Errors
 
@@ -187,7 +196,9 @@ interface IReserve {
 
     /// @notice Event emitted when ERC20 token address registered.
     /// @param erc20 The ERC20 token address.
-    event ERC20Registered(address indexed erc20, AssetType assetType);
+    /// @param assetType The type of the asset
+    /// @param riskLevel The level of risk associated to the token
+    event ERC20Registered(address indexed erc20, AssetType assetType, RiskLevel riskLevel);
 
     /// @notice Event emitted when ERC721 instance registered.
     /// @param erc721 The ERC721 token address.
@@ -352,10 +363,12 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @param oracle The ERC20 token's price oracle of type IOracle.
     /// @param assetType The asset type of the ERC20 token.
+    /// @param riskLevel The level of risk associated to the ERC20 token.
     function registerERC20(
         address erc20,
         address oracle,
-        AssetType assetType
+        AssetType assetType,
+        RiskLevel riskLevel
     ) external;
 
     /// @notice Registers given ERC721Id instance with given oracle.
@@ -860,6 +873,8 @@ interface IReserve {
     /// @notice Returns the type of a registered erc20 asset.
     function assetTypeOfERC20(address erc20) external view returns (AssetType);
 
+    /// @notice Returns the risk level of a registered erc20 asset.
+    function riskLevelOfERC20(address erc20) external view returns (RiskLevel);
     //----------------------------------
     // Vesting View Functions
 

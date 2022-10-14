@@ -44,7 +44,7 @@ contract TreasuryBonding is TreasuryTest {
         oracle.setDataAndValid(price, true);
 
         // Let treasury support token for bonding.
-        treasury.registerERC20(address(token), address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(address(token), address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
         treasury.listERC20AsBondable(address(token));
 
         // Mint tokens.

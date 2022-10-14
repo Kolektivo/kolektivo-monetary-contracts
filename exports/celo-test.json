@@ -3,7 +3,7 @@
     "chainId": "42220",
     "contracts": {
         "GeoNFT": {
-            "address": "0x0000000000000000000000000000000000000000",
+            "address": "0x3d088f32d7d83FD7868620f76C80604106b74702",
             "abi": [
                 {
                     "inputs": [
@@ -1052,7 +1052,7 @@
             ]
         },
         "Reserve": {
-            "address": "0x0000000000000000000000000000000000000000",
+            "address": "0x9f4995f6a797Dd932A5301f22cA88104e7e42366",
             "abi": [
                 {
                     "inputs": [
@@ -3500,7 +3500,7 @@
             ]
         },
         "Treasury": {
-            "address": "0x0000000000000000000000000000000000000000",
+            "address": "0xEAc68B2e33fA3dbde9bABf3edF17ed3437f3D992",
             "abi": [
                 {
                     "inputs": [],
@@ -5589,12 +5589,34 @@
             ]
         },
         "Kolektivo Curacao Token": {
-            "address": "0x0000000000000000000000000000000000000000",
+            "address": "0x799aC807A4163899c09086A6C69490f6AecD65Cb",
             "abi": "ERC20"
         },
         "Kolektivo Treasury Token": {
-            "address": "0x0000000000000000000000000000000000000000",
+            "address": "0xEAc68B2e33fA3dbde9bABf3edF17ed3437f3D992",
             "abi": "ERC20"
+        },
+        "Test Token #1": {
+            "address": "0x8E7Af361418CDAb43333c6Bd0fA6906285C0E272",
+            "abi": "ERC20"
+        },
+        "Test Token #2": {
+            "address": "0x57f046C697B15D0933605F12152c5d96cB6f9cc5",
+            "abi": "ERC20"
+        },
+        "Test Token #3": {
+            "address": "0x32dB9295556D2B5193FD404253a4a3fD206B754b",
+            "abi": "ERC20"
+        },
+        "GeoNFT #1": {
+            "address": "0x3d088f32d7d83FD7868620f76C80604106b74702",
+            "id": 1,
+            "abi": "ERC721"
+        },
+        "GeoNFT #2": {
+            "address": "0x3d088f32d7d83FD7868620f76C80604106b74702",
+            "id": 2,
+            "abi": "ERC721"
         },
         "VestingVault": {
             "address": "0x0000000000000000000000000000000000000000",

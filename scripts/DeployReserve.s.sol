@@ -58,6 +58,9 @@ contract DeployReserve is Script {
         }
         vm.stopBroadcast();
 
+        // Store deployment address in env
+        vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(reserve)));
+
         // Log the deployed Reserve contract address.
         console2.log("Deployment of Reserve at address", address(reserve));
 

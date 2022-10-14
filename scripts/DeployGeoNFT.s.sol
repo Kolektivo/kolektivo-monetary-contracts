@@ -47,6 +47,9 @@ contract DeployGeoNFT is Script {
         }
         vm.stopBroadcast();
 
+        // Store deployment address in env
+        vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(nft)));
+
         // Log the deployed GeoNFT contract address.
         console2.log("Deployment of GeoNFT at address", address(nft));
 

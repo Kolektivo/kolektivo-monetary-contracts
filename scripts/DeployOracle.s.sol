@@ -61,6 +61,9 @@ contract DeployOracle is Script {
             );
         }
         vm.stopBroadcast();
+        
+        // Store deployment address in env
+        vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(oracle)));
 
         // Log the deployed oracle contract address.
         console2.log("Deployment of Oracle at address", address(oracle));

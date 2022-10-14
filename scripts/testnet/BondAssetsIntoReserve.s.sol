@@ -18,43 +18,66 @@ import {ERC20Mock} from "../../test/utils/mocks/ERC20Mock.sol";
  *      Incurs some debt inside the Reserve.
  */
 contract BondAssetsIntoReserve is Script {
-    // Note that the addresses are copied from the DEPLOYMENT.md doc file.
-    Reserve reserve = Reserve(0x9f4995f6a797Dd932A5301f22cA88104e7e42366);
-    Oracle reserveTokenOracle =
-        Oracle(0x8684e1f9da7036adFF3D95BA54Db9Ef0F503f5D4);
-
-    Treasury treasury = Treasury(0xEAc68B2e33fA3dbde9bABf3edF17ed3437f3D992);
-    Oracle treasuryTokenOracle =
-        Oracle(0x07aDaa5739fF6d730CB9D59991072b17a70D9813);
-
-    ERC20Mock token1 = ERC20Mock(0x8E7Af361418CDAb43333c6Bd0fA6906285C0E272);
-    ERC20Mock token2 = ERC20Mock(0x57f046C697B15D0933605F12152c5d96cB6f9cc5);
-    ERC20Mock token3 = ERC20Mock(0x32dB9295556D2B5193FD404253a4a3fD206B754b);
-    GeoNFT geoNFT = GeoNFT(0x3d088f32d7d83FD7868620f76C80604106b74702);
+    Reserve reserve;
+    ReserveToken reserveToken;
+    Oracle reserveTokenOracle;
+    Treasury treasury;
+    Oracle treasuryTokenOracle;
+    ERC20Mock token1;
+    ERC20Mock token2;
+    ERC20Mock token3;
+    GeoNFT geoNFT;
     IReserve.AssetType assetTypeToken1 = IReserve.AssetType.Default;
     IReserve.AssetType assetTypeToken2 = IReserve.AssetType.Stable;
     IReserve.AssetType assetTypeToken3 = IReserve.AssetType.Ecological;
-    Oracle token1Oracle = Oracle(0x8e44992e836A742Cdcde08346DB6ECEac86C5C41);
-    Oracle token2Oracle = Oracle(0x1A9617212f01846961256717781214F9956512Be);
-    Oracle token3Oracle = Oracle(0xBbD9C2bB9901464ef92dbEf3E2DE98b744bA49D5);
-    Oracle geoNFT2Oracle = Oracle(0x5dfD0c7d607a08F07F3041a86338404442615127);
+    IReserve.RiskLevel riskLevelToken1 = IReserve.RiskLevel.Low;
+    IReserve.RiskLevel riskLevelToken2 = IReserve.RiskLevel.Medium;
+    IReserve.RiskLevel riskLevelToken3 = IReserve.RiskLevel.High;
+    Oracle token1Oracle;
+    Oracle token2Oracle;
+    Oracle token3Oracle;
+    Oracle geoNFT2Oracle;
 
-    uint token1Amount = 119e18; // 119
-    uint token2Amount = 31_000e18; // 31k
-    uint token3Amount = 152_500e18; // 152.5k
-    uint geoNFT2Price = 43_887_32e16; // $43,887.32
+    uint token1Amount;
+    uint token2Amount;
+    uint token3Amount;
+    uint geoNFT2Price;
 
     function run() external {
+        reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        reserveTokenOracle =
+            Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+
+        treasury = Treasury(vm.envAddress("DEPLOYMENT_TREASURY"));
+        treasuryTokenOracle =
+            Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
+
+        token1 = ERC20Mock(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1"));
+        token2 = ERC20Mock(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2"));
+        token3 = ERC20Mock(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3"));
+        geoNFT = GeoNFT(vm.envAddress("DEPLOYMENT_GEO_NFT_1"));
+
+        token1Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
+        token2Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"));
+        token3Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"));
+        geoNFT2Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_2_ORACLE"));
+
+        token1Amount = vm.envUint("DEPLOYMENT_TOKEN_1_AMOUNT_RESERVE");
+        token2Amount = vm.envUint("DEPLOYMENT_TOKEN_2_AMOUNT_RESERVE");
+        token3Amount = vm.envUint("DEPLOYMENT_TOKEN_3_AMOUNT_RESERVE");
+        geoNFT2Price = vm.envUint("DEPLOYMENT_GEO_NFT_2_PRICE_RESERVE");
+
         vm.startBroadcast();
         {
             geoNFT2Oracle.pushReport(geoNFT2Price);
 
-            // Mint tokens to msg.sender, i.e. the address with which's
+            // Mint tokens to vm.envAddress("WALLET_DEPLOYER"), i.e. the address with which's
             // private key the script is executed.
-            token1.mint(msg.sender, token1Amount);
-            token2.mint(msg.sender, token2Amount);
-            token3.mint(msg.sender, token3Amount);
-            geoNFT.mint(msg.sender, 1, 1, "Test GeoNFT #2");
+            token1.mint(vm.envAddress("WALLET_DEPLOYER"), token1Amount);
+            token2.mint(vm.envAddress("WALLET_DEPLOYER"), token2Amount);
+            token3.mint(vm.envAddress("WALLET_DEPLOYER"), token3Amount);
+            geoNFT.mint(vm.envAddress("WALLET_DEPLOYER"), 1, 1, "Test GeoNFT #2");
 
             // Approve tokens to Reserve.
             token1.approve(address(reserve), type(uint).max);
@@ -63,32 +86,36 @@ contract BondAssetsIntoReserve is Script {
             geoNFT.approve(address(reserve), 2);
             treasury.approve(address(reserve), type(uint).max);
 
-            reserveTokenOracle.pushReport(312e16);
-            treasuryTokenOracle.pushReport(1e18);
+            reserveTokenOracle.pushReport(vm.envUint("DEPLOYMENT_RESERVE_TOKEN_PRICE_"));
+            treasuryTokenOracle.pushReport(vm.envUint("DEPLOYMENT_TREASURY_TOKEN_PRICE_"));
 
             // Register token inside the Reserve.
             reserve.registerERC20(
                 address(token1),
                 address(token1Oracle),
-                assetTypeToken1
+                assetTypeToken1,
+                riskLevelToken1
             );
 
             reserve.registerERC20(
                 address(token2),
                 address(token2Oracle),
-                assetTypeToken2
+                assetTypeToken2,
+                riskLevelToken2
             );
 
             reserve.registerERC20(
                 address(token3),
                 address(token3Oracle),
-                assetTypeToken3
+                assetTypeToken3,
+                riskLevelToken3
             );
 
             reserve.registerERC20(
                 address(treasury),
                 address(treasuryTokenOracle),
-                assetTypeToken1
+                assetTypeToken1,
+                riskLevelToken1
             );
             reserve.registerERC721Id(
                 address(geoNFT),
@@ -110,11 +137,8 @@ contract BondAssetsIntoReserve is Script {
             reserve.bondERC20All(address(treasury));
             reserve.bondERC721Id(address(geoNFT), 2);
             
-            // Incur some debt.
-            // Note that the token's price is set as 2$.
-            // 24% of 2,000$ = 480$.
-            // Backing should now be 76%.
-            // reserve.incurDebt(480e18);
+            // Send kCUR to Reserve (just to store them there)
+            reserveToken.transfer(address(reserve), reserveToken.balanceOf(vm.envAddress("WALLET_DEPLOYER")));
         }
         vm.stopBroadcast();
     }

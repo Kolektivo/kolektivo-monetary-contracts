@@ -56,6 +56,9 @@ contract DeployReserveToken is Script {
         }
         vm.stopBroadcast();
 
+        // Store deployment address in env
+        vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(token)));
+
         // Log the deployed ReserveToken contract address.
         console2.log("Deployment of ReserveToken at address", address(token));
 

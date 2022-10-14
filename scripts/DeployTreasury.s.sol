@@ -31,6 +31,9 @@ contract DeployTreasury is Script {
         }
         vm.stopBroadcast();
 
+        // Store deployment address in env
+        vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(treasury)));
+
         // Log the deployed treasury contract address.
         console2.log("Deployment of Treasury at address", address(treasury));
 

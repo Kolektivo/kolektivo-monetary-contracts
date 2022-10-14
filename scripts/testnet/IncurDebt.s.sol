@@ -3,6 +3,7 @@ pragma solidity 0.8.10;
 import "forge-std/Script.sol";
 
 import {Reserve} from "../../src/Reserve.sol";
+import {ReserveToken} from "../../src/ReserveToken.sol";
 import {Oracle} from "../../src/Oracle.sol";
 
 /**
@@ -11,16 +12,17 @@ import {Oracle} from "../../src/Oracle.sol";
  *      Bonds the tokens into the Reserve.
  *      Incurs some debt inside the Reserve.
  */
-contract BondAssetsIntoReserve is Script {
-    // Note that the addresses are copied from the DEPLOYMENT.md doc file.
-    Reserve reserve = Reserve(0x9f4995f6a797Dd932A5301f22cA88104e7e42366);
-
-    Oracle reserveTokenOracle =
-        Oracle(0x8684e1f9da7036adFF3D95BA54Db9Ef0F503f5D4);
-
-    uint desiredBackingAmount = 8100; // %
-
+contract IncurDebt is Script {
     function run() external {
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        ReserveToken reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+
+        Oracle reserveTokenOracle =
+            Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+
+        uint desiredBackingAmount = vm.envUint("DEPLOYMENT_DESIRED_BACKING_AMOUNT_RESERVE");
+
+
         vm.startBroadcast();
         {
             uint oldReserveValuation;
@@ -58,9 +60,10 @@ contract BondAssetsIntoReserve is Script {
                 reserve.payDebt(oldSupplyValuation - requiredSupply);
             }
         }
-        // 1_783_776
-        // 1_783_776
-        // 10000
+
+        // Send kCUR to Reserve (just to store them there)
+        reserveToken.transfer(address(reserve), reserveToken.balanceOf(vm.envAddress("WALLET_DEPLOYER")));
+
         vm.stopBroadcast();
     }
 }

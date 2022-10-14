@@ -35,29 +35,29 @@ If successful, the deployed contract's address is shown in the logs:
 
 # Deployments
 
-## Testnet: alfajores (Celo)
+## Testnet: Celo
 
 Note that we did not initiate any owner switch on the testnet.
 
 Note that the alfajores Celo testnet does not implement EIP1559 and the
 `--legacy` flag needs to be appended to the deploy commands.
 
-| Kolektivo Contracts    | Address                                    |
-| ---------------------- | ------------------------------------------ |
-| Treasury               | 0xEAc68B2e33fA3dbde9bABf3edF17ed3437f3D992 |
-| Reserve                | 0x9f4995f6a797Dd932A5301f22cA88104e7e42366 |
-| Reserve Token          | 0x799aC807A4163899c09086A6C69490f6AecD65Cb |
-| Geo NFT                | 0x3d088f32d7d83FD7868620f76C80604106b74702 |
-| Oracle: Treasury Token | 0x07aDaa5739fF6d730CB9D59991072b17a70D9813 |
-| Oracle: Reserve Token  | 0x8684e1f9da7036adFF3D95BA54Db9Ef0F503f5D4 |
-
-| Other Contracts            | Address                                    |
-| -------------------------- | ------------------------------------------ |
-| ERC20 Mock Token 1         | 0x8E7Af361418CDAb43333c6Bd0fA6906285C0E272 |
-| ERC20 Mock Token 2         | 0x57f046C697B15D0933605F12152c5d96cB6f9cc5 |
-| ERC20 Mock Token 3         | 0x32dB9295556D2B5193FD404253a4a3fD206B754b |
-| Oracle: ERC20 Mock Token 1 | 0x8e44992e836A742Cdcde08346DB6ECEac86C5C41 |
-| Oracle: ERC20 Mock Token 2 | 0x1A9617212f01846961256717781214F9956512Be |
-| Oracle: ERC20 Mock Token 3 | 0xBbD9C2bB9901464ef92dbEf3E2DE98b744bA49D5 |
-| Oracle: GeoNFT 1           | 0x4CF7C83253B850BC50dC641aB7D4136aE934f77f |
-| Oracle: GeoNFT 2           | 0x5dfD0c7d607a08F07F3041a86338404442615127 |
+  | Kolektivo Contracts    | Address                                    |
+  | ---------------------- | ------------------------------------------ |
+  | Treasury               | 0x8Ddb762Fd4D56bd0D839732cC0c4538BCB5339cA |
+  | Reserve                | 0xcBf30E615B5C2781BAc526b60E956D021984a707 |
+  | Reserve Token          | 0xAF7C40a13b8a4e3e2017a61E4C2A4eDAd290D8B5 |
+  | Oracle: Treasury Token | 0x7fB0D1E0286E159Ee50d409E2C5D4B9C9D2Ab7eb |
+  | Oracle: Reserve Token  | 0xc444590ba59E44EbeC1fEB0f5579B597aF4531dC |
+   
+  | Other Contracts        | Address                                    |
+  | ---------------------- | ------------------------------------------ |
+  | ERC20 Mock Token 1     | 0x237ad41C8909976e9354a4BF3c2B7ba9a80c5e53 |
+  | ERC20 Mock Token 2     | 0xD1563f11Ed13439C153B869389dB8d700596C0fb |
+  | ERC20 Mock Token 3     | 0x91A7F78e341da0821757511204995ca32cE37b2E |
+  | Oracle: Mock Token 1   | 0x4ea87725447C6F2A42EEcE0C63BB73C8805Ba075 |
+  | Oracle: Mock Token 2   | 0x83501f3405eD8c7F8D3326e7990D6E3A1BB91aBe |
+  | Oracle: Mock Token 3   | 0x873FBEB182e5417f07f40d7166391f5A0E9edd70 |
+  | GeoNFT 1               | 0xE61A6d2093e93193fDB51134427eF67D4Bd77E06 |
+  | Oracle: GeoNFT 1 ID 1  | 0xe5464F3031a20Cac208c2f4740cB8d212AC2eae7 |
+  | Oracle: GeoNFT 1 ID 2  | 0x067552918D0EB75899f65F300436ed03f272f48D |

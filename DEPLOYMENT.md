@@ -44,20 +44,20 @@ Note that the alfajores Celo testnet does not implement EIP1559 and the
 
   | Kolektivo Contracts    | Address                                    |
   | ---------------------- | ------------------------------------------ |
-  | Treasury               | 0x8Ddb762Fd4D56bd0D839732cC0c4538BCB5339cA |
-  | Reserve                | 0xcBf30E615B5C2781BAc526b60E956D021984a707 |
-  | Reserve Token          | 0xAF7C40a13b8a4e3e2017a61E4C2A4eDAd290D8B5 |
-  | Oracle: Treasury Token | 0x7fB0D1E0286E159Ee50d409E2C5D4B9C9D2Ab7eb |
-  | Oracle: Reserve Token  | 0xc444590ba59E44EbeC1fEB0f5579B597aF4531dC |
+  | Treasury               | 0x74b06277Cd1efaA9f6595D25AdB54b4530d15BF5 |
+  | Reserve                | 0xdb2B19C8e3ce01E7f5101652B9dEb500D1298716 |
+  | Reserve Token          | 0xf4cb43D02842c65101e5DA329ED01dFeC2280EdA |
+  | Oracle: Treasury Token | 0x044bE97050A7225176391d47615CE0667DCBa134 |
+  | Oracle: Reserve Token  | 0x86baecC60c5c1CCe2c73f2Ff42588E6EBce18707 |
    
   | Other Contracts        | Address                                    |
   | ---------------------- | ------------------------------------------ |
-  | ERC20 Mock Token 1     | 0x237ad41C8909976e9354a4BF3c2B7ba9a80c5e53 |
-  | ERC20 Mock Token 2     | 0xD1563f11Ed13439C153B869389dB8d700596C0fb |
-  | ERC20 Mock Token 3     | 0x91A7F78e341da0821757511204995ca32cE37b2E |
-  | Oracle: Mock Token 1   | 0x4ea87725447C6F2A42EEcE0C63BB73C8805Ba075 |
-  | Oracle: Mock Token 2   | 0x83501f3405eD8c7F8D3326e7990D6E3A1BB91aBe |
-  | Oracle: Mock Token 3   | 0x873FBEB182e5417f07f40d7166391f5A0E9edd70 |
-  | GeoNFT 1               | 0xE61A6d2093e93193fDB51134427eF67D4Bd77E06 |
-  | Oracle: GeoNFT 1 ID 1  | 0xe5464F3031a20Cac208c2f4740cB8d212AC2eae7 |
-  | Oracle: GeoNFT 1 ID 2  | 0x067552918D0EB75899f65F300436ed03f272f48D |
+  | ERC20 Mock Token 1     | 0x4cB13ED364bd2c212B694921CdAca979DCA76054 |
+  | ERC20 Mock Token 2     | 0x5bFE78b0d15eF0cdcA4077336e0bEbEc15CFb142 |
+  | ERC20 Mock Token 3     | 0xd312bCeA257799a39e0C85d7EC45031612e4dd50 |
+  | Oracle: Mock Token 1   | 0x377898651e03A9c1562F739a40bda70a18715cdD |
+  | Oracle: Mock Token 2   | 0xBb6fB0e7510744c8234dFA78D5088fF9AD550A88 |
+  | Oracle: Mock Token 3   | 0xe898a9e58105414eA4066C8b6a15F0D9F2f4A5dc |
+  | GeoNFT 1               | 0x9fC5461A1e6CF567C7E19Befa7c0351C9C6CB719 |
+  | Oracle: GeoNFT 1 ID 1  | 0xCf79C474994a7441E908C73Dd6cc3869dCfeD6cF |
+  | Oracle: GeoNFT 1 ID 2  | 0x1011AdbFe0E41c610FF633DC6EfA6D67A2CfA978 | 

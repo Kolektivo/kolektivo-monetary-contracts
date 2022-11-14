@@ -133,6 +133,9 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     ///      inception.
     uint private _epoch;
 
+    /// @dev The block timestamp during which a rebase has been executed
+    uint private _lastRebase;
+
     /// @dev The amount of bits one token is composed of, i.e. the bits-token
     ///      conversion rate.
     uint private _bitsPerToken;
@@ -179,7 +182,7 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         );
 
     /// @dev Number of EIP-2612 permits per address.
-    mapping(address => uint256) private _nonces;
+    mapping(address => uint) private _nonces;
 
     //--------------------------------------------------------------------------
     // Constructor
@@ -428,8 +431,14 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
     /// @notice Returns the number of successful permits for an address.
     /// @param who The address to check the number of permits for.
     /// @return The number of successful permits.
-    function nonces(address who) public view returns (uint256) {
+    function nonces(address who) public view returns (uint) {
         return _nonces[who];
+    }
+
+    /// @notice Returns the timestamp of the last rebase.
+    /// @return The timestamp of the last rebase.
+    function lastRebase() public view returns (uint) {
+        return _lastRebase;
     }
 
     /// @notice Returns the EIP-712 domain separator hash.
@@ -554,6 +563,8 @@ abstract contract ElasticReceiptToken is IRebasingERC20 {
         // Adjust conversion rate and total token supply.
         _bitsPerToken = _activeBits() / supplyTarget;
         _totalTokenSupply = supplyTarget;
+
+        _lastRebase = block.timestamp;
 
         // Notify about new rebase.
         _epoch++;

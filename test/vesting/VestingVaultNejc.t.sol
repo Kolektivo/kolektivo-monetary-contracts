@@ -66,7 +66,7 @@ contract VestingVaultNejcTest is Test {
         //
         // // Expect revert if amount is zero.
         // // Modifier: validAmount.
-        if (amount == 0) {
+        if (amount == 0 || amount > 10e40) {
             vm.expectRevert(Errors.InvalidAmount);
             vestingVaultNejc.depositFor(receiver, amount, duration);
             return;
@@ -129,20 +129,10 @@ contract VestingVaultNejcTest is Test {
         assertEq(totalVested, amount);
     }
 
-
-    // validate vesting data depositing tokens
-    // function vestingDataIsCorrect(address receiver, uint amount, uint duration)
-    //     internal
-    // {
-    //     // deposited amount is stored properly.
-    //     uint totalVested = vestingVaultNejc.getTotalVestedFor(receiver);
-    //     assertEq(totalVested, amount);
-    // }
-
     //--------------------------------------------------------------------------
     // Claim Tests
 
-    function testClaim(address receiver, uint amount, uint duration)
+    function testInstantClaim(address receiver, uint amount, uint duration)
         public
         validParams(receiver, amount, duration)
     {
@@ -155,26 +145,44 @@ contract VestingVaultNejcTest is Test {
             return;
         }
 
+        assertEq(claimable, 0, "claimable amount should be zero");
+
+        vestingVaultNejc.claim();
+    }
+
+    function testRandomClaim(address receiver, uint amount, uint duration, uint skipTime)
+        public
+        validParams(receiver, amount, duration)
+    {
+        vm.assume(skipTime < 10e70);
+        testDepositFor(receiver, amount, duration);
+
+        uint startTime = block.timestamp;
+        uint balanceBefore = token.balanceOf(address(receiver));
+
+        skip(skipTime);
+
+        uint claimable = vestingVaultNejc.getTotalClaimableFor(receiver);
+        if (claimable == 0 ) {
+            vm.expectRevert(Errors.InvalidVestingsData);
+            vestingVaultNejc.claim();
+            return;
+        }
+
+        uint claimTime = block.timestamp;
+        uint timePassed = claimTime - startTime;
+        uint claimableAmount;
+        if(claimTime > startTime + duration)
+            claimableAmount = amount;
+        else
+            claimableAmount = timePassed * amount / duration;
+
+        vm.prank(receiver);
         vestingVaultNejc.claim();
 
-        // uint claimedAmount = testToken.balanceOf(receiver);
-        // uint notYetClaimable = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
-        // assertEq(claimedAmount + notYetClaimable, amount)
-        //
+        uint balanceAfter = token.balanceOf(address(receiver));
 
-
-        // Check vestingVaultNejc balances
-        // assertEq(testToken.balanceOf(vestingVaultNejc), amount);
-        // // TODO check that event is emitted
-        //
-        // uint totalVested = vestingVaultNejc.getTotalVestedFor(receiver);
-        // assertEq(totalVested, amount);
-        //
-        // uint totalClaimable = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
-        // //      assert totalClaimable < totalVested
-        //
-        // uint totalNotClaimableYetFor = vestingVaultNejc.getTotalNotClaimableYetFor(receiver);
-        //      assert totalClaimable < totalNonClaimable
+        assertEq(balanceBefore + claimableAmount, balanceAfter);
 
         // TODO after vesting is complete, make sure its not possible to claim anymore
         //

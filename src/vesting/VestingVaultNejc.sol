@@ -84,7 +84,7 @@ contract VestingVaultNejc {
 
     /// @dev Modifier to guarantee token amount is valid.
     modifier validAmount(uint amount) {
-        if (amount == 0) {
+        if (amount == 0 || amount > 10e40) {
             revert InvalidAmount();
         }
         _;

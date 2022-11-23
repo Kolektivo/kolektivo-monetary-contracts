@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 import "./Test.t.sol";
 
@@ -21,7 +21,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         // => Backing          = 100%       = 10_000 bps
 
         // Setup an erc20 token and some initial backing.
-        (ERC20Mock erc20, OracleMock erc20Oracle) = _setUpERC20(erc20Price);
+        (ERC20Mock erc20, ) = _setUpERC20(erc20Price);
         _setUpInitialBacking(erc20, erc20Deposit);
 
         // Mint some erc20 and send them to reserve.
@@ -82,7 +82,7 @@ contract ReserveFractionalReserveBanking is ReserveTest {
         // => Backing          = 100%
 
         // Setup an erc20 token and some initial backing.
-        (ERC20Mock erc20, OracleMock erc20Oracle) = _setUpERC20(erc20Price);
+        (ERC20Mock erc20, ) = _setUpERC20(erc20Price);
         _setUpInitialBacking(erc20, erc20Deposit);
 
         uint tokenPrice = 1e18;       // 1 USD

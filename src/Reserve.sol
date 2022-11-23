@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.10;
+pragma solidity 0.8.17;
 
 // External Interfaces.
 import {IERC20} from "./interfaces/_external/IERC20.sol";
@@ -1368,7 +1368,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Declare variables outside of loop to save gas.
         address erc721;
         uint id;
-        bytes32 erc721IdHash;
 
         // Calculate the total valuation of registered ERC721 assets in the
         // reserve.

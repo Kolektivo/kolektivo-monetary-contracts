@@ -63,8 +63,8 @@ testGeoNFT: ## Run GeoNFT tests
 
 .PHONY: analyze-slither
 analyze-slither: ## Run slither analyzer against project (requires solc-select)
-	@solc-select install 0.8.10
-	@solc-select use 0.8.10
+	@solc-select install 0.8.17
+	@solc-select use 0.8.17
 	@slither src
 
 # Something like this:

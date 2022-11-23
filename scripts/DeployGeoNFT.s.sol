@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.17;
 
 import "forge-std/Script.sol";
 
@@ -33,13 +33,6 @@ contract DeployGeoNFT is Script {
             "DeployGeoNFT: Missing env variable: symbol"
         );
 
-        // Read owner settings from environment variables.
-        address newOwner = vm.envAddress("TRUSTED_OWNER");
-        require(
-            newOwner != address(0),
-            "DeployTreasury: Missing env variable: trusted owner"
-        );
-
         // Deploy the GeoNFT.
         vm.startBroadcast();
         {
@@ -52,21 +45,5 @@ contract DeployGeoNFT is Script {
 
         // Log the deployed GeoNFT contract address.
         console2.log("Deployment of GeoNFT at address", address(nft));
-
-        // Initiate owner switch.
-        vm.startBroadcast();
-        {
-            nft.setPendingOwner(newOwner);
-        }
-        vm.stopBroadcast();
-
-        // Check initiation of owner switch.
-        require(
-            nft.pendingOwner() == newOwner,
-            "DeployGeoNFT: Initiating owner switch failed"
-        );
-
-        // Log successful initiation of the owner switch.
-        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
 }

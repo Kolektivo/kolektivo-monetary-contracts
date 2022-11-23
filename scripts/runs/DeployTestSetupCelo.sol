@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.17;
 
 import "forge-std/Test.sol";
 
@@ -130,5 +130,20 @@ contract DeployTestSetupCelo is Script {
         console2.log("| Oracle: GeoNFT 1 ID 1  |", vm.envString("DEPLOYMENT_GEO_NFT_1_ORACLE") ,"|");
         console2.log("| Oracle: GeoNFT 1 ID 2  |", vm.envString("DEPLOYMENT_GEO_NFT_2_ORACLE") ,"|");
         console2.log(" ");
+        
+        console2.log("To initiate the ownership switch at a later time, ");
+        console2.log("copy these and put into console: ");
+        string memory exportValues = string(abi.encodePacked("export DEPLOYMENT_TREASURY=", vm.envString("DEPLOYMENT_TREASURY"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_RESERVE=", vm.envString("DEPLOYMENT_RESERVE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_RESERVE_TOKEN=", vm.envString("DEPLOYMENT_RESERVE_TOKEN"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_TREASURY_TOKEN_ORACLE=", vm.envString("DEPLOYMENT_TREASURY_TOKEN_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_RESERVE_TOKEN_ORACLE=", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MOCK_TOKEN_1_ORACLE=", vm.envString("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MOCK_TOKEN_2_ORACLE=", vm.envString("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MOCK_TOKEN_3_ORACLE=", vm.envString("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_GEO_NFT_1_ORACLE=", vm.envString("DEPLOYMENT_GEO_NFT_1_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_GEO_NFT_2_ORACLE=", vm.envString("DEPLOYMENT_GEO_NFT_2_ORACLE")));
+        console2.log(exportValues);
+        
     }
 }

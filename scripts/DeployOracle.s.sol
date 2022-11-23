@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.17;
 
 import "forge-std/Script.sol";
 
@@ -44,13 +44,6 @@ contract DeployOracle is Script {
             "DeployOracle: Missing env variable: minimum providers"
         );
 
-        // Read owner settings from environment variables.
-        address newOwner = vm.envAddress("TRUSTED_OWNER");
-        require(
-            newOwner != address(0),
-            "DeployOracle: Missing env variable: trusted owner"
-        );
-
         // Deploy the oracle.
         vm.startBroadcast();
         {
@@ -67,21 +60,5 @@ contract DeployOracle is Script {
 
         // Log the deployed oracle contract address.
         console2.log("Deployment of Oracle at address", address(oracle));
-
-        // Initiate owner switch.
-        vm.startBroadcast();
-        {
-            oracle.setPendingOwner(newOwner);
-        }
-        vm.stopBroadcast();
-
-        // Check initiation of owner switch.
-        require(
-            oracle.pendingOwner() == newOwner,
-            "DeployOracle: Initiating owner switch failed"
-        );
-
-        // Log successful initiation of the owner switch.
-        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
 }

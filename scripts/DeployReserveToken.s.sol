@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.17;
 
 import "forge-std/Script.sol";
 
@@ -42,13 +42,6 @@ contract DeployReserveToken is Script {
             "DeployReserveToken: Missing env variable: mint burner"
         );
 
-        // Read owner settings from environment variables.
-        address newOwner = vm.envAddress("TRUSTED_OWNER");
-        require(
-            newOwner != address(0),
-            "DeployReserveToken: Missing env variable: trusted owner"
-        );
-
         // Deploy the ReserveToken.
         vm.startBroadcast();
         {
@@ -61,21 +54,5 @@ contract DeployReserveToken is Script {
 
         // Log the deployed ReserveToken contract address.
         console2.log("Deployment of ReserveToken at address", address(token));
-
-        // Initiate owner switch.
-        vm.startBroadcast();
-        {
-            token.setPendingOwner(newOwner);
-        }
-        vm.stopBroadcast();
-
-        // Check initiation of owner switch.
-        require(
-            token.pendingOwner() == newOwner,
-            "DeployReserveToken: Initiating owner switch failed"
-        );
-
-        // Log successful initiation of the owner switch.
-        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
 }

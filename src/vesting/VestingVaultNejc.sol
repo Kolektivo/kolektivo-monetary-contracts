@@ -84,7 +84,7 @@ contract VestingVaultNejc {
 
     /// @dev Modifier to guarantee token amount is valid.
     modifier validAmount(uint amount) {
-        if (amount == 0 || amount > 10e40) {
+        if (amount == 0 || amount > 10e70) {
             revert InvalidAmount();
         }
         _;
@@ -100,8 +100,8 @@ contract VestingVaultNejc {
     }
 
     /// @dev Modifier to guarantee receiver has active vestings assigned to him.
-    modifier validVestingData(address receiver) {
-        if (_vestings[receiver].length == 0) {
+    modifier validVestingData() {
+        if (_vestings[msg.sender].length == 0) {
             revert InvalidVestingsData();
         }
         _;
@@ -148,11 +148,12 @@ contract VestingVaultNejc {
     }
 
     /// @notice Release all claimable tokens to receiver.
-    function claim() external validVestingData(msg.sender) {
+    function claim() external validVestingData() {
         // @dev iterate receivers vesting claimableAmounts to calculate totalClaimable
         uint totalClaimable;
         for(uint slot; slot < _vestings[msg.sender].length; ++slot){
             Vesting memory vesting = _vestings[msg.sender][slot];
+
             // @dev if vesting is finished and nothing is claimed, everything is available
             if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
                 totalClaimable += vesting.totalAmount;
@@ -162,13 +163,19 @@ contract VestingVaultNejc {
             else {
                 uint timePassed = block.timestamp - vesting.start;
                 uint totalDuration = vesting.end - vesting.start;
-                uint claimableAmount = timePassed * vesting.totalAmount / totalDuration
-                - vesting.alreadyReleased;
 
-                vesting.alreadyReleased += claimableAmount;
+                uint claimableAmount;
+                if(timePassed > totalDuration)
+                    claimableAmount = vesting.totalAmount - vesting.alreadyReleased;
+                else
+                    claimableAmount = timePassed * vesting.totalAmount / totalDuration
+                        - vesting.alreadyReleased;
+
+                //@dev update state and delete vesting if fulfilled
+                _vestings[msg.sender][slot].alreadyReleased += claimableAmount;
                 totalClaimable += claimableAmount;
 
-                if(vesting.alreadyReleased == vesting.totalAmount)
+                if(vesting.alreadyReleased >= vesting.totalAmount)
                     delete vesting;
             }
         }
@@ -194,11 +201,13 @@ contract VestingVaultNejc {
     /// @return uint Amount of vested tokens for specified address.
     function getTotalVestedFor(address receiver)
         external
-        validVestingData(receiver)
         view
         returns (uint)
     {
-      // @dev iterate receivers vesting totalAmounts to calculate totalVestedFor
+        if (_vestings[receiver].length == 0) {
+            return 0;
+        }
+        // @dev iterate receivers vesting totalAmounts to calculate totalVestedFor
         uint totalVestedFor;
         for(uint slot; slot < _vestings[receiver].length; ++slot){
             totalVestedFor += _vestings[receiver][slot].totalAmount;
@@ -212,25 +221,33 @@ contract VestingVaultNejc {
     /// @return uint Amount of tokens that can currently be claimed.
     function getTotalClaimableFor(address receiver)
         external
-        validVestingData(receiver)
         view
         returns (uint)
     {
+        if (_vestings[receiver].length == 0) {
+            return 0;
+        }
         // @dev iterate receivers vesting claimableAmounts to calculate totalClaimable
         uint totalClaimable;
-        for(uint slot; slot < _vestings[receiver].length; ++slot){
-            Vesting memory vesting = _vestings[receiver][slot];
+        for(uint slot; slot < _vestings[msg.sender].length; ++slot){
+            Vesting memory vesting = _vestings[msg.sender][slot];
+
             // @dev if vesting is finished and nothing is claimed, everything is available
             if(vesting.alreadyReleased == 0 && block.timestamp > vesting.end){
                 totalClaimable += vesting.totalAmount;
-
+            }
             // @dev if not everything is released yet, use regular calculation
-            } else if(vesting.totalAmount > vesting.alreadyReleased){
+            else {
                 uint timePassed = block.timestamp - vesting.start;
                 uint totalDuration = vesting.end - vesting.start;
+                uint claimableAmount;
+                if(timePassed > totalDuration)
+                    claimableAmount = vesting.totalAmount - vesting.alreadyReleased;
+                else
+                    claimableAmount = timePassed * vesting.totalAmount / totalDuration
+                        - vesting.alreadyReleased;
 
-                totalClaimable += timePassed * vesting.totalAmount / totalDuration
-                - vesting.alreadyReleased;
+                totalClaimable += claimableAmount;
             }
         }
 
@@ -243,11 +260,13 @@ contract VestingVaultNejc {
     /// @return uint Amount of tokens that will be available for claiming later.
     function getTotalNotClaimableYetFor(address receiver)
         external
-        validVestingData(receiver)
         view
         returns (uint)
     {
-      // @dev iterate receivers vesting ends to calculate totalNonClaimable
+        if (_vestings[receiver].length == 0) {
+            return 0;
+        }
+        // @dev iterate receivers vesting ends to calculate totalNonClaimable
         uint totalNonClaimable;
         for(uint slot; slot < _vestings[receiver].length; ++slot){
             Vesting memory vesting = _vestings[receiver][slot];

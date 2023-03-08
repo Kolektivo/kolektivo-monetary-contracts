@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
-interface IMentoReserve {
+interface IReserve {
   function setTobinTaxStalenessThreshold(uint256) external;
   function addToken(address) external returns (bool);
   function removeToken(address, uint256) external returns (bool);

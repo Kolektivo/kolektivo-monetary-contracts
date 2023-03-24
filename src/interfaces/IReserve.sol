@@ -299,40 +299,40 @@ interface IReserve {
     );
 
     //----------------------------------
-    // Vesting Management
+    // TimeLock Management
 
-    /// @notice Event emitted when vesting vault address set.
-    /// @param oldVestingVault The old vesting vault's address.
-    /// @param newVestingVault The new vesting vault's address.
-    event SetVestingVault(
-        address indexed oldVestingVault,
-        address indexed newVestingVault
+    /// @notice Event emitted when TimeLock vault address set.
+    /// @param oldTimeLockVault The old TimeLock vault's address.
+    /// @param newTimeLockVault The new TimeLock vault's address.
+    event SetTimeLockVault(
+        address indexed oldTimeLockVault,
+        address indexed newTimeLockVault
     );
 
-    /// @notice Event emitted when ERC20 token's bonding vesting duration set.
+    /// @notice Event emitted when ERC20 token's bonding TimeLock duration set.
     /// @param erc20 The ERC20 token's address.
-    /// @param oldVestingDuration The ERC20 token's old bonding vesting
+    /// @param oldtimeLockDuration The ERC20 token's old bonding TimeLock
     ///                           duration.
-    /// @param newVestingDuration The ERC20 token's new bonding vesting
+    /// @param newtimeLockDuration The ERC20 token's new bonding TimeLock
     ///                           duration.
-    event SetERC20BondingVesting(
+    event SetERC20BondingTimeLock(
         address indexed erc20,
-        uint oldVestingDuration,
-        uint newVestingDuration
+        uint oldtimeLockDuration,
+        uint newtimeLockDuration
     );
 
-    /// @notice Event emitted when ERC721Id instance's bonding vesting duration set.
+    /// @notice Event emitted when ERC721Id instance's bonding TimeLock duration set.
     /// @param erc721 The ERC721 token address.
     /// @param id The id of the corresponding NFT.
-    /// @param oldVestingDuration The ERC721Id instance's old bonding vesting
+    /// @param oldtimeLockDuration The ERC721Id instance's old bonding TimeLock
     ///                           duration.
-    /// @param newVestingDuration The ERC721Id instance's new bonding vesting
+    /// @param newtimeLockDuration The ERC721Id instance's new bonding TimeLock
     ///                           duration.
-    event SetERC721IdBondingVesting(
+    event SetERC721IdBondingTimeLock(
         address erc721,
         uint id,
-        uint oldVestingDuration,
-        uint newVestingDuration
+        uint oldtimeLockDuration,
+        uint newtimeLockDuration
     );
 
     //--------------------------------------------------------------------------
@@ -502,30 +502,30 @@ interface IReserve {
     ) external;
 
     //----------------------------------
-    // Vesting Management
+    // TimeLock Management
 
-    /// @notice Sets the vesting vault to use for vested bondings.
+    /// @notice Sets the TimeLock vault to use for vested bonds.
     /// @dev Only callable by owner.
-    /// @param vestingVault The vesting vault address of type IVestingVault.
-    function setVestingVault(address vestingVault) external;
+    /// @param timeLockVault The TimeLock vault address of type ITimeLockVault.
+    function setTimeLockVault(address timeLockVault) external;
 
-    /// @notice Sets the bonding vesting duration for given ERC20 token.
+    /// @notice Sets the bonding TimeLock duration for given ERC20 token.
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
-    /// @param vestingDuration The bonding vesting duration for the ERC20 token.
-    function setBondingVestingForERC20(address erc20, uint vestingDuration)
+    /// @param timeLockDuration The bonding TimeLock duration for the ERC20 token.
+    function setBondingTimeLockForERC20(address erc20, uint timeLockDuration)
         external;
 
-    /// @notice Sets the bonding vesting duration for given ERC721Id instance.
+    /// @notice Sets the bonding TimeLock duration for given ERC721Id instance.
     /// @dev Only callable by owner.
     /// @param erc721 The ERC721 token address.
     /// @param id The id of the corresponding NFT.
-    /// @param vestingDuration The bonding vesting duration for the ERC721Id
+    /// @param timeLockDuration The bonding TimeLock duration for the ERC721Id
     ///        instance.
-    function setBondingVestingForERC721Id(
+    function setBondingTimeLockForERC721Id(
         address erc721,
         uint id,
-        uint vestingDuration
+        uint timeLockDuration
     ) external;
 
     //---------------------------------
@@ -537,12 +537,12 @@ interface IReserve {
     /// @param erc20 The ERC20 token address.
     /// @param limit The bonding limit for the ERC20 token.
     /// @param discount The bonding discount for the ERC20 token.
-    /// @param vestingDuration The vesting duration for the ERC20 token.
+    /// @param timeLockDuration The TimeLock duration for the ERC20 token.
     function setupAndListERC20Bond(
         address erc20, 
         uint limit, 
         uint discount, 
-        uint vestingDuration
+        uint timeLockDuration
     ) external;
 
     /// @notice Bundles the listing of a new ERC20 redemption together
@@ -561,12 +561,12 @@ interface IReserve {
     /// @param erc721 The ERC721 token address.
     /// @param id The id of the corresponding NFT.
     /// @param discount The bonding discount for the ERC721Id.
-    /// @param vestingDuration The vesting duration for the ERC721Id.
+    /// @param timeLockDuration The TimeLock duration for the ERC721Id.
     function setupAndListERC721IdBond(
         address erc721, 
         uint id,
         uint discount, 
-        uint vestingDuration
+        uint timeLockDuration
     ) external;
 
     /// @notice Bundles the listing of a new ERC721Id redemption together
@@ -876,13 +876,13 @@ interface IReserve {
     /// @notice Returns the risk level of a registered erc20 asset.
     function riskLevelOfERC20(address erc20) external view returns (RiskLevel);
     //----------------------------------
-    // Vesting View Functions
+    // TimeLock View Functions
 
-    /// @notice Returns the reserve's vesting vault address used for vested
+    /// @notice Returns the reserve's TimeLock vault address used for vested
     ///         bonding operations.
     /// @dev Changeable by owner.
-    /// @dev Is of type IVestingVault.
-    function vestingVault() external view returns (address);
+    /// @dev Is of type ITimeLockVault.
+    function timeLockVault() external view returns (address);
 
     //----------------------------------
     // Oracle View Functions
@@ -976,23 +976,23 @@ interface IReserve {
         returns (uint);
 
     //----------------------------------
-    // Vesting View Mappings
+    // TimeLock View Mappings
 
-    /// @notice Returns the bonding vesting duration for given ERC20 token
+    /// @notice Returns the bonding TimeLock duration for given ERC20 token
     ///         address.
     /// @param erc20 The ERC20 token address.
-    /// @return The bonding vesting duration for given ERC20 token address.
-    function bondingVestingDurationPerERC20(address erc20)
+    /// @return The bonding TimeLock duration for given ERC20 token address.
+    function bondingTimeLockDurationPerERC20(address erc20)
         external
         view
         returns (uint);
 
-    /// @notice Returns the bonding vesting duration for the ERC721Id instance,
+    /// @notice Returns the bonding TimeLock duration for the ERC721Id instance,
     ///         identified through address and id.
     /// @param erc721 The ERC721 token's address.
     /// @param id     The NFTs corresponding id.
-    /// @return The bonding vesting duration for given ERC721Id instance.
-    function bondingVestingDurationPerERC721Id(address erc721, uint id)
+    /// @return The bonding TimeLock duration for given ERC721Id instance.
+    function bondingTimeLockDurationPerERC721Id(address erc721, uint id)
         external
         view
         returns (uint);

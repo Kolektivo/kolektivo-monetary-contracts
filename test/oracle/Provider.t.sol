@@ -50,7 +50,7 @@ contract OracleProvider is OracleTest {
         setUpProviders();
 
         pushValidReport(p1, 10);
-
+        
         // Expect correct data being delivered from oracle.
         uint data;
         bool valid;

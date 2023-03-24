@@ -35,9 +35,9 @@ contract ReserveTokenTest is Test {
     ReserveToken token;
 
     // Events copied from SuT.
-    event SetMintBurner(
-        address indexed oldMintBurner,
-        address indexed newMintBurner
+    event UpdateMintBurner(
+        address indexed mintBurner,
+        bool newStatus
     );
 
     function setUp() public {
@@ -55,7 +55,7 @@ contract ReserveTokenTest is Test {
         // Constructor arguments.
         assertEq(token.name(), "Reserve Token");
         assertEq(token.symbol(), "RT");
-        assertEq(token.mintBurner(), address(this));
+        assertEq(token.mintBurner(address(this)), true);
     }
 
     //--------------------------------------------------------------------------
@@ -67,17 +67,23 @@ contract ReserveTokenTest is Test {
         vm.startPrank(caller);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        token.setMintBurner(address(1));
+        token.setMintBurner(address(1), true);
     }
 
     function testSetMintBurner(address who) public {
-        if (who != token.mintBurner()) {
+        if (!token.mintBurner(who)) {
             vm.expectEmit(true, true, true, true);
-            emit SetMintBurner(token.mintBurner(), who);
+            emit UpdateMintBurner(who, true);
         }
 
-        token.setMintBurner(who);
-        assertEq(token.mintBurner(), who);
+        token.setMintBurner(who, true);
+        assertEq(token.mintBurner(who), true);
+
+        vm.expectEmit(true, true, true, true);
+        emit UpdateMintBurner(who, false);
+
+        token.setMintBurner(who, false);
+        assertEq(token.mintBurner(who), false);
     }
 
     //--------------------------------------------------------------------------

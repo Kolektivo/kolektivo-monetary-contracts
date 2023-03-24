@@ -15,7 +15,7 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 // Internal Interfaces.
 import {IOracle} from "./interfaces/IOracle.sol";
-import {IVestingVault} from "./interfaces/IVestingVault.sol";
+import {ITimeLockVault} from "./interfaces/ITimeLockVault.sol";
 import {IReserve} from "./interfaces/IReserve.sol";
 
 // Internal Libraries.
@@ -178,7 +178,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     address public tokenOracle;
 
     /// @inheritdoc IReserve
-    address public vestingVault;
+    address public timeLockVault;
 
     //----------------------------------
     // Asset Mappings
@@ -232,14 +232,14 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => mapping(uint => uint)) public bondingDiscountPerERC721Id;
 
     //----------------------------------
-    // Vesting Mappings
+    // Time Lock Mappings
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public bondingVestingDurationPerERC20;
+    mapping(address => uint) public bondingTimeLockDurationPerERC20;
 
     /// @inheritdoc IReserve
     mapping(address => mapping(uint => uint))
-        public bondingVestingDurationPerERC721Id;
+        public bondingTimeLockDurationPerERC721Id;
 
     //----------------------------------
     // Reserve Management
@@ -253,31 +253,19 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     constructor(
         address token_,
         address tokenOracle_,
-        address vestingVault_,
         uint minBacking_
     ) {
         // Check token's validity.
         require(token_.code.length != 0);
 
-        // @todo What about oracle and vesting vault checks in constructor.
-        // Check token oracle's validity.
-        //require(_oracleIsValid(tokenOracle_));
-
-        // Check vesting vault's validity.
-        //require(IVestingVault(vestingVault_).token() == token_);
-
         // Set storage.
         _token = IERC20MintBurn(token_);
         tokenOracle = tokenOracle_;
-        vestingVault = vestingVault_;
         minBacking = minBacking_;
-
-        // Give vesting vault infinite approval.
-        IERC20MintBurn(token_).approve(vestingVault_, type(uint).max);
+    
 
         // Notify off-chain services.
         emit SetTokenOracle(address(0), tokenOracle_);
-        emit SetVestingVault(address(0), vestingVault_);
         emit SetMinBacking(0, minBacking_);
         emit BackingUpdated(0, BPS);
     }
@@ -903,58 +891,58 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     //----------------------------------
-    // Vesting Management
+    // TimeLock Management
 
     /// @inheritdoc IReserve
-    function setVestingVault(address vestingVault_) external onlyOwner {
-        if (vestingVault != vestingVault_) {
-            // Check new vesting vault's validity.
-            require(IVestingVault(vestingVault_).token() == address(_token));
+    function setTimeLockVault(address timeLockVault_) external onlyOwner {
+        if (timeLockVault != timeLockVault_) {
+            // Check new time lock vault's authentication system.
+            require(ITimeLockVault(timeLockVault_).isLocker(address(this)));
 
-            // Remove old vesting vault's approval.
-            _token.approve(vestingVault, 0);
+            // Remove old TimeLock vault's approval.
+            _token.approve(timeLockVault, 0);
 
-            // Give new vesting vault infinite approval.
-            _token.approve(vestingVault_, type(uint).max);
+            // Give new TimeLock vault infinite approval.
+            _token.approve(timeLockVault_, type(uint).max);
 
-            emit SetVestingVault(vestingVault, vestingVault_);
-            vestingVault = vestingVault_;
+            emit SetTimeLockVault(timeLockVault, timeLockVault_);
+            timeLockVault = timeLockVault_;
         }
     }
 
     /// @inheritdoc IReserve
-    function setBondingVestingForERC20(address erc20, uint vestingDuration)
+    function setBondingTimeLockForERC20(address erc20, uint timeLockDuration)
         public
         onlyOwner
     {
-        uint oldVestingDuration = bondingVestingDurationPerERC20[erc20];
+        uint oldTimeLockDuration = bondingTimeLockDurationPerERC20[erc20];
 
-        if (vestingDuration != oldVestingDuration) {
-            emit SetERC20BondingVesting(
+        if (timeLockDuration != oldTimeLockDuration) {
+            emit SetERC20BondingTimeLock(
                 erc20,
-                oldVestingDuration,
-                vestingDuration
+                oldTimeLockDuration,
+                timeLockDuration
             );
-            bondingVestingDurationPerERC20[erc20] = vestingDuration;
+            bondingTimeLockDurationPerERC20[erc20] = timeLockDuration;
         }
     }
 
     /// @inheritdoc IReserve
-    function setBondingVestingForERC721Id(
+    function setBondingTimeLockForERC721Id(
         address erc721,
         uint id,
-        uint vestingDuration
+        uint timeLockDuration
     ) public onlyOwner {
-        uint oldVestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
+        uint oldTimeLockDuration = bondingTimeLockDurationPerERC721Id[erc721][id];
 
-        if (vestingDuration != oldVestingDuration) {
-            emit SetERC721IdBondingVesting(
+        if (timeLockDuration != oldTimeLockDuration) {
+            emit SetERC721IdBondingTimeLock(
                 erc721,
                 id,
-                oldVestingDuration,
-                vestingDuration
+                oldTimeLockDuration,
+                timeLockDuration
             );
-            bondingVestingDurationPerERC721Id[erc721][id] = vestingDuration;
+            bondingTimeLockDurationPerERC721Id[erc721][id] = timeLockDuration;
         }
     }
 
@@ -966,7 +954,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address erc20, 
         uint limit, 
         uint discount, 
-        uint vestingDuration
+        uint timeLockDuration
     ) external onlyOwner {
         // List ERC20 as bondable if it isn't already
         if(!isERC20Bondable[erc20]) {
@@ -983,9 +971,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             setBondingDiscountForERC20(erc20, discount);
         }
 
-        // Set the ERC20's vesting duration if it isn't already
-        if(bondingVestingDurationPerERC20[erc20] != vestingDuration) {
-            setBondingVestingForERC20(erc20, vestingDuration);
+        // Set the ERC20's TimeLock duration if it isn't already
+        if(bondingTimeLockDurationPerERC20[erc20] != timeLockDuration) {
+            setBondingTimeLockForERC20(erc20, timeLockDuration);
         }
     }
 
@@ -1010,7 +998,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address erc721, 
         uint id,
         uint discount, 
-        uint vestingDuration
+        uint timeLockDuration
     ) external onlyOwner {
         // List ERC721Id as bondable if it isn't already
         if(!isERC721IdBondable[erc721][id]) {
@@ -1022,9 +1010,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             setBondingDiscountForERC721Id(erc721, id, discount);
         }
 
-        // Set the ERC721Id's vesting duration if it isn't already
-        if(bondingVestingDurationPerERC721Id[erc721][id] != vestingDuration) {
-            setBondingVestingForERC721Id(erc721, id, vestingDuration);
+        // Set the ERC721Id's TimeLock duration if it isn't already
+        if(bondingTimeLockDurationPerERC721Id[erc721][id] != timeLockDuration) {
+            setBondingTimeLockForERC721Id(erc721, id, timeLockDuration);
         }
     }
 
@@ -1460,18 +1448,18 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address to,
         uint amount
     ) private {
-        uint vestingDuration = bondingVestingDurationPerERC20[erc20];
+        uint timeLockDuration = bondingTimeLockDurationPerERC20[erc20];
 
-        if (vestingDuration == 0) {
-            // No vesting, mint tokens directly to user.
-            _token.mint(to, amount);
-        } else {
-            // Vest token via vesting vault.
+        if(timeLockDuration != 0 && timeLockVault != address(0)) {
+            // Vest token via TimeLock vault.
             _token.mint(address(this), amount);
 
             // Note that the tokens are fetched from address(this) to the
-            // vesting vault.
-            IVestingVault(vestingVault).depositFor(to, amount, vestingDuration);
+            // TimeLock vault.
+            ITimeLockVault(timeLockVault).lock(to, address(_token), amount, timeLockDuration);
+        } else {
+            // No TimeLock, mint tokens directly to user.
+            _token.mint(to, amount);
         }
     }
 
@@ -1481,18 +1469,18 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         address to,
         uint amount
     ) private {
-        uint vestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
+        uint timeLockDuration = bondingTimeLockDurationPerERC721Id[erc721][id];
 
-        if (vestingDuration == 0) {
-            // No vesting, mint tokens directly to user.
-            _token.mint(to, amount);
-        } else {
-            // Vest token via vesting vault.
+        if(timeLockDuration != 0 && timeLockVault != address(0)) {
+            // Vest token via TimeLock vault.
             _token.mint(address(this), amount);
 
             // Note that the tokens are fetched from address(this) to the
-            // vesting vault.
-            IVestingVault(vestingVault).depositFor(to, amount, vestingDuration);
+            // TimeLock vault.
+            ITimeLockVault(timeLockVault).lock(to, address(_token), amount, timeLockDuration);
+        } else {
+            // No TimeLock, mint tokens directly to user.
+            _token.mint(to, amount);
         }
     }
 

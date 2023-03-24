@@ -32,11 +32,11 @@ contract ReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Events
 
-    /// @notice Event emitted when mintBurner address changed.
-    /// @param oldMintBurner The old mintBurner address.
-    /// @param newMintBurner The new mintBurner address.
-    event SetMintBurner(
-        address indexed oldMintBurner, address indexed newMintBurner
+    /// @notice Event emitted when a mintBurner address is updated.
+    /// @param mintBurner The mintBurner address.
+    /// @param newStatus The new status of the mintBurner (true = active).
+    event UpdateMintBurner(
+        address indexed mintBurner, bool newStatus
     );
 
     //--------------------------------------------------------------------------
@@ -60,7 +60,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @dev Modifier to guarantee function is only callable by mintBurner.
     modifier onlyMintBurner() {
-        if (msg.sender != mintBurner) {
+        if (!mintBurner[msg.sender]) {
             revert ReserveToken__NotMintBurner();
         }
         _;
@@ -69,9 +69,9 @@ contract ReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Storage
 
-    /// @notice The address being eligible for mint and burn operations.
+    /// @notice The addresses that are eligible for mint and burn operations.
     /// @dev Changeable by owner.
-    address public mintBurner;
+    mapping(address => bool) public mintBurner;
 
     //--------------------------------------------------------------------------
     // Constructor
@@ -79,7 +79,7 @@ contract ReserveToken is ERC20, TSOwnable {
     constructor(string memory name, string memory symbol, address mintBurner_)
         ERC20(name, symbol, uint8(18))
     {
-        mintBurner = mintBurner_;
+        mintBurner[mintBurner_] = true;
     }
 
     //--------------------------------------------------------------------------
@@ -111,10 +111,10 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Sets the mintBurner address.
     /// @dev Only callable by owner.
-    function setMintBurner(address who) external onlyOwner {
-        if (who != mintBurner) {
-            emit SetMintBurner(mintBurner, who);
-            mintBurner = who;
+    function setMintBurner(address who, bool status) external onlyOwner {
+        if (mintBurner[who] != status) {
+            emit UpdateMintBurner(who, status);
+            mintBurner[who] = status;
         }
     }
 

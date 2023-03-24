@@ -17,19 +17,12 @@ contract ReserveDeployment is ReserveTest {
         assertEq(reserveValuation, 0);
         assertEq(supplyValuation, 0);
         assertEq(backing, BPS);
-
-        // Check vesting vault's token approval.
-        assertEq(
-            token.allowance(address(reserve), address(vestingVault)),
-            type(uint).max
-        );
     }
 
     function testConstructor() public {
         // Constructor arguments.
         assertEq(reserve.token(), address(token));
         assertEq(reserve.tokenOracle(), address(tokenOracle));
-        assertEq(reserve.vestingVault(), address(vestingVault));
         assertEq(reserve.minBacking(), DEFAULT_MIN_BACKING);
     }
 
@@ -38,7 +31,6 @@ contract ReserveDeployment is ReserveTest {
         new Reserve(
             address(1), // Does not have any code
             address(tokenOracle),
-            address(vestingVault),
             DEFAULT_MIN_BACKING
         );
     }

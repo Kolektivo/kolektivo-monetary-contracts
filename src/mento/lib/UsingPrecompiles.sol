@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 contract UsingPrecompiles {
   address constant TRANSFER = address(0xff - 2);

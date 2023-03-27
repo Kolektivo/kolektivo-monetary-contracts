@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "@oz/token/ERC20/IERC20.sol";
 import "@oz-up/access/OwnableUpgradeable.sol";

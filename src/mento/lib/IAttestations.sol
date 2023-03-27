@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 interface IAttestations {
   function request(bytes32, uint256, address) external;

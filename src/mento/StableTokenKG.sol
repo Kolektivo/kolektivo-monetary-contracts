@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import {OwnableUpgradeable} from "@oz-up/access/OwnableUpgradeable.sol";
 import {ERC20PermitUpgradeable} from "@oz-up/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";

@@ -1,5 +1,5 @@
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 interface IElection {
   function electValidatorSigners() external view returns (address[] memory);
   function electNValidatorSigners(uint256, uint256) external view returns (address[] memory);

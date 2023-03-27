@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 interface IRandom {
   function revealAndCommit(bytes32, bytes32, address) external;

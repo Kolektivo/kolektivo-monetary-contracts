@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 interface IAccounts {
   function isAccount(address) external view returns (bool);

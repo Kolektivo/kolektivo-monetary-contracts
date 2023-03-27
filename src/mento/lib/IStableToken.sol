@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 interface IStableToken {
   function mint(address, uint256) external returns (bool);

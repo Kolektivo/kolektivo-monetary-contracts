@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 interface ICeloToken {
   function transferWithComment(address, uint256, string calldata) external returns (bool);

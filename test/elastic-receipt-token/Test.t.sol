@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
 import "src/ElasticReceiptToken.sol";
 
-import {ElasticReceiptTokenMock}
-    from "../utils/mocks/ElasticReceiptTokenMock.sol";
+import {ElasticReceiptTokenMock} from "../utils/mocks/ElasticReceiptTokenMock.sol";
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
 
 /**
@@ -25,13 +24,13 @@ abstract contract ElasticReceiptTokenTest is Test {
     // Constants
     string internal constant NAME = "elastic receipt Token";
     string internal constant SYMBOL = "ERT";
-    uint internal constant DECIMALS = 9;
+    uint256 internal constant DECIMALS = 9;
 
     // Constants copied from SuT.
-    uint internal constant MAX_UINT = type(uint).max;
-    uint internal constant MAX_SUPPLY = 1_000_000_000e18;
-    uint internal constant TOTAL_BITS = MAX_UINT - (MAX_UINT % MAX_SUPPLY);
-    uint internal constant BITS_PER_UNDERLYING = TOTAL_BITS / MAX_SUPPLY;
+    uint256 internal constant MAX_UINT = type(uint256).max;
+    uint256 internal constant MAX_SUPPLY = 1_000_000_000e18;
+    uint256 internal constant TOTAL_BITS = MAX_UINT - (MAX_UINT % MAX_SUPPLY);
+    uint256 internal constant BITS_PER_UNDERLYING = TOTAL_BITS / MAX_SUPPLY;
 
     function setUp() public {
         underlier = new ERC20Mock("Test ERC20", "TEST", uint8(18));
@@ -44,7 +43,7 @@ abstract contract ElasticReceiptTokenTest is Test {
         );
     }
 
-    modifier assumeTestAmount(uint amount) {
+    modifier assumeTestAmount(uint256 amount) {
         vm.assume(amount != 0 && amount <= MAX_SUPPLY);
         _;
     }
@@ -55,22 +54,21 @@ abstract contract ElasticReceiptTokenTest is Test {
         _;
     }
 
-    function mintToUser(address user, uint erts) public {
+    function mintToUser(address user, uint256 erts) public {
         underlier.mint(user, erts);
 
         vm.startPrank(user);
         {
-            underlier.approve(address(ert), type(uint).max);
+            underlier.approve(address(ert), type(uint256).max);
             ert.mint(erts);
         }
         vm.stopPrank();
     }
 
-    function underflows(uint a, uint b) public pure returns (bool) {
+    function underflows(uint256 a, uint256 b) public pure returns (bool) {
         unchecked {
-            uint x = a - b;
+            uint256 x = a - b;
             return x > a;
         }
     }
-
 }

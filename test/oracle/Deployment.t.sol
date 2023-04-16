@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "./Test.t.sol";
 
@@ -7,7 +7,6 @@ import "./Test.t.sol";
  * @dev Deployment Tests.
  */
 contract OracleDeployment is OracleTest {
-
     function testInvariants() public {
         assertEq(oracle.owner(), address(this));
         assertEq(oracle.providersSize(), 0);
@@ -38,5 +37,4 @@ contract OracleDeployment is OracleTest {
             minimumProviders
         );
     }
-
 }

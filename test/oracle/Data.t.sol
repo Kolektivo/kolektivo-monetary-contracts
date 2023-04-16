@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "./Test.t.sol";
 
@@ -7,7 +7,6 @@ import "./Test.t.sol";
  * @dev Data Tests.
  */
 contract OracleData is OracleTest {
-
     function testDataInvalidIfOracleMarkedAsInvalid() public {
         setUpProviders();
 
@@ -18,7 +17,7 @@ contract OracleData is OracleTest {
         oracle.setIsValid(false);
 
         // Expect oracle data to be invalid.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
         assertEq(result, 0);
@@ -33,17 +32,14 @@ contract OracleData is OracleTest {
         pushValidReport(p1, 10);
 
         // Expect oracle data to be invalid.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
         assertEq(result, 0);
         assertTrue(!valid);
     }
 
-    function testDataIsAverageOfSameProviderReports(
-        uint payload1,
-        uint payload2
-    ) public {
+    function testDataIsAverageOfSameProviderReports(uint256 payload1, uint256 payload2) public {
         setUpProviders();
 
         // Push two valid reports from same provider.
@@ -51,11 +47,10 @@ contract OracleData is OracleTest {
         pushValidReport(p1, payload2);
 
         // Compute average.
-        uint average = (payload1 / 2) + (payload2 / 2)
-                       + (((payload1 % 2) + (payload2 % 2)) / 2);
+        uint256 average = (payload1 / 2) + (payload2 / 2) + (((payload1 % 2) + (payload2 % 2)) / 2);
 
         // Expect oracle data to be the average to the two report payloads.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
         assertEq(result, average);
@@ -76,7 +71,7 @@ contract OracleData is OracleTest {
         vm.warp(block.timestamp + reportExpirationTime - 60 minutes + 1 seconds);
 
         // Expect oracle data to only take the second report into account.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
         assertEq(result, 20);
@@ -95,7 +90,7 @@ contract OracleData is OracleTest {
         vm.warp(block.timestamp + reportDelay - 1 seconds);
 
         // Expect oracle data to only take the first report into account.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
         assertEq(result, 10);
@@ -109,7 +104,7 @@ contract OracleData is OracleTest {
         pushValidReport(p2, 20);
 
         // Expect oracle data to take the median of the two reports.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
 
@@ -126,7 +121,7 @@ contract OracleData is OracleTest {
         pushValidReport(p3, 30);
 
         // Expect oracle data to take the median of the three reports.
-        uint result;
+        uint256 result;
         bool valid;
         (result, valid) = oracle.getData();
 
@@ -134,5 +129,4 @@ contract OracleData is OracleTest {
         assertEq(result, 20);
         assertTrue(valid);
     }
-
 }

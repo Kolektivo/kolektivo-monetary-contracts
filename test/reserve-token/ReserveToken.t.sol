@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
@@ -14,17 +14,13 @@ import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
  */
 library Errors {
     // Inherited from solrocket/TSOwnable.sol
-    bytes internal constant OnlyCallableByOwner =
-        abi.encodeWithSignature("OnlyCallableByOwner()");
+    bytes internal constant OnlyCallableByOwner = abi.encodeWithSignature("OnlyCallableByOwner()");
 
-    bytes internal constant InvalidRecipient =
-        abi.encodeWithSignature("ReserveToken__InvalidRecipient()");
+    bytes internal constant InvalidRecipient = abi.encodeWithSignature("ReserveToken__InvalidRecipient()");
 
-    bytes internal constant InvalidAmount =
-        abi.encodeWithSignature("ReserveToken__InvalidAmount()");
+    bytes internal constant InvalidAmount = abi.encodeWithSignature("ReserveToken__InvalidAmount()");
 
-    bytes internal constant NotMintBurner =
-        abi.encodeWithSignature("ReserveToken__NotMintBurner()");
+    bytes internal constant NotMintBurner = abi.encodeWithSignature("ReserveToken__NotMintBurner()");
 }
 
 /**
@@ -35,10 +31,7 @@ contract ReserveTokenTest is Test {
     ReserveToken token;
 
     // Events copied from SuT.
-    event UpdateMintBurner(
-        address indexed mintBurner,
-        bool newStatus
-    );
+    event UpdateMintBurner(address indexed mintBurner, bool newStatus);
 
     function setUp() public {
         token = new ReserveToken("Reserve Token", "RT", address(this));
@@ -89,7 +82,7 @@ contract ReserveTokenTest is Test {
     //--------------------------------------------------------------------------
     // Mint/Burn Tests
 
-    function testMint(address to, uint amount) public {
+    function testMint(address to, uint256 amount) public {
         // Expect revert for invalid recipient.
         if (to == address(0) || to == address(token)) {
             vm.expectRevert(Errors.InvalidRecipient);
@@ -110,7 +103,7 @@ contract ReserveTokenTest is Test {
         assertEq(token.totalSupply(), amount);
     }
 
-    function testBurn(address who, uint mint, uint burn) public {
+    function testBurn(address who, uint256 mint, uint256 burn) public {
         vm.assume(who != address(0) && who != address(token));
         vm.assume(mint != 0 && mint >= burn);
 
@@ -125,8 +118,7 @@ contract ReserveTokenTest is Test {
 
         token.burn(who, burn);
 
-        assertEq(token.balanceOf(who), mint-burn);
-        assertEq(token.totalSupply(), mint-burn);
+        assertEq(token.balanceOf(who), mint - burn);
+        assertEq(token.totalSupply(), mint - burn);
     }
-
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
@@ -11,23 +11,17 @@ import "src/lib/GeoCoordinates.sol";
  * Enables checking for errors with vm.expectRevert(Errors.<Error>).
  */
 library Errors {
-    bytes internal constant OnlyCallableByOwner =
-        abi.encodeWithSignature("OnlyCallableByOwner()");
+    bytes internal constant OnlyCallableByOwner = abi.encodeWithSignature("OnlyCallableByOwner()");
 
-    bytes internal constant InvalidTokenId =
-        abi.encodeWithSignature("GeoNFT__InvalidTokenId()");
+    bytes internal constant InvalidTokenId = abi.encodeWithSignature("GeoNFT__InvalidTokenId()");
 
-    bytes internal constant InvalidRecipient =
-        abi.encodeWithSignature("GeoNFT__InvalidRecipient()");
+    bytes internal constant InvalidRecipient = abi.encodeWithSignature("GeoNFT__InvalidRecipient()");
 
-    bytes internal constant InvalidLatitude =
-        abi.encodeWithSignature("GeoNFT__InvalidLatitude()");
+    bytes internal constant InvalidLatitude = abi.encodeWithSignature("GeoNFT__InvalidLatitude()");
 
-    bytes internal constant InvalidLongitude =
-        abi.encodeWithSignature("GeoNFT__InvalidLongitude()");
+    bytes internal constant InvalidLongitude = abi.encodeWithSignature("GeoNFT__InvalidLongitude()");
 
-    bytes internal constant InvalidIdentifier =
-        abi.encodeWithSignature("GeoNFT__InvalidIdentifier()");
+    bytes internal constant InvalidIdentifier = abi.encodeWithSignature("GeoNFT__InvalidIdentifier()");
 }
 
 /**
@@ -42,14 +36,14 @@ contract GeoNFTTest is Test {
 
     // Event copied from SuT.
     // Note that the Event declarations are needed to test for emission.
-    event TokenModified(uint indexed id);
+    event TokenModified(uint256 indexed id);
 
     // Contructor arguments.
     string internal constant name = "GeoNFT";
     string internal constant symbol = "GNFT";
 
     // Other constants.
-    uint internal constant FIRST_TOKEN_ID = 1;
+    uint256 internal constant FIRST_TOKEN_ID = 1;
 
     //--------------------------------------------------------------------------
     // Set Up Functions
@@ -90,12 +84,7 @@ contract GeoNFTTest is Test {
     //--------------------------------------------------------------------------
     // Mint Tests
 
-    function testMint(
-        address to,
-        int32 latitude,
-        int32 longitude,
-        string memory identifier
-    ) public {
+    function testMint(address to, int32 latitude, int32 longitude, string memory identifier) public {
         // Expect revert if token recipient is zero address or address(geoNFT).
         // Modifier: validRecipient.
         if (to == address(0) || to == address(geoNFT)) {
@@ -136,12 +125,11 @@ contract GeoNFTTest is Test {
         assertEq(geoNFT.balanceOf(to), 1);
 
         // Check token data.
-        uint gotlastModified;
+        uint256 gotlastModified;
         int32 gotLatitude;
         int32 gotLongitude;
         string memory gotIdentifier;
-        (gotlastModified, gotLatitude, gotLongitude, gotIdentifier)
-            = geoNFT.tokenData(FIRST_TOKEN_ID);
+        (gotlastModified, gotLatitude, gotLongitude, gotIdentifier) = geoNFT.tokenData(FIRST_TOKEN_ID);
 
         assertEq(gotlastModified, block.timestamp);
         assertEq(gotLatitude, latitude);
@@ -159,11 +147,7 @@ contract GeoNFTTest is Test {
     //--------------------------------------------------------------------------
     // Modify Tests
 
-    function testModify(
-        int32 latitude,
-        int32 longitude,
-        string memory identifier
-    ) public {
+    function testModify(int32 latitude, int32 longitude, string memory identifier) public {
         // Note that GeoNFT does not use safeMint, i.e. ERC721TokenReceiver is
         // not checked for contracts.
         _mintTokenTo(address(this));
@@ -202,12 +186,11 @@ contract GeoNFTTest is Test {
         assertEq(geoNFT.ownerOf(FIRST_TOKEN_ID), address(this));
 
         // Check token data.
-        uint gotlastModified;
+        uint256 gotlastModified;
         int32 gotLatitude;
         int32 gotLongitude;
         string memory gotIdentifier;
-        (gotlastModified, gotLatitude, gotLongitude, gotIdentifier)
-            = geoNFT.tokenData(FIRST_TOKEN_ID);
+        (gotlastModified, gotLatitude, gotLongitude, gotIdentifier) = geoNFT.tokenData(FIRST_TOKEN_ID);
 
         assertEq(gotlastModified, block.timestamp);
         assertEq(gotLatitude, latitude);
@@ -215,12 +198,12 @@ contract GeoNFTTest is Test {
         assertEq(gotIdentifier, identifier);
     }
 
-    function testModifyInvalidTokenId(uint tokenId) public {
+    function testModifyInvalidTokenId(uint256 tokenId) public {
         // Don't go to crazy with minting.
         vm.assume(tokenId > 0 && tokenId < 10);
 
         // Mint tokenId - 1 NFTs.
-        for (uint i; i < tokenId - 1; i++) {
+        for (uint256 i; i < tokenId - 1; i++) {
             _mintTokenTo(address(1));
         }
 
@@ -246,12 +229,12 @@ contract GeoNFTTest is Test {
         assertEq(geoNFT.balanceOf(address(this)), 0);
     }
 
-    function testBurnInvalidTokenId(uint tokenId) public {
+    function testBurnInvalidTokenId(uint256 tokenId) public {
         // Don't go to crazy with minting.
         vm.assume(tokenId > 0 && tokenId < 10);
 
         // Mint tokenId - 1 NFTs.
-        for (uint i; i < tokenId - 1; i++) {
+        for (uint256 i; i < tokenId - 1; i++) {
             _mintTokenTo(address(1));
         }
 
@@ -267,5 +250,4 @@ contract GeoNFTTest is Test {
     function _mintTokenTo(address to) private {
         geoNFT.mint(to, 0, 0, "identifier");
     }
-
 }

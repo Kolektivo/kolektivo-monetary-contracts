@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "./Test.t.sol";
 
@@ -7,7 +7,6 @@ import "./Test.t.sol";
  * @dev Deployment Tests.
  */
 contract ElasticReceiptTokenDeployment is ElasticReceiptTokenTest {
-
     function testInvariants() public {
         assertEq(ert.totalSupply(), 0);
         assertEq(ert.scaledBalanceOf(address(0)), TOTAL_BITS);
@@ -21,5 +20,4 @@ contract ElasticReceiptTokenDeployment is ElasticReceiptTokenTest {
         assertEq(ert.symbol(), SYMBOL);
         assertEq(ert.decimals(), uint8(DECIMALS));
     }
-
 }

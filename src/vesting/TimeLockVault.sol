@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
@@ -24,8 +24,8 @@ contract TimeLockVault {
     /// @dev Lock encapsulates time-locked token metadata.
     struct Lock {
         address token;
-        uint amount;
-        uint unlockAt;
+        uint256 amount;
+        uint256 unlockAt;
     }
 
     //--------------------------------------------------------------------------
@@ -41,9 +41,9 @@ contract TimeLockVault {
     // Events
 
     /// @notice Event emitted when tokens are time-locked.
-    event Locked(address indexed receiver, address indexed token, uint amount, uint unlockAt);
+    event Locked(address indexed receiver, address indexed token, uint256 amount, uint256 unlockAt);
     /// @notice Event emitted when receiver claims unlocked tokens.
-    event Claimed(address indexed receiver, address indexed token, uint amount);
+    event Claimed(address indexed receiver, address indexed token, uint256 amount);
 
     //--------------------------------------------------------------------------
     // Errors
@@ -68,7 +68,7 @@ contract TimeLockVault {
 
     /// @dev Modifier to guarantee that only certain addresses may create locks
     modifier validSender() {
-        if(!_lockers[msg.sender]) {
+        if (!_lockers[msg.sender]) {
             revert SenderCantLock();
         }
         _;
@@ -76,18 +76,15 @@ contract TimeLockVault {
 
     /// @dev Modifier to guarantee token receiver is valid.
     modifier validRecipient(address receiver, address token) {
-        if (receiver == address(0)      ||
-            receiver == address(this)   ||
-            receiver == msg.sender      ||
-            receiver == address(token)
-        ) {
+        if (receiver == address(0) || receiver == address(this) || receiver == msg.sender || receiver == address(token))
+        {
             revert InvalidRecipient();
         }
         _;
     }
 
     /// @dev Modifier to guarantee token amount is valid.
-    modifier validAmount(uint amount) {
+    modifier validAmount(uint256 amount) {
         if (amount == 0 || amount > 10e40) {
             revert InvalidAmount();
         }
@@ -95,7 +92,7 @@ contract TimeLockVault {
     }
 
     /// @dev Modifier to guarantee lock duration is valid.
-    modifier validDuration(uint duration) {
+    modifier validDuration(uint256 duration) {
         // @notice duration cap is 10e8 (roughly 31 years)
         if (duration == 0 || duration > 10e8) {
             revert InvalidDuration();
@@ -119,22 +116,18 @@ contract TimeLockVault {
     /// @param receiver Address to receive the vesting.
     /// @param amount Amount of tokens to be deposited.
     /// @param duration Length of time over which tokens are vested.
-    function lock(address token, address receiver, uint amount, uint duration)
+    function lock(address token, address receiver, uint256 amount, uint256 duration)
         external
-        validSender()
+        validSender
         validRecipient(receiver, token)
         validAmount(amount)
         validDuration(duration)
     {
         ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        uint unlockAt = block.timestamp + duration;
-        
+        uint256 unlockAt = block.timestamp + duration;
+
         // @dev save vesting to storage
-        Lock memory newLock = Lock(
-            token,
-            amount,
-            unlockAt
-        );
+        Lock memory newLock = Lock(token, amount, unlockAt);
 
         _locks[receiver].push(newLock);
 
@@ -142,10 +135,10 @@ contract TimeLockVault {
     }
 
     /// @notice Release all unlocked tokens to receiver.
-    function claim() external hasActiveLocks(msg.sender)  {
-        uint amountOfLocks = _locks[msg.sender].length;
-        for(uint i; i < amountOfLocks; ++i) {
-            if(_tryUnlock(i)) {
+    function claim() external hasActiveLocks(msg.sender) {
+        uint256 amountOfLocks = _locks[msg.sender].length;
+        for (uint256 i; i < amountOfLocks; ++i) {
+            if (_tryUnlock(i)) {
                 amountOfLocks--;
                 i--;
             }
@@ -153,10 +146,10 @@ contract TimeLockVault {
     }
 
     /// @notice Release all unlocked tokens to receiver of a token
-    function claimToken(address token) external hasActiveLocks(msg.sender)  {
-        uint amountOfLocks = _locks[msg.sender].length;
-        for(uint i; i < amountOfLocks; ++i) {
-            if(_locks[msg.sender][i].token == token && _tryUnlock(i)) {
+    function claimToken(address token) external hasActiveLocks(msg.sender) {
+        uint256 amountOfLocks = _locks[msg.sender].length;
+        for (uint256 i; i < amountOfLocks; ++i) {
+            if (_locks[msg.sender][i].token == token && _tryUnlock(i)) {
                 amountOfLocks--;
                 i--;
             }
@@ -164,16 +157,16 @@ contract TimeLockVault {
     }
 
     /// @notice Release one specific lock
-    function claimAt(uint index) external hasActiveLocks(msg.sender) {
+    function claimAt(uint256 index) external hasActiveLocks(msg.sender) {
         _tryUnlock(index);
     }
 
     /// @notice Internal function that releases a certain lock if it's due
-    function _tryUnlock(uint index) internal returns(bool) {
+    function _tryUnlock(uint256 index) internal returns (bool) {
         Lock memory thisLock = _locks[msg.sender][index];
-        if(block.timestamp >= thisLock.unlockAt) {
+        if (block.timestamp >= thisLock.unlockAt) {
             // If this lock is not the last one
-            if(index != _locks[msg.sender].length - 1) {
+            if (index != _locks[msg.sender].length - 1) {
                 // Replace the current one with the last one
                 _locks[msg.sender][index] = _locks[msg.sender][_locks[msg.sender].length - 1];
             }
@@ -193,19 +186,14 @@ contract TimeLockVault {
     /// @notice Returns all locks for receiver address.
     /// @param receiver Address of user to query.
     /// @return locks   Array of the receivers active locks.
-    function getLocksOf(address receiver)
-        external
-        hasActiveLocks(receiver)
-        view
-        returns (Lock[] memory locks)
-    {
+    function getLocksOf(address receiver) external view hasActiveLocks(receiver) returns (Lock[] memory locks) {
         return _locks[receiver];
     }
 
     /// @notice Returns whether an address is a whitelisted locker
     /// @param locker Address to check.
     /// @return A boolean indicating whether the address is a locker.
-    function isLocker(address locker) external view returns(bool) {
+    function isLocker(address locker) external view returns (bool) {
         return _lockers[locker];
     }
 }

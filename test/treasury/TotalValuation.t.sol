@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.10;
 
 import "./Test.t.sol";
 
@@ -10,35 +10,32 @@ import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
  * @dev Tests the Calculation of the Treasury's Total Valuation.
  */
 contract TreasuryTotalValuation is TreasuryTest {
-
     // The max amount of assets the treasury should hold for the purpose of
     // this tests.
-    uint private constant MAX_ASSETS = 27;
+    uint256 private constant MAX_ASSETS = 27;
 
     // An asset with corresponding oracle, price and treasury's balance.
     struct Asset {
         ERC20Mock asset;
         OracleMock oracle;
-        uint price;
-        uint balance;
+        uint256 price;
+        uint256 balance;
     }
 
     Asset[] assets;
 
-    function testTotalValuationWithWadAssets(uint assetAmount) public {
+    function testTotalValuationWithWadAssets(uint256 assetAmount) public {
         assetAmount %= MAX_ASSETS;
         if (assetAmount == 0) {
             return;
         }
 
-        uint want = setUpWadAssets(assetAmount);
-        uint got = treasury.totalValuation();
+        uint256 want = setUpWadAssets(assetAmount);
+        uint256 got = treasury.totalValuation();
         assertEq(got, want);
     }
 
-    function testTotalValuationWithNonWadAssets()
-        public
-    {
+    function testTotalValuationWithNonWadAssets() public {
         // Asset 1:
         // price = 1e18, decimals = 20, balance = 1e20
         // => valuation = 1$
@@ -63,14 +60,14 @@ contract TreasuryTotalValuation is TreasuryTest {
     //--------------------------------------------------------------------------
     // Helper
 
-    function setUpWadAssets(uint amount) private returns (uint) {
-        uint totalValuation;
+    function setUpWadAssets(uint256 amount) private returns (uint256) {
+        uint256 totalValuation;
 
-        for (uint i; i < amount; i++) {
+        for (uint256 i; i < amount; i++) {
             // Get "random" values for price and balance.
             // Note to make sure that price is never zero.
-            uint price = (amount % (i+1)) + 1;
-            uint balance = amount % (i+1);
+            uint256 price = (amount % (i + 1)) + 1;
+            uint256 balance = amount % (i + 1);
 
             price *= 1e18;
             balance *= 1e18;
@@ -99,5 +96,4 @@ contract TreasuryTotalValuation is TreasuryTest {
 
         return totalValuation;
     }
-
 }

@@ -151,7 +151,8 @@ contract BalancerV2Proxy is TSOwnable {
     ) external payable returns (uint256 totalAmountOut) {
         (bool breach, bool isFloor) = _checkReserveLimits();
         require(
-            (address(tokenIn) == reserveToken && address(tokenOut) == address(pairToken)) || (address(tokenIn) == address(pairToken) && address(tokenOut) == reserveToken)
+            (address(tokenIn) == reserveToken && address(tokenOut) == address(pairToken))
+                || (address(tokenIn) == address(pairToken) && address(tokenOut) == reserveToken)
         );
         require(swaps.length == 1);
 
@@ -244,7 +245,8 @@ contract BalancerV2Proxy is TSOwnable {
     ) external payable returns (uint256 totalAmountIn) {
         (bool breach, bool isFloor) = _checkReserveLimits();
         require(
-            (address(tokenIn) == reserveToken && address(tokenOut) == address(pairToken)) || (address(tokenIn) == address(pairToken) && address(tokenOut) == reserveToken)
+            (address(tokenIn) == reserveToken && address(tokenOut) == address(pairToken))
+                || (address(tokenIn) == address(pairToken) && address(tokenOut) == reserveToken)
         );
         require(swaps.length == 1);
 

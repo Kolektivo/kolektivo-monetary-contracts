@@ -31,6 +31,14 @@ update: ## Update dependencies
 test: ## Run whole testsuite
 	@forge test -vvv
 
+.PHONY: fmt
+fmt: ## Format code
+	@forge fmt
+
+.PHONY: fmt-check
+fmt-check: ## Check whether code formatted correctly
+	@forge fmt --check
+
 # -----------------------------------------------------------------------------
 # Individual Component Tests
 
@@ -63,8 +71,8 @@ testGeoNFT: ## Run GeoNFT tests
 
 .PHONY: analyze-slither
 analyze-slither: ## Run slither analyzer against project (requires solc-select)
-	@solc-select install 0.8.17
-	@solc-select use 0.8.17
+	@solc-select install 0.8.10
+	@solc-select use 0.8.10
 	@slither src
 
 # Something like this:
@@ -91,7 +99,7 @@ cov-report: ## Print coverage report and create lcov report file
 	@forge coverage
 
 # -----------------------------------------------------------------------------
-# Help Command
+# Help Command 
 
 .PHONY: help
 help:

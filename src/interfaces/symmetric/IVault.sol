@@ -39,8 +39,11 @@ interface IVault {
     //
     // - View functions revert if referring to either unregistered Pools, or unregistered tokens for registered Pools.
 
-
-    enum PoolSpecialization { GENERAL, MINIMAL_SWAP_INFO, TWO_TOKEN }
+    enum PoolSpecialization {
+        GENERAL,
+        MINIMAL_SWAP_INFO,
+        TWO_TOKEN
+    }
 
     /**
      * @dev Registers the caller account as a Pool with a given specialization setting. Returns the Pool's ID, which
@@ -89,11 +92,7 @@ interface IVault {
      *
      * Emits a `TokensRegistered` event.
      */
-    function registerTokens(
-        bytes32 poolId,
-        IERC20[] memory tokens,
-        address[] memory assetManagers
-    ) external;
+    function registerTokens(bytes32 poolId, IERC20[] memory tokens, address[] memory assetManagers) external;
 
     /**
      * @dev Emitted when a Pool registers tokens by calling `registerTokens`.
@@ -138,12 +137,7 @@ interface IVault {
     function getPoolTokenInfo(bytes32 poolId, IERC20 token)
         external
         view
-        returns (
-            uint256 cash,
-            uint256 managed,
-            uint256 lastChangeBlock,
-            address assetManager
-        );
+        returns (uint256 cash, uint256 managed, uint256 lastChangeBlock, address assetManager);
 
     /**
      * @dev Returns a Pool's registered tokens, the total balance for each, and the latest block when *any* of
@@ -162,11 +156,7 @@ interface IVault {
     function getPoolTokens(bytes32 poolId)
         external
         view
-        returns (
-            IERC20[] memory tokens,
-            uint256[] memory balances,
-            uint256 lastChangeBlock
-        );
+        returns (IERC20[] memory tokens, uint256[] memory balances, uint256 lastChangeBlock);
 
     /**
      * @dev Called by users to join a Pool, which transfers tokens from `sender` into the Pool's balance. This will
@@ -200,12 +190,9 @@ interface IVault {
      *
      * Emits a `PoolBalanceChanged` event.
      */
-    function joinPool(
-        bytes32 poolId,
-        address sender,
-        address recipient,
-        JoinPoolRequest memory request
-    ) external payable;
+    function joinPool(bytes32 poolId, address sender, address recipient, JoinPoolRequest memory request)
+        external
+        payable;
 
     struct JoinPoolRequest {
         IAsset[] assets;
@@ -249,12 +236,8 @@ interface IVault {
      *
      * Emits a `PoolBalanceChanged` event.
      */
-    function exitPool(
-        bytes32 poolId,
-        address sender,
-        address payable recipient,
-        ExitPoolRequest memory request
-    ) external;
+    function exitPool(bytes32 poolId, address sender, address payable recipient, ExitPoolRequest memory request)
+        external;
 
     struct ExitPoolRequest {
         IAsset[] assets;
@@ -274,7 +257,10 @@ interface IVault {
         uint256[] protocolFeeAmounts
     );
 
-    enum PoolBalanceChangeKind { JOIN, EXIT }
+    enum PoolBalanceChangeKind {
+        JOIN,
+        EXIT
+    }
 
     // Swaps
     //
@@ -323,7 +309,10 @@ interface IVault {
     //
     // Finally, Internal Balance can be used when either sending or receiving tokens.
 
-    enum SwapKind { GIVEN_IN, GIVEN_OUT }
+    enum SwapKind {
+        GIVEN_IN,
+        GIVEN_OUT
+    }
 
     /**
      * @dev Performs a swap with a single Pool.
@@ -338,12 +327,10 @@ interface IVault {
      *
      * Emits a `Swap` event.
      */
-    function swap(
-        SingleSwap memory singleSwap,
-        FundManagement memory funds,
-        uint256 limit,
-        uint256 deadline
-    ) external payable returns (uint256);
+    function swap(SingleSwap memory singleSwap, FundManagement memory funds, uint256 limit, uint256 deadline)
+        external
+        payable
+        returns (uint256);
 
     /**
      * @dev Data for a single swap executed by `swap`. `amount` is either `amountIn` or `amountOut` depending on
@@ -424,11 +411,7 @@ interface IVault {
      * @dev Emitted for each individual swap performed by `swap` or `batchSwap`.
      */
     event Swap(
-        bytes32 indexed poolId,
-        IERC20 indexed tokenIn,
-        IERC20 indexed tokenOut,
-        uint256 amountIn,
-        uint256 amountOut
+        bytes32 indexed poolId, IERC20 indexed tokenIn, IERC20 indexed tokenOut, uint256 amountIn, uint256 amountOut
     );
 
     /**
@@ -516,7 +499,11 @@ interface IVault {
      * Updates don't affect the Pool's cash balance, but because the managed balance changes, it does alter the total.
      * The external amount can be either increased or decreased by this call (i.e., reporting a gain or a loss).
      */
-    enum PoolBalanceOpKind { WITHDRAW, DEPOSIT, UPDATE }
+    enum PoolBalanceOpKind {
+        WITHDRAW,
+        DEPOSIT,
+        UPDATE
+    }
 
     /**
      * @dev Emitted when a Pool's token Asset Manager alters its balance via `managePoolBalance`.
@@ -528,7 +515,6 @@ interface IVault {
         int256 cashDelta,
         int256 managedDelta
     );
-
 
     /**
      * @dev Returns the Vault's WETH instance.

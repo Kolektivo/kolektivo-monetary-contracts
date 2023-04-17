@@ -31,6 +31,14 @@ update: ## Update dependencies
 test: ## Run whole testsuite
 	@forge test -vvv
 
+.PHONY: fmt
+fmt: ## Format code
+	@forge fmt
+
+.PHONY: fmt-check
+fmt-check: ## Check whether code formatted correctly
+	@forge fmt --check
+
 # -----------------------------------------------------------------------------
 # Individual Component Tests
 
@@ -91,7 +99,7 @@ cov-report: ## Print coverage report and create lcov report file
 	@forge coverage
 
 # -----------------------------------------------------------------------------
-# Help Command
+# Help Command 
 
 .PHONY: help
 help:

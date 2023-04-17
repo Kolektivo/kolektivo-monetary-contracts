@@ -33,7 +33,7 @@ contract Setup is Script {
         // Set ReserveToken's mintBurner allowance to Reserve.
         vm.startBroadcast();
         {
-            reserveToken.setMintBurner(reserve);
+            reserveToken.setMintBurner(reserve, true);
         }
         vm.stopBroadcast();
 

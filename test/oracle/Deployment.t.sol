@@ -7,7 +7,6 @@ import "./Test.t.sol";
  * @dev Deployment Tests.
  */
 contract OracleDeployment is OracleTest {
-
     function testInvariants() public {
         assertEq(oracle.owner(), address(this));
         assertEq(oracle.providersSize(), 0);
@@ -38,5 +37,4 @@ contract OracleDeployment is OracleTest {
             minimumProviders
         );
     }
-
 }

@@ -25,10 +25,9 @@ import "./Test.t.sol";
  *
  */
 contract ElasticReceiptTokenSimulateTransferPrecision is ElasticReceiptTokenTest {
-
     // The granularity by which the supply should be adjusted in each iteration.
     // Should not be zero due to div by zero at compile time.
-    uint constant MAX_ITERATIONS = 1;
+    uint256 constant MAX_ITERATIONS = 1;
 
     // Wether expansion or contraction should be simulated.
     bool constant SIMULATE_EXPANSION = true;
@@ -46,38 +45,36 @@ contract ElasticReceiptTokenSimulateTransferPrecision is ElasticReceiptTokenTest
             emit log_string("Simulate Contraction");
         }
 
-        uint currentSupply = SIMULATE_EXPANSION
-            ? 1           // Min supply to simulate expansion.
+        uint256 currentSupply = SIMULATE_EXPANSION
+            ? 1 // Min supply to simulate expansion.
             : MAX_SUPPLY; // Max supply to simulate contraction.
-        uint nextSupplyChange = MAX_SUPPLY / MAX_ITERATIONS;
+        uint256 nextSupplyChange = MAX_SUPPLY / MAX_ITERATIONS;
 
         address u1 = address(1);
         address u2 = address(2);
 
         // Users give infinite approval of mock tokens to downstream contract.
         vm.prank(u1);
-        underlier.approve(address(ert), type(uint).max);
+        underlier.approve(address(ert), type(uint256).max);
         vm.prank(u2);
-        underlier.approve(address(ert), type(uint).max);
+        underlier.approve(address(ert), type(uint256).max);
 
         // Users give infinite approval of erts to this contract.
         vm.prank(u1);
-        ert.approve(address(this), type(uint).max);
+        ert.approve(address(this), type(uint256).max);
         vm.prank(u2);
-        ert.approve(address(this), type(uint).max);
+        ert.approve(address(this), type(uint256).max);
 
         // User 1 receives currentSupply of erts.
         mintToUser(u1, currentSupply);
 
-        uint iteration;
+        uint256 iteration;
         while (true) {
             iteration++;
             emit log_named_uint("Iteration", iteration);
 
             // Calculate current supply.
-            currentSupply = SIMULATE_EXPANSION
-                ? currentSupply + nextSupplyChange
-                : currentSupply - nextSupplyChange;
+            currentSupply = SIMULATE_EXPANSION ? currentSupply + nextSupplyChange : currentSupply - nextSupplyChange;
             emit log_named_uint("Supply", currentSupply);
 
             // Stop simulation if MAX_SUPPLY reached or underflows occurs.
@@ -104,8 +101,8 @@ contract ElasticReceiptTokenSimulateTransferPrecision is ElasticReceiptTokenTest
 
             // Cache balance, send 1e-9 ert back and forth,
             // and check if balance is same afterwards.
-            uint balanceU1 = ert.balanceOf(u1);
-            uint balanceU2 = ert.balanceOf(u2);
+            uint256 balanceU1 = ert.balanceOf(u1);
+            uint256 balanceU2 = ert.balanceOf(u2);
             ert.transferFrom(u1, u2, 1);
             ert.transferFrom(u2, u1, 1);
             assertEq(balanceU1, ert.balanceOf(u1));
@@ -121,5 +118,4 @@ contract ElasticReceiptTokenSimulateTransferPrecision is ElasticReceiptTokenTest
             assertEq(balanceU2, ert.balanceOf(u2));
         }
     }
-
 }

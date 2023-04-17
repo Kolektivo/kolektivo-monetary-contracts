@@ -10,17 +10,16 @@ import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
  * @dev Bonding Function Tests.
  */
 contract TreasuryBonding is TreasuryTest {
-
     //--------------------------------------------------------------------------
     // Constants
 
     // 1 USD with 18 decimals precision.
-    uint private constant ONE_USD = 1e18;
+    uint256 private constant ONE_USD = 1e18;
 
     //--------------------------------------------------------------------------
     // Modifiers
 
-    modifier validAmount(uint amount, bool fail) {
+    modifier validAmount(uint256 amount, bool fail) {
         if (amount > 0 && amount < MAX_SUPPLY) {
             _;
         } else {
@@ -33,11 +32,7 @@ contract TreasuryBonding is TreasuryTest {
     //--------------------------------------------------------------------------
     // setUp Functions
 
-    function setUpForBonding(
-        uint price,
-        uint amount,
-        uint decimals
-    ) public returns (ERC20Mock, OracleMock) {
+    function setUpForBonding(uint256 price, uint256 amount, uint256 decimals) public returns (ERC20Mock, OracleMock) {
         // Create token and oracle.
         ERC20Mock token = new ERC20Mock("TKN", "Token", uint8(decimals));
         OracleMock oracle = new OracleMock();
@@ -48,7 +43,7 @@ contract TreasuryBonding is TreasuryTest {
         treasury.listERC20AsBondable(address(token));
 
         // Mint tokens.
-        token.approve(address(treasury), type(uint).max);
+        token.approve(address(treasury), type(uint256).max);
         token.mint(address(this), amount);
 
         return (token, oracle);
@@ -60,10 +55,7 @@ contract TreasuryBonding is TreasuryTest {
     //----------------------------------
     // Bond & Redeem disabled for invalid oracles
 
-    function testFailBondingDisabledIfOracleInvalid(uint amount)
-        public
-        validAmount(amount, true)
-    {
+    function testFailBondingDisabledIfOracleInvalid(uint256 amount) public validAmount(amount, true) {
         ERC20Mock token;
         OracleMock oracle;
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
@@ -75,10 +67,7 @@ contract TreasuryBonding is TreasuryTest {
         treasury.bondERC20(address(token), amount);
     }
 
-    function testFailBondingDisabledIfOraclePriceIsZero(uint amount)
-        public
-        validAmount(amount, true)
-    {
+    function testFailBondingDisabledIfOraclePriceIsZero(uint256 amount) public validAmount(amount, true) {
         ERC20Mock token;
         OracleMock oracle;
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
@@ -90,10 +79,7 @@ contract TreasuryBonding is TreasuryTest {
         treasury.bondERC20(address(token), amount);
     }
 
-    function testFailRedeemDisabledIfOracleInvalid(uint amount)
-        public
-        validAmount(amount, true)
-    {
+    function testFailRedeemDisabledIfOracleInvalid(uint256 amount) public validAmount(amount, true) {
         ERC20Mock token;
         OracleMock oracle;
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
@@ -111,10 +97,7 @@ contract TreasuryBonding is TreasuryTest {
         treasury.redeemERC20(address(token), amount);
     }
 
-    function testFailRedeemDisabledIfOraclePriceIsZero(uint amount)
-        public
-        validAmount(amount, true)
-    {
+    function testFailRedeemDisabledIfOraclePriceIsZero(uint256 amount) public validAmount(amount, true) {
         ERC20Mock token;
         OracleMock oracle;
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
@@ -135,10 +118,7 @@ contract TreasuryBonding is TreasuryTest {
     //----------------------------------
     // Bonding
 
-    function testFailCanNotRedeemToZero(uint amount)
-        public
-        validAmount(amount, true)
-    {
+    function testFailCanNotRedeemToZero(uint256 amount) public validAmount(amount, true) {
         ERC20Mock token;
         OracleMock oracle;
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
@@ -154,10 +134,7 @@ contract TreasuryBonding is TreasuryTest {
         treasury.redeemERC20(address(token), amount);
     }
 
-    function testBondingAndRedeeming(uint amount)
-        public
-        validAmount(amount, false)
-    {
+    function testBondingAndRedeeming(uint256 amount) public validAmount(amount, false) {
         ERC20Mock token;
         OracleMock oracle;
         (token, oracle) = setUpForBonding(ONE_USD, amount, 18);
@@ -188,7 +165,7 @@ contract TreasuryBonding is TreasuryTest {
         if (amount == 1) {
             return;
         }
-        uint tokensUnbonded = amount - 1;
+        uint256 tokensUnbonded = amount - 1;
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
@@ -292,5 +269,4 @@ contract TreasuryBonding is TreasuryTest {
             assertEq(treasury.totalSupply(), 1e18);
         }
     }
-
 }

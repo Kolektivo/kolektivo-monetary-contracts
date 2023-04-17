@@ -19,7 +19,6 @@ import "./IERC20Metadata.sol";
  * @author Buttonwood Foundation
  */
 interface IRebasingERC20 is IERC20Metadata {
-
     /// @notice Returns the fixed balance of the specified address.
     /// @param who The address to query.
     function scaledBalanceOf(address who) external view returns (uint256);
@@ -44,5 +43,4 @@ interface IRebasingERC20 is IERC20Metadata {
     /// @param epoch The number of rebases since inception.
     /// @param newScalar The new scalar.
     event Rebase(uint256 indexed epoch, uint256 newScalar);
-
 }

@@ -22,14 +22,13 @@ import {GeoCoordinates} from "./lib/GeoCoordinates.sol";
  * @author byterocket
  */
 contract GeoNFT is ERC721, TSOwnable {
-
     //--------------------------------------------------------------------------
     // Types
 
     /// @dev TokenData encapsulates a token's metadata.
     struct TokenData {
         /// @dev The timestamp the token data was last modified.
-        uint lastModified;
+        uint256 lastModified;
         /// @dev The token's latitude coordinate.
         int32 latitude;
         /// @dev The token's longitude coordinate.
@@ -60,13 +59,13 @@ contract GeoNFT is ERC721, TSOwnable {
     // Events
 
     /// @notice Event emitted when a token's data is modified.
-    event TokenModified(uint indexed id);
+    event TokenModified(uint256 indexed id);
 
     //--------------------------------------------------------------------------
     // Modifiers
 
     /// @dev Modifier to guarantee token id is valid.
-    modifier validTokenId(uint id) {
+    modifier validTokenId(uint256 id) {
         if (id > _tokenCounter) {
             revert GeoNFT__InvalidTokenId();
         }
@@ -109,17 +108,15 @@ contract GeoNFT is ERC721, TSOwnable {
     // Storage
 
     /// @dev Mapping of token id to tokenData struct.
-    mapping(uint => TokenData) private _tokenData;
+    mapping(uint256 => TokenData) private _tokenData;
 
     /// @dev The last token's id created.
-    uint private _tokenCounter;
+    uint256 private _tokenCounter;
 
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(string memory _name, string memory _symbol)
-        ERC721(_name, _symbol)
-    {
+    constructor(string memory _name, string memory _symbol) ERC721(_name, _symbol) {
         // NO-OP
     }
 
@@ -133,30 +130,15 @@ contract GeoNFT is ERC721, TSOwnable {
     /// @return int32 The token's latitude coordinate.
     /// @return int32 The token's longitude coordinate.
     /// @return string The token's string identifier.
-    function tokenData(uint id)
-        external
-        validTokenId(id)
-        view
-        returns (uint, int32, int32, string memory)
-    {
+    function tokenData(uint256 id) external view validTokenId(id) returns (uint256, int32, int32, string memory) {
         TokenData memory data = _tokenData[id];
 
-        return (
-            data.lastModified,
-            data.latitude,
-            data.longitude,
-            data.identifier
-        );
+        return (data.lastModified, data.latitude, data.longitude, data.identifier);
     }
 
     // @todo Issue #24 "What should be the tokens URI?"
     // Need a decision about the URI construction.
-    function tokenURI(uint id)
-        public
-        view
-        override(ERC721)
-        returns (string memory)
-    {
+    function tokenURI(uint256 id) public view override(ERC721) returns (string memory) {
         return "";
     }
 
@@ -171,12 +153,7 @@ contract GeoNFT is ERC721, TSOwnable {
     /// @param latitude The token's latitude coordinate.
     /// @param longitude The token's longitude coordinate.
     /// @param identifier The token's string identifier.
-    function mint(
-        address to,
-        int32 latitude,
-        int32 longitude,
-        string memory identifier
-    )
+    function mint(address to, int32 latitude, int32 longitude, string memory identifier)
         external
         onlyOwner
         validRecipient(to)
@@ -185,15 +162,10 @@ contract GeoNFT is ERC721, TSOwnable {
         validIdentifier(identifier)
     {
         // Increase token counter and cache result in memory variable.
-        uint id = ++_tokenCounter;
+        uint256 id = ++_tokenCounter;
 
         // Encapsulate data in a TokenData struct.
-        TokenData memory data = TokenData(
-            block.timestamp,
-            latitude,
-            longitude,
-            identifier
-        );
+        TokenData memory data = TokenData(block.timestamp, latitude, longitude, identifier);
 
         // Save associated data.
         _tokenData[id] = data;
@@ -211,12 +183,7 @@ contract GeoNFT is ERC721, TSOwnable {
     /// @param latitude The token's latitude coordinate.
     /// @param longitude The token's longitude coordinate.
     /// @param identifier The token's string identifier.
-    function modify(
-        uint id,
-        int32 latitude,
-        int32 longitude,
-        string memory identifier
-    )
+    function modify(uint256 id, int32 latitude, int32 longitude, string memory identifier)
         external
         onlyOwner
         validTokenId(id)
@@ -225,12 +192,7 @@ contract GeoNFT is ERC721, TSOwnable {
         validIdentifier(identifier)
     {
         // Encapsulate data in a TokenData struct.
-        TokenData memory data = TokenData(
-            block.timestamp,
-            latitude,
-            longitude,
-            identifier
-        );
+        TokenData memory data = TokenData(block.timestamp, latitude, longitude, identifier);
 
         // Save associated data.
         _tokenData[id] = data;
@@ -243,14 +205,11 @@ contract GeoNFT is ERC721, TSOwnable {
     /// @dev Only callable by owner.
     /// @dev Reverts if token id is invalid.
     /// @param id The token's id.
-    function burn(
-        uint id
-    ) external onlyOwner validTokenId(id) {
+    function burn(uint256 id) external onlyOwner validTokenId(id) {
         // Delete associated data.
         delete _tokenData[id];
 
         // Burn token.
         super._burn(id);
     }
-
 }

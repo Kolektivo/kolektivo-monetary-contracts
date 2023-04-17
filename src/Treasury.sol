@@ -65,7 +65,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         /// @dev The ERC721 contract address.
         address erc721;
         /// @dev The token's id.
-        uint id;
+        uint256 id;
     }
 
     //--------------------------------------------------------------------------
@@ -78,7 +78,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Function is only callable for bondable erc721Id's.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    error Treasury__ERC721IdIsNotBondable(address erc721, uint id);
+    error Treasury__ERC721IdIsNotBondable(address erc721, uint256 id);
 
     /// @notice Function is only callable for redeemable erc20's.
     /// @param erc20 The address of the erc20 token.
@@ -87,7 +87,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Function is only callable for redeemable erc721Id's.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    error Treasury__ERC721IdIsNotRedeemable(address erc721, uint id);
+    error Treasury__ERC721IdIsNotRedeemable(address erc721, uint256 id);
 
     /// @notice Function is only callable for registered erc20's.
     /// @param erc20 The address of the erc20 token.
@@ -96,7 +96,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Function is only callable for registered erc721Id's.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    error Treasury__ERC721IdIsNotRegistered(address erc721, uint id);
+    error Treasury__ERC721IdIsNotRegistered(address erc721, uint256 id);
 
     /// @notice Function is only callable when the erc20's bonding limit
     ///         hasn't been exceeded yet
@@ -111,20 +111,13 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param erc20 The address of the erc20 token.
     /// @param oracle The address of the asset's oracle.
-    error Treasury__StaleERC20PriceDeliveredByOracle(
-        address erc20,
-        address oracle
-    );
+    error Treasury__StaleERC20PriceDeliveredByOracle(address erc20, address oracle);
 
     /// @notice Functionality is limited due to stale price delivered by oracle.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param oracle The address of the asset's oracle.
-    error Treasury__StaleERC721IdPriceDeliveredByOracle(
-        address erc721,
-        uint id,
-        address oracle
-    );
+    error Treasury__StaleERC721IdPriceDeliveredByOracle(address erc721, uint256 id, address oracle);
 
     //--------------------------------------------------------------------------
     // Events
@@ -137,12 +130,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param oracle The address of the oracle.
     /// @param oldPrice The cached price before the update.
     /// @param newPrice The cached price after the update.
-    event ERC20PriceUpdated(
-        address indexed erc20,
-        address indexed oracle,
-        uint oldPrice,
-        uint newPrice
-    );
+    event ERC20PriceUpdated(address indexed erc20, address indexed oracle, uint256 oldPrice, uint256 newPrice);
 
     /// @notice Event emitted when an erc721Id's cached price is updated.
     /// @param erc721 The address of the erc721 token.
@@ -151,11 +139,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param oldPrice The cached price before the update.
     /// @param newPrice The cached price after the update.
     event ERC721IdPriceUpdated(
-        address indexed erc721,
-        uint indexed id,
-        address indexed oracle,
-        uint oldPrice,
-        uint newPrice
+        address indexed erc721, uint256 indexed id, address indexed oracle, uint256 oldPrice, uint256 newPrice
     );
 
     //----------------------------------
@@ -169,22 +153,13 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param oracle The address of the asset's oracle.
     /// @param assetType The type of the asset
     /// @param riskLevel The level of risk associated to the token
-    event ERC20Registered(
-        address indexed erc20,
-        address indexed oracle,
-        AssetType assetType,
-        RiskLevel riskLevel
-    );
+    event ERC20Registered(address indexed erc20, address indexed oracle, AssetType assetType, RiskLevel riskLevel);
 
     /// @notice Event emitted when an erc721Id is registered
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param oracle The address of the asset's oracle.
-    event ERC721IdRegistered(
-        address indexed erc721,
-        uint indexed id,
-        address indexed oracle
-    );
+    event ERC721IdRegistered(address indexed erc721, uint256 indexed id, address indexed oracle);
 
     /// @notice Event emitted when an erc20 is deregistered.
     /// @param erc20 The address of the erc20 token.
@@ -193,50 +168,32 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Event emitted when an erc721Id is deregistered.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    event ERC721IdDeregistered(address indexed erc721, uint indexed id);
+    event ERC721IdDeregistered(address indexed erc721, uint256 indexed id);
 
     /// @notice Event emitted when an erc20's oracle is updated.
     /// @param erc20 The address of the erc20 token.
     /// @param oldOracle The address of the asset's old oracle.
     /// @param newOracle The address of the asset's new oracle.
-    event ERC20OracleUpdated(
-        address indexed erc20,
-        address oldOracle,
-        address newOracle
-    );
+    event ERC20OracleUpdated(address indexed erc20, address oldOracle, address newOracle);
 
     /// @notice Event emitted when an erc20 is withdrawn.
     /// @param erc20 The address of the erc20 token.
     /// @param recipient The address that received the withdrawn tokens
     /// @param erc20sWithdrawn The amount of ERC20 tokens withdrawn.
-    event ERC20Withdrawn(
-        address indexed erc20,
-        address indexed recipient,
-        uint erc20sWithdrawn
-    );
+    event ERC20Withdrawn(address indexed erc20, address indexed recipient, uint256 erc20sWithdrawn);
 
     /// @notice Event emitted when an erc721Id's oracle is updated.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param oldOracle The address of the asset's old oracle.
     /// @param newOracle The address of the asset's new oracle.
-    event ERC721IdOracleUpdated(
-        address indexed erc721,
-        uint indexed id,
-        address oldOracle,
-        address newOracle
-    );
-
+    event ERC721IdOracleUpdated(address indexed erc721, uint256 indexed id, address oldOracle, address newOracle);
 
     /// @notice Event emitted when an erc721Id is withdrawn.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param recipient The address that received the withdrawn tokens
-    event ERC721IdWithdrawn(
-        address indexed erc721,
-        uint indexed id,
-        address indexed recipient
-    );
+    event ERC721IdWithdrawn(address indexed erc721, uint256 indexed id, address indexed recipient);
 
     //--------------
     // Un/Bonding Management
@@ -248,7 +205,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Event emitted when an erc721 is listed as bondable.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    event ERC721IdListedAsBondable(address indexed erc721, uint indexed id);
+    event ERC721IdListedAsBondable(address indexed erc721, uint256 indexed id);
 
     /// @notice Event emitted when an asset is listed as redeemable.
     /// @param erc20 The address of the erc20 token.
@@ -257,7 +214,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Event emitted when an asset is listed as redeemable.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    event ERC721IdListedAsRedeemable(address indexed erc721, uint indexed id);
+    event ERC721IdListedAsRedeemable(address indexed erc721, uint256 indexed id);
 
     /// @notice Event emitted when an asset is delisted as bondable.
     /// @param erc20 The address of the erc20 token.
@@ -266,7 +223,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Event emitted when an asset is delisted as bondable.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    event ERC721IdDelistedAsBondable(address indexed erc721, uint indexed id);
+    event ERC721IdDelistedAsBondable(address indexed erc721, uint256 indexed id);
 
     /// @notice Event emitted when an asset is delisted as redeemable.
     /// @param erc20 The address of the erc20 token.
@@ -275,27 +232,19 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Event emitted when an asset is delisted as redeemable.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
-    event ERC721IdDelistedAsRedeemable(address indexed erc721, uint indexed id);
+    event ERC721IdDelistedAsRedeemable(address indexed erc721, uint256 indexed id);
 
     /// @notice Event emitted when ERC20 token's bonding limit set.
     /// @param erc20 The ERC20 token address.
     /// @param oldLimit The ERC20 token's old bonding limit.
     /// @param newLimit The ERC20 token's new bonding limit.
-    event SetERC20BondingLimit(
-        address indexed erc20,
-        uint oldLimit,
-        uint newLimit
-    );
+    event SetERC20BondingLimit(address indexed erc20, uint256 oldLimit, uint256 newLimit);
 
     /// @notice Event emitted when ERC20 token's redeem limit set.
     /// @param erc20 The ERC20 token address.
     /// @param oldLimit The ERC20 token's old redeem limit.
     /// @param newLimit The ERC20 token's new redeem limit.
-    event SetERC20RedeemLimit(
-        address indexed erc20,
-        uint oldLimit,
-        uint newLimit
-    );
+    event SetERC20RedeemLimit(address indexed erc20, uint256 oldLimit, uint256 newLimit);
 
     //----------------------------------
     // User Events
@@ -304,45 +253,27 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param who The address of the user.
     /// @param erc20 The address of the erc20 token.
     /// @param kttsMinted The number of KTTs minted.
-    event ERC20sBonded(
-        address indexed who,
-        address indexed erc20,
-        uint kttsMinted
-    );
+    event ERC20sBonded(address indexed who, address indexed erc20, uint256 kttsMinted);
 
     /// @notice Event emitted when erc721Id's are bonded.
     /// @param who The address of the user.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param kttsMinted The number of KTTs minted.
-    event ERC721IdsBonded(
-        address indexed who,
-        address indexed erc721,
-        uint indexed id,
-        uint kttsMinted
-    );
+    event ERC721IdsBonded(address indexed who, address indexed erc721, uint256 indexed id, uint256 kttsMinted);
 
     /// @notice Event emitted when erc20's are redeemed.
     /// @param who The address of the user.
     /// @param erc20 The address of the erc20 token.
     /// @param kttsBurned The number of KTTs burned.
-    event ERC20sRedeemed(
-        address indexed who,
-        address indexed erc20,
-        uint kttsBurned
-    );
+    event ERC20sRedeemed(address indexed who, address indexed erc20, uint256 kttsBurned);
 
     /// @notice Event emitted when erc721Id's are redeemed.
     /// @param who The address of the user.
     /// @param erc721 The address of the erc721 token.
     /// @param id The id of the corresponding NFT.
     /// @param kttsBurned The number of KTTs burned.
-    event ERC721IdsRedeemed(
-        address indexed who,
-        address indexed erc721,
-        uint indexed id,
-        uint kttsBurned
-    );
+    event ERC721IdsRedeemed(address indexed who, address indexed erc721, uint256 indexed id, uint256 kttsBurned);
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -358,7 +289,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @notice Modifier to guarantee function is only callable with registered
     ///         ERC721Id's.
-    modifier isRegisteredERC721Id(address erc721, uint id) {
+    modifier isRegisteredERC721Id(address erc721, uint256 id) {
         if (oraclePerERC721Id[erc721][id] == address(0)) {
             revert Treasury__ERC721IdIsNotRegistered(erc721, id);
         }
@@ -376,7 +307,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @notice Modifier to guarantee function is only callable with bondable
     ///         ERC721Id's.
-    modifier isBondableERC721Id(address erc721, uint id) {
+    modifier isBondableERC721Id(address erc721, uint256 id) {
         if (!isERC721IdBondable[erc721][id]) {
             revert Treasury__ERC721IdIsNotBondable(erc721, id);
         }
@@ -394,7 +325,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @notice Modifier to guarantee function is only callable with redeemable
     ///         assets.
-    modifier isRedeemableERC721Id(address erc721, uint id) {
+    modifier isRedeemableERC721Id(address erc721, uint256 id) {
         if (!isERC721IdRedeemable[erc721][id]) {
             revert Treasury__ERC721IdIsNotRedeemable(erc721, id);
         }
@@ -403,9 +334,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @notice Modifier to guarantee function is only callable if the
     ///         bonding limit hasn't been exceeded.
-    modifier isNotExceedingERC20BondingLimit(address erc20, uint amount) {
-        uint balance = ERC20(erc20).balanceOf(address(this));
-        uint limit = bondingLimitPerERC20[erc20];
+    modifier isNotExceedingERC20BondingLimit(address erc20, uint256 amount) {
+        uint256 balance = ERC20(erc20).balanceOf(address(this));
+        uint256 limit = bondingLimitPerERC20[erc20];
 
         // Note that a limit of zero is interpreted as no limit given.
         if (limit != 0 && balance + amount > limit) {
@@ -452,7 +383,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Changeable by owner.
     /// @dev address in registeredERC721Ids => uint id in
     //       registeredERC721Ids => address of type IOracle.
-    mapping(address => mapping(uint => address)) public oraclePerERC721Id;
+    mapping(address => mapping(uint256 => address)) public oraclePerERC721Id;
 
     /// @notice Mapping of bondable erc20s.
     /// @dev Changeable by owner.
@@ -460,7 +391,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @notice Mapping of bondable erc721Ids.
     /// @dev Changeable by owner.
-    mapping(address => mapping(uint => bool)) public isERC721IdBondable;
+    mapping(address => mapping(uint256 => bool)) public isERC721IdBondable;
 
     /// @notice Mapping of redeemable erc20s.
     /// @dev Changeable by owner.
@@ -468,24 +399,22 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @notice Mapping of redeemable erc721Ids.
     /// @dev Changeable by owner.
-    mapping(address => mapping(uint => bool)) public isERC721IdRedeemable;
+    mapping(address => mapping(uint256 => bool)) public isERC721IdRedeemable;
 
     /// @notice Mapping of the bonding limit for given erc20.
     /// @dev A limit of zero is treated as infinite, i.e. no limit set.
     /// @dev Changeable by owner.
-    mapping(address => uint) public bondingLimitPerERC20;
+    mapping(address => uint256) public bondingLimitPerERC20;
 
     /// @notice Mapping of the redeem limit for given erc20.
     /// @dev A limit of zero is treated as infinite, i.e. no limit set.
     /// @dev Changeable by owner.
-    mapping(address => uint) public redeemLimitPerERC20;
+    mapping(address => uint256) public redeemLimitPerERC20;
 
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor()
-        ElasticReceiptToken("Kolektivo Treasury Token", "KTT", uint8(18))
-    {
+    constructor() ElasticReceiptToken("Kolektivo Treasury Token", "KTT", uint8(18)) {
         // NO-OP
     }
 
@@ -498,11 +427,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     }
 
     /// @notice Returns the array of all registered erc721Id assets.
-    function allRegisteredERC721Ids()
-        external
-        view
-        returns (ERC721Id[] memory)
-    {
+    function allRegisteredERC721Ids() external view returns (ERC721Id[] memory) {
         return registeredERC721Ids;
     }
 
@@ -514,7 +439,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable for bondable assets.
     /// @param erc20 The erc20 token to bond.
     /// @param amount The amount of erc20's to bond.
-    function bondERC20(address erc20, uint amount)
+    function bondERC20(address erc20, uint256 amount)
         external
         // Note that if an erc20 is bondable, it is also supported.
         // isRegistered(erc20)
@@ -524,11 +449,11 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         onlyOwner
     {
         // Convert amount to wad.
-        uint amountWad = Wad.convertToWad(erc20, amount);
+        uint256 amountWad = Wad.convertToWad(erc20, amount);
 
         // Calculate the amount of KTTs to mint.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        uint mintWad = (amountWad * _queryERC20Price(erc20)) / 1e18;
+        uint256 mintWad = (amountWad * _queryERC20Price(erc20)) / 1e18;
 
         // Mint the KTTs to msg.sender and fetch the erc20s from msg.sender.
         super._mint(msg.sender, mintWad);
@@ -543,7 +468,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable for bondable assets.
     /// @param erc721 The erc721 token to bond.
     /// @param id     The id of the corresponding nft.
-    function bondERC721Id(address erc721, uint id)
+    function bondERC721Id(address erc721, uint256 id)
         external
         // Note that if an erc721Id is bondable, it is also supported.
         // isRegistered(erc721, id)
@@ -553,7 +478,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         // Retrieve the price of the ERC721Id, which corresponds to it's
         // value and thus the amount of KTTs to mint.
         // Note that 1 KTT equals 1 USD worth of assets in the treasury.
-        uint mintWad = _queryERC721IdPrice(erc721, id);
+        uint256 mintWad = _queryERC721IdPrice(erc721, id);
 
         // Mint the KTTs to msg.sender and fetch the erc721Id from msg.sender.
         super._mint(msg.sender, mintWad);
@@ -569,7 +494,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable for redeemable assets.
     /// @param erc20 The erc20 token to unbond.
     /// @param kttWad The amount of KTT tokens to burn.
-    function redeemERC20(address erc20, uint kttWad)
+    function redeemERC20(address erc20, uint256 kttWad)
         external
         // Note that if an asset is unbondable, it is also supported.
         // isRegistered(asset)
@@ -584,14 +509,14 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
         // Calculate the amount of erc20's to withdraw for burned amount of KTTs.
         // Note that 1 KTT equals 1 USD worth of erc20's in the treasury.
-        uint withdrawableWad = (kttWad * 1e18) / _queryERC20Price(erc20);
+        uint256 withdrawableWad = (kttWad * 1e18) / _queryERC20Price(erc20);
 
         // Adjust to decimal precision of the erc20.
-        uint withdrawable = Wad.convertFromWad(erc20, withdrawableWad);
-        
+        uint256 withdrawable = Wad.convertFromWad(erc20, withdrawableWad);
+
         // Revert if redeem limit exceeded.
-        uint limit = redeemLimitPerERC20[erc20];
-        uint balance = ERC20(erc20).balanceOf(address(this));
+        uint256 limit = redeemLimitPerERC20[erc20];
+        uint256 balance = ERC20(erc20).balanceOf(address(this));
         if (balance - withdrawable < limit) {
             revert Treasury__ERC20RedeemLimitExceeded(erc20);
         }
@@ -609,14 +534,14 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable for redeemable assets.
     /// @param erc721 The erc721 token to bond.
     /// @param id     The id of the corresponding nft.
-    function redeemERC721Id(address erc721, uint id)
+    function redeemERC721Id(address erc721, uint256 id)
         external
         // Note that if an asset is unbondable, it is also supported.
         // isRegistered(erc721, id)
         isRedeemableERC721Id(erc721, id)
         onlyOwner
     {
-        uint kttWad = _queryERC721IdPrice(erc721, id);
+        uint256 kttWad = _queryERC721IdPrice(erc721, id);
 
         // Burn KTTs from msg.sender.
         // Note to update the KTT amount which could have changed due to
@@ -636,17 +561,12 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Returns the total valuation of assets, denominated in USD, held
     ///         in the treasury.
     /// @return The USD value of assets held in the treasury.
-    function totalValuation() external view returns (uint) {
+    function totalValuation() external view returns (uint256) {
         return _supplyTarget();
     }
 
     /// @inheritdoc IERC721Receiver
-    function onERC721Received(
-        address,
-        address,
-        uint,
-        bytes calldata
-    ) external pure returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -656,12 +576,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Computes the total valuation of assets held in the treasury and
     ///      uses that value as KTT's supply target.
     /// @dev Has to be in same decimal precision as token, i.e. 18.
-    function _supplyTarget()
-        internal
-        view
-        override(ElasticReceiptToken)
-        returns (uint)
-    {
+    function _supplyTarget() internal view override(ElasticReceiptToken) returns (uint256) {
         // Return the total valuation of assets in the treasury.
         return _treasuryERC20sValuation() + _treasuryERC721IdsValuation();
     }
@@ -679,7 +594,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param data The call data.
     function executeTx(address target, bytes memory data) external onlyOwner {
         bool success;
-        (success, /*returnData*/) = target.call(data);
+        (success, /*returnData*/ ) = target.call(data);
         require(success);
     }
 
@@ -698,11 +613,12 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc20 The address of the erc20 token.
     /// @param recipient The recipient address.
     /// @param amount The amount of the erc20 to withdraw.
-    function withdrawERC20(
-        address erc20,
-        address recipient,
-        uint amount
-    ) external validAmount(amount) validRecipient(recipient) onlyOwner {
+    function withdrawERC20(address erc20, address recipient, uint256 amount)
+        external
+        validAmount(amount)
+        validRecipient(recipient)
+        onlyOwner
+    {
         // Make sure that asset's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -732,11 +648,11 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
     /// @param recipient The recipient address.
-    function withdrawERC721Id(
-        address erc721,
-        uint id,
-        address recipient
-    ) external validRecipient(recipient) onlyOwner {
+    function withdrawERC721Id(address erc721, uint256 id, address recipient)
+        external
+        validRecipient(recipient)
+        onlyOwner
+    {
         // Make sure that erc721's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc721.code.length != 0);
@@ -760,12 +676,10 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param oracle The address of the erc20's oracle.
     /// @param assetType The type of the asset
     /// @param riskLevel The level  of risk of the asset
-    function registerERC20(
-        address erc20,
-        address oracle,
-        AssetType assetType,
-        RiskLevel riskLevel
-    ) external onlyOwner {
+    function registerERC20(address erc20, address oracle, AssetType assetType, RiskLevel riskLevel)
+        external
+        onlyOwner
+    {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -783,7 +697,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         require(oldOracle == address(0));
 
         // Query oracle.
-        uint priceWad;
+        uint256 priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
@@ -793,10 +707,10 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         }
 
         // Revert if asset type is invalid.
-        require(uint(assetType) <= uint(type(AssetType).max));
+        require(uint256(assetType) <= uint256(type(AssetType).max));
 
         // Revert if risk level is invalid.
-        require(uint(riskLevel) <= uint(type(RiskLevel).max));
+        require(uint256(riskLevel) <= uint256(type(RiskLevel).max));
 
         // Add erc20 and its oracle and asset type to storage.
         registeredERC20s.push(erc20);
@@ -813,11 +727,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
     /// @param oracle The address of the erc721Id's oracle.
-    function registerERC721Id(
-        address erc721,
-        uint id,
-        address oracle
-    ) external onlyOwner {
+    function registerERC721Id(address erc721, uint256 id, address oracle) external onlyOwner {
         // Make sure that erc721's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc721.code.length != 0);
@@ -835,17 +745,13 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         require(oldOracle == address(0));
 
         // Query oracle.
-        uint priceWad;
+        uint256 priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
         // Do not accept invalid oracle response or price of zero.
         if (!valid || priceWad == 0) {
-            revert Treasury__StaleERC721IdPriceDeliveredByOracle(
-                erc721,
-                id,
-                oracle
-            );
+            revert Treasury__StaleERC721IdPriceDeliveredByOracle(erc721, id, oracle);
         }
 
         // Add erc721Id and oracle to storage.
@@ -872,8 +778,8 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         delete riskLevelOfERC20[erc20];
 
         // Remove erc20 from registeredERC20s array.
-        uint len = registeredERC20s.length;
-        for (uint i; i < len; ) {
+        uint256 len = registeredERC20s.length;
+        for (uint256 i; i < len;) {
             if (erc20 == registeredERC20s[i]) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
@@ -885,7 +791,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
                 break;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -893,7 +801,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
-    function deregisterERC721Id(address erc721, uint id) external onlyOwner {
+    function deregisterERC721Id(address erc721, uint256 id) external onlyOwner {
         // Do nothing if erc721Id is already not supported.
         // Note that we do not use the isRegistered modifier to be idempotent.
         if (oraclePerERC721Id[erc721][id] == address(0)) {
@@ -904,12 +812,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         delete oraclePerERC721Id[erc721][id];
 
         // Remove erc721Id from registeredERC721Ids array.
-        uint len = registeredERC721Ids.length;
-        for (uint i; i < len; ) {
-            if (
-                erc721 == registeredERC721Ids[i].erc721 &&
-                id == registeredERC721Ids[i].id
-            ) {
+        uint256 len = registeredERC721Ids.length;
+        for (uint256 i; i < len;) {
+            if (erc721 == registeredERC721Ids[i].erc721 && id == registeredERC721Ids[i].id) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
                     registeredERC721Ids[i] = registeredERC721Ids[len - 1];
@@ -920,7 +825,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
                 break;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -928,11 +835,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The erc20 token to update the oracle for.
     /// @param oracle The new erc20's oracle.
-    function updateERC20Oracle(address erc20, address oracle)
-        external
-        isRegisteredERC20(erc20)
-        onlyOwner
-    {
+    function updateERC20Oracle(address erc20, address oracle) external isRegisteredERC20(erc20) onlyOwner {
         // Cache old oracle.
         address oldOracle = oraclePerERC20[erc20];
 
@@ -942,7 +845,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         }
 
         // Query new oracle.
-        uint priceWad;
+        uint256 priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
@@ -961,11 +864,11 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
     /// @param oracle The new erc721Id's oracle.
-    function updateERC721IdOracle(
-        address erc721,
-        uint id,
-        address oracle
-    ) external isRegisteredERC721Id(erc721, id) onlyOwner {
+    function updateERC721IdOracle(address erc721, uint256 id, address oracle)
+        external
+        isRegisteredERC721Id(erc721, id)
+        onlyOwner
+    {
         // Cache old oracle.
         address oldOracle = oraclePerERC721Id[erc721][id];
 
@@ -975,17 +878,13 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
         }
 
         // Query new oracle.
-        uint priceWad;
+        uint256 priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
         // Do not accept invalid oracle response or price of zero.
         if (!valid || priceWad == 0) {
-            revert Treasury__StaleERC721IdPriceDeliveredByOracle(
-                erc721,
-                id,
-                oracle
-            );
+            revert Treasury__StaleERC721IdPriceDeliveredByOracle(erc721, id, oracle);
         }
 
         // Update erc721Id's oracle and notify off-chain services.
@@ -999,11 +898,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Lists an erc20 as bondable.
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token to list as bondable.
-    function listERC20AsBondable(address erc20)
-        public
-        isRegisteredERC20(erc20)
-        onlyOwner
-    {
+    function listERC20AsBondable(address erc20) public isRegisteredERC20(erc20) onlyOwner {
         // Do nothing if erc20 is already listed as bondable.
         if (isERC20Bondable[erc20]) {
             return;
@@ -1019,11 +914,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
-    function listERC721IdAsBondable(address erc721, uint id)
-        public
-        isRegisteredERC721Id(erc721, id)
-        onlyOwner
-    {
+    function listERC721IdAsBondable(address erc721, uint256 id) public isRegisteredERC721Id(erc721, id) onlyOwner {
         // Do nothing if erc721Id is already listed as bondable.
         if (isERC721IdBondable[erc721][id]) {
             return;
@@ -1038,11 +929,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Delists an erc20 as bondable.
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token to delist as bondable.
-    function delistERC20AsBondable(address erc20)
-        external
-        isRegisteredERC20(erc20)
-        onlyOwner
-    {
+    function delistERC20AsBondable(address erc20) external isRegisteredERC20(erc20) onlyOwner {
         // Do nothing if erc20 is already delisted as bondable.
         if (!isERC20Bondable[erc20]) {
             return;
@@ -1058,11 +945,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
-    function delistERC721IdAsBondable(address erc721, uint id)
-        external
-        isRegisteredERC721Id(erc721, id)
-        onlyOwner
-    {
+    function delistERC721IdAsBondable(address erc721, uint256 id) external isRegisteredERC721Id(erc721, id) onlyOwner {
         // Do nothing if erc721Id is already delisted as bondable.
         if (!isERC721IdBondable[erc721][id]) {
             return;
@@ -1077,11 +960,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Lists an erc20 as redeemable.
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token to list as redeemable.
-    function listERC20AsRedeemable(address erc20)
-        public
-        isRegisteredERC20(erc20)
-        onlyOwner
-    {
+    function listERC20AsRedeemable(address erc20) public isRegisteredERC20(erc20) onlyOwner {
         // Do nothing if erc20 is already listed as redeemable.
         if (isERC20Redeemable[erc20]) {
             return;
@@ -1097,11 +976,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
-    function listERC721IdAsRedeemable(address erc721, uint id)
-        public
-        isRegisteredERC721Id(erc721, id)
-        onlyOwner
-    {
+    function listERC721IdAsRedeemable(address erc721, uint256 id) public isRegisteredERC721Id(erc721, id) onlyOwner {
         // Do nothing if erc721Id is already listed as redeemable.
         if (isERC721IdRedeemable[erc721][id]) {
             return;
@@ -1116,11 +991,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @notice Delists an erc20 as redeemable.
     /// @dev Only callable by owner.
     /// @param erc20 The address of the erc20 token to delist as redeemable.
-    function delistERC20AsRedeemable(address erc20)
-        external
-        isRegisteredERC20(erc20)
-        onlyOwner
-    {
+    function delistERC20AsRedeemable(address erc20) external isRegisteredERC20(erc20) onlyOwner {
         // Do nothing if erc20 is already delisted as redeemable.
         if (!isERC20Redeemable[erc20]) {
             return;
@@ -1136,11 +1007,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc721 The address of the erc721Id instance.
     /// @param id The id of the erc721Id instance.
-    function delistERC20AsRedeemable(address erc721, uint id)
-        external
-        isRegisteredERC721Id(erc721, id)
-        onlyOwner
-    {
+    function delistERC20AsRedeemable(address erc721, uint256 id) external isRegisteredERC721Id(erc721, id) onlyOwner {
         // Do nothing if erc721 is already delisted as redeemable.
         if (!isERC721IdRedeemable[erc721][id]) {
             return;
@@ -1157,11 +1024,8 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param limit The upper balance limit for the ERC20 token.
-    function setERC20BondingLimit(address erc20, uint limit)
-        public
-        onlyOwner
-    {
-        uint oldLimit = bondingLimitPerERC20[erc20];
+    function setERC20BondingLimit(address erc20, uint256 limit) public onlyOwner {
+        uint256 oldLimit = bondingLimitPerERC20[erc20];
 
         if (limit != oldLimit) {
             emit SetERC20BondingLimit(erc20, oldLimit, limit);
@@ -1174,8 +1038,8 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param limit The lower balance limit for the ERC20 token.
-    function setERC20RedeemLimit(address erc20, uint limit) public onlyOwner {
-        uint oldLimit = redeemLimitPerERC20[erc20];
+    function setERC20RedeemLimit(address erc20, uint256 limit) public onlyOwner {
+        uint256 oldLimit = redeemLimitPerERC20[erc20];
 
         if (limit != oldLimit) {
             emit SetERC20RedeemLimit(erc20, oldLimit, limit);
@@ -1191,17 +1055,14 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param limit The bonding limit for the ERC20 token.
-    function setupAndListERC20Bond(
-        address erc20, 
-        uint limit
-    ) external onlyOwner {
+    function setupAndListERC20Bond(address erc20, uint256 limit) external onlyOwner {
         // List ERC20 as bondable if it isn't already
-        if(!isERC20Bondable[erc20]) {
+        if (!isERC20Bondable[erc20]) {
             listERC20AsBondable(erc20);
         }
 
         // Set the ERC20's limit if it isn't already
-        if(bondingLimitPerERC20[erc20] != limit) {
+        if (bondingLimitPerERC20[erc20] != limit) {
             setERC20BondingLimit(erc20, limit);
         }
     }
@@ -1211,17 +1072,14 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Only callable by owner.
     /// @param erc20 The ERC20 token address.
     /// @param limit The redeem limit for the ERC20 token.
-     function setupAndListERC20Redemption(
-        address erc20, 
-        uint limit
-    ) external onlyOwner {
+    function setupAndListERC20Redemption(address erc20, uint256 limit) external onlyOwner {
         // List ERC20 as redeemable if it isn't already
-        if(!isERC20Redeemable[erc20]) {
+        if (!isERC20Redeemable[erc20]) {
             listERC20AsRedeemable(erc20);
         }
 
         // Set the ERC20's limit if it isn't already
-        if(redeemLimitPerERC20[erc20] != limit) {
+        if (redeemLimitPerERC20[erc20] != limit) {
             setERC20RedeemLimit(erc20, limit);
         }
     }
@@ -1231,12 +1089,12 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @dev Query's the price for given erc20 from the erc20's oracle.
     ///      Reverts in case the oracle or delivered price is invalid.
-    function _queryERC20Price(address erc20) private view returns (uint) {
+    function _queryERC20Price(address erc20) private view returns (uint256) {
         address oracle = oraclePerERC20[erc20];
         assert(oracle != address(0));
 
         // Note that price is returned in 18 decimal precision.
-        uint priceWad;
+        uint256 priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
@@ -1250,43 +1108,35 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @dev Query's the price for given erc721Id from the erc721Id's oracle.
     ///      Reverts in case the oracle or delivered price is invalid.
-    function _queryERC721IdPrice(address erc721, uint id)
-        private
-        view
-        returns (uint)
-    {
+    function _queryERC721IdPrice(address erc721, uint256 id) private view returns (uint256) {
         address oracle = oraclePerERC721Id[erc721][id];
         assert(oracle != address(0));
 
         // Note that price is returned in 18 decimal precision.
-        uint priceWad;
+        uint256 priceWad;
         bool valid;
         (priceWad, valid) = IOracle(oracle).getData();
 
         // Revert if oracle is invalid or price is zero.
         if (!valid || priceWad == 0) {
-            revert Treasury__StaleERC721IdPriceDeliveredByOracle(
-                erc721,
-                id,
-                oracle
-            );
+            revert Treasury__StaleERC721IdPriceDeliveredByOracle(erc721, id, oracle);
         }
 
         return priceWad;
     }
 
     /// @dev Returns the total valuation of ERC20 assets held in the treasury.
-    function _treasuryERC20sValuation() internal view returns (uint) {
+    function _treasuryERC20sValuation() internal view returns (uint256) {
         // Declare variables outside of loop to save gas.
         address erc20;
-        uint erc20Balance;
-        uint erc20BalanceWad;
+        uint256 erc20Balance;
+        uint256 erc20BalanceWad;
 
         // The total valuation of erc20's in the treasury.
-        uint totalWad;
+        uint256 totalWad;
 
-        uint len = registeredERC20s.length;
-        for (uint i; i < len; ) {
+        uint256 len = registeredERC20s.length;
+        for (uint256 i; i < len;) {
             erc20 = registeredERC20s[i];
             erc20Balance = ERC20(erc20).balanceOf(address(this));
 
@@ -1295,7 +1145,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked { ++i; }
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
@@ -1305,7 +1157,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
             erc20BalanceWad = Wad.convertToWad(erc20, erc20Balance);
             totalWad += (erc20BalanceWad * _queryERC20Price(erc20)) / 1e18;
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Return the total valuation of erc20's in the treasury.
@@ -1314,16 +1168,16 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
 
     /// @dev Returns the total valuation of ERC721Id assets held in the
     ///      treasury.
-    function _treasuryERC721IdsValuation() internal view returns (uint) {
+    function _treasuryERC721IdsValuation() internal view returns (uint256) {
         // Declare variables outside of loop to save gas.
         address erc721;
-        uint id;
+        uint256 id;
 
         // The total valuation of erc721Ids's in the treasury.
-        uint totalWad;
+        uint256 totalWad;
 
-        uint len = registeredERC721Ids.length;
-        for (uint i; i < len; ) {
+        uint256 len = registeredERC721Ids.length;
+        for (uint256 i; i < len;) {
             erc721 = registeredERC721Ids[i].erc721;
             id = registeredERC721Ids[i].id;
 
@@ -1333,7 +1187,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked { ++i; }
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
@@ -1341,7 +1197,9 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
             // Add the erc721Id's valuation to the total valuation
             totalWad += _queryERC721IdPrice(erc721, id);
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Return the total valuation of erc721Id's in the treasury.

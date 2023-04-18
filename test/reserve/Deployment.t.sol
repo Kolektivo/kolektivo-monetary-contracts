@@ -30,6 +30,7 @@ contract ReserveDeployment is ReserveTest {
         new Reserve(
             address(1), // Does not have any code
             address(tokenOracle),
+            address(vestingVault),
             DEFAULT_MIN_BACKING
         );
     }

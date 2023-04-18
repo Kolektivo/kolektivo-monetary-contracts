@@ -10,7 +10,7 @@ import "src/Reserve.sol";
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
 import {ERC721Mock} from "../utils/mocks/ERC721Mock.sol";
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
-// import {VestingVaultMock} from "../utils/mocks/VestingVaultMock.sol";
+import {TimeLockVaultMock} from "../utils/mocks/TimeLockVaultMock.sol";
 
 /**
  * Errors library for Reserve's custom errors.
@@ -61,7 +61,7 @@ contract ReserveTest is Test, IERC721Receiver {
     // Mocks.
     ERC20Mock token; // The reserve token
     OracleMock tokenOracle; // The reserve token's price oracle
-    // VestingVaultMock vestingVault;    // The vesting vault for ERC20 bondings
+    TimeLockVaultMock vestingVault;    // The vesting vault for ERC20 bondings
     ERC721Mock nft; // A ERC721 contract
     OracleMock defaultERC721IdOracle; // The default ERC721Id's price oracle
 
@@ -76,9 +76,10 @@ contract ReserveTest is Test, IERC721Receiver {
 
     function setUp() public {
         token = new ERC20Mock("RTKN", "Reserve Token", uint8(18));
-
+        vestingVault = new TimeLockVaultMock();
         tokenOracle = new OracleMock();
         tokenOracle.setDataAndValid(1e18, true);
+
 
         // vestingVault = new VestingVaultMock(address(token));
 
@@ -93,6 +94,7 @@ contract ReserveTest is Test, IERC721Receiver {
         reserve = new Reserve(
             address(token),
             address(tokenOracle),
+            address(vestingVault),
             DEFAULT_MIN_BACKING
         );
     }

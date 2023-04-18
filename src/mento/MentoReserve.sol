@@ -204,7 +204,10 @@ contract MentoReserve is
         // TODO: Change "cGLD" to "CELO" in this file, after ensuring that any
         // off chain tools working with asset allocation weights are aware of this
         // change.
-        require(assetAllocationWeights["cGLD"] != 0, "Must set cGLD asset weight");
+        
+        // NOTE: commented this out as this fork will not be using cGLD
+        //require(assetAllocationWeights["cGLD"] != 0, "Must set cGLD asset weight");
+
         emit AssetAllocationSet(symbols, weights);
     }
 

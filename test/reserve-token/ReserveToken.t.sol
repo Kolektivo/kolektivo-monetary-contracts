@@ -34,7 +34,7 @@ contract ReserveTokenTest is Test {
     event UpdateMintBurner(address indexed mintBurner, bool newStatus);
 
     function setUp() public {
-        token = new ReserveToken("Reserve Token", "RT", address(this));
+        token = new ReserveToken("Reserve Token", "RT");
     }
 
     function testDeployment() public {

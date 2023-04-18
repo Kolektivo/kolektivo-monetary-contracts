@@ -45,7 +45,8 @@ contract DeployReserveToken is Script {
         // Deploy the ReserveToken.
         vm.startBroadcast();
         {
-            token = new ReserveToken(name, symbol, mintBurner);
+            token = new ReserveToken(name, symbol);
+            token.setMintBurner(mintBurner, true);
         }
         vm.stopBroadcast();
 

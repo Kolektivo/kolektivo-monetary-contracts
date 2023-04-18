@@ -16,7 +16,7 @@ contract ERC721Mock is ERC721 {
         super._burn(id);
     }
 
-    function tokenURI(uint256 id) public view override(ERC721) returns (string memory) {
+    function tokenURI(uint256 id) public view override (ERC721) returns (string memory) {
         return "";
     }
 }

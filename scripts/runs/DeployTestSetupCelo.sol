@@ -7,21 +7,31 @@ import "../DeployGeoNFT.s.sol";
 import "../DeployReserveToken.s.sol";
 import "../DeployReserve.s.sol";
 import "../DeployTreasury.s.sol";
+import "../DeployMento.s.sol";
 import "../mocks/DeployERC20Mock.s.sol";
 
 import "../testnet/Setup.s.sol";
 import "../testnet/IncurDebt.s.sol";
 import "../testnet/BondAssetsIntoReserve.s.sol";
 import "../testnet/BondAssetsIntoTreasury.s.sol";
+
+import {Registry} from "../../src/mento/MentoRegistry.sol";
+
 contract DeployTestSetupCelo is Script {
 
     function run() external {
+        // Push the Timestamp forward 1.5m blocks if we are on a local test node,
+        // otherwise the Oracle expiry values will underflow since the local
+        // node starts at timestamp 0
+        vm.warp(1500000);
+
         DeployOracle deployOracle = new DeployOracle();
         DeployERC20Mock deployERC20Mock = new DeployERC20Mock();
         DeployGeoNFT deployGeoNFT = new DeployGeoNFT();
         DeployReserveToken deployReserveToken = new DeployReserveToken();
         DeployReserve deployReserve = new DeployReserve();
         DeployTreasury deployTreasury = new DeployTreasury(); 
+        DeployMento deployMento = new DeployMento();
 
         Setup setup = new Setup();
         IncurDebt incurDebt = new IncurDebt();
@@ -31,8 +41,7 @@ contract DeployTestSetupCelo is Script {
 
         console2.log("Running deployment script, deploying a testnet scenario to Celo.");
 
-
-        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", "1660744843");
+        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", "7200");
         vm.setEnv("DEPLOYMENT_ORACLE_REPORT_DELAY", "0");
         vm.setEnv("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS", "1");
         deployOracle.run();
@@ -85,6 +94,17 @@ contract DeployTestSetupCelo is Script {
         deployTreasury.run();
         vm.setEnv("DEPLOYMENT_TREASURY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
 
+        vm.setEnv("DEPLOYMENT_MENTO_TOKEN_NAME", "Kolektivo Curacao Test Guilder");
+        vm.setEnv("DEPLOYMENT_MENTO_TOKEN_SYMBOL", "kG-T");
+        deployMento.run();
+        vm.setEnv("DEPLOYMENT_MENTO_REGISTRY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        Registry mentoRegistry = Registry(vm.envAddress("DEPLOYMENT_MENTO_REGISTRY"));
+        address mentoExchange = mentoRegistry.getAddressForStringOrDie("Exchange");
+        address mentoToken = mentoRegistry.getAddressForStringOrDie(vm.envString("DEPLOYMENT_MENTO_TOKEN_SYMBOL"));
+        address mentoReserve = mentoRegistry.getAddressForStringOrDie("Reserve");
+        address mentoFreezer = mentoRegistry.getAddressForStringOrDie("Freezer");
+        vm.setEnv("DEPLOYMENT_MENTO_TOKEN", vm.toString(mentoToken));
+
 
         setup.run();
 
@@ -118,6 +138,14 @@ contract DeployTestSetupCelo is Script {
         console2.log("| Oracle: Treasury Token |", vm.envString("DEPLOYMENT_TREASURY_TOKEN_ORACLE") ,"|");
         console2.log("| Oracle: Reserve Token  |", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE") ,"|");
         console2.log(" ");
+        console2.log("| Mento Contracts        | Address                                    |");
+        console2.log("| ---------------------- | ------------------------------------------ |");
+        console2.log("| Registry               |",address(mentoRegistry) ,"|");
+        console2.log("| Reserve                |", mentoReserve ,"|");
+        console2.log("| Exchange               |", mentoExchange ,"|");
+        console2.log("| Freezer                |", mentoFreezer ,"|");
+        console2.log("| Token                  |", mentoToken ,"|");
+        console2.log(" ");
         console2.log("| Other Contracts        | Address                                    |");
         console2.log("| ---------------------- | ------------------------------------------ |");
         console2.log("| ERC20 Mock Token 1     |", vm.envString("DEPLOYMENT_MOCK_TOKEN_1") ,"|");
@@ -142,7 +170,9 @@ contract DeployTestSetupCelo is Script {
         exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MOCK_TOKEN_2_ORACLE=", vm.envString("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"), " && "));
         exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MOCK_TOKEN_3_ORACLE=", vm.envString("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"), " && "));
         exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_GEO_NFT_1_ORACLE=", vm.envString("DEPLOYMENT_GEO_NFT_1_ORACLE"), " && "));
-        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_GEO_NFT_2_ORACLE=", vm.envString("DEPLOYMENT_GEO_NFT_2_ORACLE")));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_GEO_NFT_2_ORACLE=", vm.envString("DEPLOYMENT_GEO_NFT_2_ORACLE"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MENTO_TOKEN=", vm.envString("DEPLOYMENT_MENTO_TOKEN"), " && "));
+        exportValues = string(abi.encodePacked(exportValues, "export DEPLOYMENT_MENTO_REGISTRY=", vm.envString("DEPLOYMENT_MENTO_REGISTRY")));
         console2.log(exportValues);
         
     }

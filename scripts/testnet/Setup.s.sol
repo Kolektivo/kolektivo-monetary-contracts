@@ -49,16 +49,16 @@ contract Setup is Script {
             geoNFT1Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
             geoNFT2Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
             
-            address ownOracle = vm.envAddress("OWN_ORACLE_ADDRESS");
-            if(ownOracle != address(0)) {
-                treasuryOracle.addProvider(ownOracle);
-                reserveOracle.addProvider(ownOracle);
-                erc20Mock1Oracle.addProvider(ownOracle);
-                erc20Mock2Oracle.addProvider(ownOracle);
-                erc20Mock3Oracle.addProvider(ownOracle);
-                geoNFT1Oracle.addProvider(ownOracle);
-                geoNFT2Oracle.addProvider(ownOracle);
-            }
+            // address ownOracle = vm.envAddress("OWN_ORACLE_ADDRESS");
+            // if(ownOracle != address(0)) {
+            //     treasuryOracle.addProvider(ownOracle);
+            //     reserveOracle.addProvider(ownOracle);
+            //     erc20Mock1Oracle.addProvider(ownOracle);
+            //     erc20Mock2Oracle.addProvider(ownOracle);
+            //     erc20Mock3Oracle.addProvider(ownOracle);
+            //     geoNFT1Oracle.addProvider(ownOracle);
+            //     geoNFT2Oracle.addProvider(ownOracle);
+            // }
         }
         vm.stopBroadcast();
     }

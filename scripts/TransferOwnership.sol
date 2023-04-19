@@ -17,32 +17,25 @@ import {Oracle} from "../src/Oracle.sol";
  *      - TRUSTED_OWNER
  */
 contract TransferOwnership is Script {
-
     function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Treasury treasury = Treasury(vm.envAddress("DEPLOYMENT_TREASURY"));
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         ReserveToken reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
         Oracle treasuryOracle = Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
         Oracle reserveOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
-        Oracle erc20Mock1Oracle =
-            Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
-        Oracle erc20Mock2Oracle =
-            Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"));
-        Oracle erc20Mock3Oracle =
-            Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"));
+        Oracle erc20Mock1Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
+        Oracle erc20Mock2Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"));
+        Oracle erc20Mock3Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"));
         Oracle geoNFT1Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_1_ORACLE"));
         Oracle geoNFT2Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_2_ORACLE"));
 
         // Read owner settings from environment variables.
         address newOwner = vm.envAddress("NEW_OWNER");
-        require(
-            newOwner != address(0),
-            "DeployTreasury: Missing env variable: trusted owner"
-        );
-
+        require(newOwner != address(0), "DeployTreasury: Missing env variable: trusted owner");
 
         // Initiate owner switch.
-        vm.startBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
         {
             treasury.setPendingOwner(newOwner);
             reserve.setPendingOwner(newOwner);
@@ -58,10 +51,7 @@ contract TransferOwnership is Script {
         vm.stopBroadcast();
 
         // Check initiation of owner switch.
-        require(
-            reserveOracle.pendingOwner() == newOwner,
-            "DeployTreasury: Initiating owner switch failed"
-        );
+        require(reserveOracle.pendingOwner() == newOwner, "DeployTreasury: Initiating owner switch failed");
 
         // Log successful initiation of the owner switch.
         console2.log("Owner switch succesfully initiated to address", newOwner);

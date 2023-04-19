@@ -22,28 +22,18 @@ contract DeployReserveToken is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         string memory name = vm.envString("DEPLOYMENT_RESERVE_TOKEN_NAME");
         string memory symbol = vm.envString("DEPLOYMENT_RESERVE_TOKEN_SYMBOL");
-        address mintBurner = vm.envAddress(
-            "DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER"
-        );
+        address mintBurner = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER");
 
         // Check settings.
-        require(
-            bytes(name).length != 0,
-            "DeployReserveToken: Missing env variable: name"
-        );
-        require(
-            bytes(symbol).length != 0,
-            "DeployReserveToken: Missing env variable: symbol"
-        );
-        require(
-            mintBurner != address(0),
-            "DeployReserveToken: Missing env variable: mint burner"
-        );
+        require(bytes(name).length != 0, "DeployReserveToken: Missing env variable: name");
+        require(bytes(symbol).length != 0, "DeployReserveToken: Missing env variable: symbol");
+        require(mintBurner != address(0), "DeployReserveToken: Missing env variable: mint burner");
 
         // Deploy the ReserveToken.
-        vm.startBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
         {
             token = new ReserveToken(name, symbol);
             token.setMintBurner(mintBurner, true);

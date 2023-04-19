@@ -19,33 +19,20 @@ contract DeployReserve is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address token = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         address tokenOracle = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE");
-        address vestingVault = vm.envAddress(
-            "DEPLOYMENT_RESERVE_VESTING_VAULT"
-        );
-        uint minBacking = vm.envUint("DEPLOYMENT_RESERVE_MIN_BACKING");
+        address vestingVault = vm.envAddress("DEPLOYMENT_RESERVE_VESTING_VAULT");
+        uint256 minBacking = vm.envUint("DEPLOYMENT_RESERVE_MIN_BACKING");
 
         // Check settings.
-        require(
-            token != address(0),
-            "DeployReserve: Missing env variable: token"
-        );
-        require(
-            tokenOracle != address(0),
-            "DeployReserve: Missing env variable: token oracle"
-        );
-        require(
-            vestingVault != address(0),
-            "DeployReserve: Missing env variable: vesting vault"
-        );
-        require(
-            minBacking != 0,
-            "DeployReserve: Missing env variable: min backing"
-        );
+        require(token != address(0), "DeployReserve: Missing env variable: token");
+        require(tokenOracle != address(0), "DeployReserve: Missing env variable: token oracle");
+        require(vestingVault != address(0), "DeployReserve: Missing env variable: vesting vault");
+        require(minBacking != 0, "DeployReserve: Missing env variable: min backing");
 
         // Deploy the Reserve.
-        vm.startBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
         {
             reserve = new Reserve(token, tokenOracle, vestingVault, minBacking);
         }
@@ -53,6 +40,9 @@ contract DeployReserve is Script {
 
         // Store deployment address in env
         vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(reserve)));
+
+        // Possible command for verifying
+        // forge verify-contract 0xdc43e196c5057355e3f8b4c2e998ca5874d43546 StableTokenKG --chain ID?
 
         // Log the deployed Reserve contract address.
         console2.log("Deployment of Reserve at address", address(reserve));

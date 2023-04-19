@@ -24,14 +24,8 @@ contract DeployGeoNFT is Script {
         string memory symbol = vm.envString("DEPLOYMENT_GEONFT_SYMBOL");
 
         // Check settings.
-        require(
-            bytes(name).length != 0,
-            "DeployGeoNFT: Missing env variable: name"
-        );
-        require(
-            bytes(symbol).length != 0,
-            "DeployGeoNFT: Missing env variable: symbol"
-        );
+        require(bytes(name).length != 0, "DeployGeoNFT: Missing env variable: name");
+        require(bytes(symbol).length != 0, "DeployGeoNFT: Missing env variable: symbol");
 
         // Deploy the GeoNFT.
         vm.startBroadcast();

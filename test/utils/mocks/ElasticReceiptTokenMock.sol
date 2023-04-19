@@ -16,7 +16,7 @@ contract ElasticReceiptTokenMock is ElasticReceiptToken {
         underlier = underlier_;
     }
 
-    function _supplyTarget() internal view override (ElasticReceiptToken) returns (uint256) {
+    function _supplyTarget() internal view override(ElasticReceiptToken) returns (uint256) {
         return ERC20(underlier).balanceOf(address(this));
     }
 

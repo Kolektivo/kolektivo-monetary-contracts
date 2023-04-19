@@ -3,6 +3,7 @@ pragma solidity 0.8.10;
 import "forge-std/Script.sol";
 
 import {Reserve} from "../src/Reserve.sol";
+import {TimeLockVault} from "../src/vesting/TimeLockVault.sol";
 
 /**
  * @title Reserve Deployment Script
@@ -21,32 +22,18 @@ contract DeployReserve is Script {
         // Read deployment settings from environment variables.
         address token = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         address tokenOracle = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE");
-        address vestingVault = vm.envAddress(
-            "DEPLOYMENT_RESERVE_VESTING_VAULT"
-        );
-        uint minBacking = vm.envUint("DEPLOYMENT_RESERVE_MIN_BACKING");
+        uint256 minBacking = vm.envUint("DEPLOYMENT_RESERVE_MIN_BACKING");
 
         // Check settings.
-        require(
-            token != address(0),
-            "DeployReserve: Missing env variable: token"
-        );
-        require(
-            tokenOracle != address(0),
-            "DeployReserve: Missing env variable: token oracle"
-        );
-        require(
-            vestingVault != address(0),
-            "DeployReserve: Missing env variable: vesting vault"
-        );
-        require(
-            minBacking != 0,
-            "DeployReserve: Missing env variable: min backing"
-        );
+        require(token != address(0), "DeployReserve: Missing env variable: token");
+        require(tokenOracle != address(0), "DeployReserve: Missing env variable: token oracle");
+        require(minBacking != 0, "DeployReserve: Missing env variable: min backing");
 
         // Deploy the Reserve.
         vm.startBroadcast();
         {
+            address vestingVault = address(new TimeLockVault());
+            require(vestingVault != address(0), "DeployReserve: Error during VestingVault deployment");
             reserve = new Reserve(token, tokenOracle, vestingVault, minBacking);
         }
         vm.stopBroadcast();

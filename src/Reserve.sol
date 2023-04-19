@@ -249,7 +249,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(address token_, address tokenOracle_, uint256 minBacking_) {
+    constructor(address token_, address tokenOracle_, address vestingVault_, uint256 minBacking_) {
         // Check token's validity.
         require(token_.code.length != 0);
 
@@ -257,6 +257,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         _token = IERC20MintBurn(token_);
         tokenOracle = tokenOracle_;
         minBacking = minBacking_;
+        timeLockVault = vestingVault_;
+
 
         // Notify off-chain services.
         emit SetTokenOracle(address(0), tokenOracle_);

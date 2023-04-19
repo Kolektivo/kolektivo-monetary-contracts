@@ -74,8 +74,7 @@ contract ReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(string memory name, string memory symbol) ERC20(name, symbol, uint8(18)) {
-    }
+    constructor(string memory name, string memory symbol) ERC20(name, symbol, uint8(18)) {}
 
     //--------------------------------------------------------------------------
     // onlyWhitelisted Mutating Functions

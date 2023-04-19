@@ -35,6 +35,7 @@ contract ReserveTokenTest is Test {
 
     function setUp() public {
         token = new ReserveToken("Reserve Token", "RT");
+        token.setMintBurner(address(this), true);
     }
 
     function testDeployment() public {

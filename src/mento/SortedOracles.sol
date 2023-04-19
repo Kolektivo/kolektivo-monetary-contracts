@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "@oz/access/Ownable.sol";
+import "@oz-up/access/OwnableUpgradeable.sol";
 
 import "./lib/ISortedOracles.sol";
 import "./lib/ICeloVersionedContract.sol";
 import "./lib/IBreakerBox.sol";
 
 import "./lib/FixidityLib.sol";
-import "./lib/Initializable.sol";
 import "./lib/AddressSortedLinkedListWithMedian.sol";
 import "./lib/SortedLinkedListWithMedian.sol";
 
@@ -36,7 +35,7 @@ import "./lib/SortedLinkedListWithMedian.sol";
  *          protocol documentation to learn more about the rateFeedId and how it is derived.
  *
  */
-contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initializable {
+contract SortedOracles is ISortedOracles, ICeloVersionedContract, OwnableUpgradeable {
     using AddressSortedLinkedListWithMedian for SortedLinkedListWithMedian.List;
     using FixidityLib for FixidityLib.Fraction;
 
@@ -87,9 +86,11 @@ contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initi
 
     /**
      * @notice Sets initialized == true on implementation contracts
-     * @param test Set to true to skip implementation initialization
+     * @param isImplementation Set to true to lock he initialization
      */
-    constructor(bool test) public Initializable(test) {}
+    constructor(bool isImplementation) {
+        if (isImplementation) _disableInitializers();
+    }
 
     /**
      * @notice Used in place of the constructor to allow the contract to be upgradable via proxy.

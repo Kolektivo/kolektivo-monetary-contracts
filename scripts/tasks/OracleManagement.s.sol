@@ -25,3 +25,22 @@ contract AddProvider is Script {
         );
     }
 }
+
+contract GetData is Script {
+    function run() external {
+        // Get env variables
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
+        uint256 price;
+        bool valid;
+
+        // Set new DataProvider to Oracle
+        vm.startBroadcast(deployerPrivateKey);
+        {
+            (price, valid) = oracle.getData();
+        }
+        vm.stopBroadcast();
+
+        console2.log("Pushed price in Oracle ", vm.envString("TASK_ORACLE"), "is ", price);
+    }
+}

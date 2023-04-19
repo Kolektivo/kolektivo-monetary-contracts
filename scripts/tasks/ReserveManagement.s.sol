@@ -35,7 +35,7 @@ contract RegisterERC20 is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         address erc20 = vm.envAddress("TASK_REGISTERERC20_TOKEN");
-        address oracle = vm.envAddress("TASK_REGISTER_ERC20_ORACLE");
+        address oracle = vm.envAddress("TASK_ORACLE");
 
         IReserve.AssetType tokenAssetType = IReserve.AssetType.Stable;
         IReserve.RiskLevel tokenRiskLevel = IReserve.RiskLevel.Low;

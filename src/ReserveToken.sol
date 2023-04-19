@@ -109,13 +109,13 @@ contract ReserveToken is ERC20, TSOwnable {
     // Note that the functions are overidden in order to enforce the validAmount
     // and validRecipient modifiers.
 
-    function approve(address spender, uint256 amount) public override(ERC20) validRecipient(spender) returns (bool) {
+    function approve(address spender, uint256 amount) public override (ERC20) validRecipient(spender) returns (bool) {
         return super.approve(spender, amount);
     }
 
     function transfer(address to, uint256 amount)
         public
-        override(ERC20)
+        override (ERC20)
         validRecipient(to)
         validAmount(amount)
         returns (bool)
@@ -125,7 +125,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     function transferFrom(address from, address to, uint256 amount)
         public
-        override(ERC20)
+        override (ERC20)
         validRecipient(to)
         validAmount(amount)
         returns (bool)

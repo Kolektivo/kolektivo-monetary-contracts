@@ -164,7 +164,7 @@ contract StableTokenKG is
             updatePeriod,
             // solhint-disable-next-line not-rely-on-time
             block.timestamp
-        );
+            );
     }
 
     /**
@@ -347,7 +347,7 @@ contract StableTokenKG is
      * @param accountOwner The address to query the balance of.
      * @return The balance of the specified address.
      */
-    function balanceOf(address accountOwner) public view override(IStableToken, IERC20Upgradeable) returns (uint256) {
+    function balanceOf(address accountOwner) public view override (IStableToken, IERC20Upgradeable) returns (uint256) {
         return unitsToValue(balances[accountOwner]);
     }
 

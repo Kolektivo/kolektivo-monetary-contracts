@@ -138,7 +138,7 @@ contract GeoNFT is ERC721, TSOwnable {
 
     // @todo Issue #24 "What should be the tokens URI?"
     // Need a decision about the URI construction.
-    function tokenURI(uint256 id) public view override(ERC721) returns (string memory) {
+    function tokenURI(uint256 id) public view override (ERC721) returns (string memory) {
         return "";
     }
 

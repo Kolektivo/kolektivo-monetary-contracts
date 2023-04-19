@@ -259,7 +259,6 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         minBacking = minBacking_;
         timeLockVault = vestingVault_;
 
-
         // Notify off-chain services.
         emit SetTokenOracle(address(0), tokenOracle_);
         emit SetMinBacking(0, minBacking_);

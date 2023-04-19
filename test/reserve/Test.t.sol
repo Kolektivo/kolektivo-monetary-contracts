@@ -61,7 +61,7 @@ contract ReserveTest is Test, IERC721Receiver {
     // Mocks.
     ERC20Mock token; // The reserve token
     OracleMock tokenOracle; // The reserve token's price oracle
-    TimeLockVaultMock vestingVault;    // The vesting vault for ERC20 bondings
+    TimeLockVaultMock vestingVault; // The vesting vault for ERC20 bondings
     ERC721Mock nft; // A ERC721 contract
     OracleMock defaultERC721IdOracle; // The default ERC721Id's price oracle
 
@@ -79,7 +79,6 @@ contract ReserveTest is Test, IERC721Receiver {
         vestingVault = new TimeLockVaultMock();
         tokenOracle = new OracleMock();
         tokenOracle.setDataAndValid(1e18, true);
-
 
         // vestingVault = new VestingVaultMock(address(token));
 

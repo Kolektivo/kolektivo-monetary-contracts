@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "../../../lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 import "./LinkedList.sol";
 
 /**
  * @title Maintains a sorted list of unsigned ints keyed by bytes32.
  */
 library SortedLinkedList {
-    using SafeMath for uint256;
     using LinkedList for LinkedList.List;
 
     struct List {
@@ -79,7 +77,7 @@ library SortedLinkedList {
     function popN(List storage list, uint256 n) internal returns (bytes32[] memory) {
         require(n <= list.list.numElements, "not enough elements");
         bytes32[] memory keys = new bytes32[](n);
-        for (uint256 i = 0; i < n; i = i.add(1)) {
+        for (uint256 i = 0; i < n; i++) {
             bytes32 key = list.list.head;
             keys[i] = key;
             remove(list, key);
@@ -116,7 +114,7 @@ library SortedLinkedList {
     function getElements(List storage list) internal view returns (bytes32[] memory, uint256[] memory) {
         bytes32[] memory keys = getKeys(list);
         uint256[] memory values = new uint256[](keys.length);
-        for (uint256 i = 0; i < keys.length; i = i.add(1)) {
+        for (uint256 i = 0; i < keys.length; i++) {
             values[i] = list.values[keys[i]];
         }
         return (keys, values);

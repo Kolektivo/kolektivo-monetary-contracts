@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "../../../lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 import "./LinkedList.sol";
 import "./SortedLinkedList.sol";
 
@@ -9,7 +8,6 @@ import "./SortedLinkedList.sol";
  * @title Maintains a sorted list of unsigned ints keyed by bytes32.
  */
 library SortedLinkedListWithMedian {
-    using SafeMath for uint256;
     using SortedLinkedList for SortedLinkedList.List;
 
     enum MedianAction {
@@ -132,7 +130,7 @@ library SortedLinkedListWithMedian {
     function popN(List storage list, uint256 n) internal returns (bytes32[] memory) {
         require(n <= list.list.list.numElements, "not enough elements");
         bytes32[] memory keys = new bytes32[](n);
-        for (uint256 i = 0; i < n; i = i.add(1)) {
+        for (uint256 i = 0; i < n; i++) {
             bytes32 key = list.list.list.head;
             keys[i] = key;
             remove(list, key);
@@ -220,7 +218,7 @@ library SortedLinkedListWithMedian {
         bytes32[] memory keys = getKeys(list);
         uint256[] memory values = new uint256[](keys.length);
         MedianRelation[] memory relations = new MedianRelation[](keys.length);
-        for (uint256 i = 0; i < keys.length; i = i.add(1)) {
+        for (uint256 i = 0; i < keys.length; i++) {
             values[i] = list.list.values[keys[i]];
             relations[i] = list.relation[keys[i]];
         }

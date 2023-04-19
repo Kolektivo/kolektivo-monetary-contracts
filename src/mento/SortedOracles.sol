@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "../../lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
-import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import "@oz/access/Ownable.sol";
 
 import "./lib/ISortedOracles.sol";
 import "./lib/ICeloVersionedContract.sol";
@@ -38,7 +37,6 @@ import "./lib/SortedLinkedListWithMedian.sol";
  *
  */
 contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initializable {
-    using SafeMath for uint256;
     using AddressSortedLinkedListWithMedian for SortedLinkedListWithMedian.List;
     using FixidityLib for FixidityLib.Fraction;
 
@@ -165,9 +163,10 @@ contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initi
             "token addr null or oracle addr null or index of token oracle not mapped to oracle addr"
         );
         isOracle[token][oracleAddress] = false;
-        oracles[token][index] = oracles[token][oracles[token].length.sub(1)];
-        // Comment out line below because seemed not needed and compile gave error -> old Solidity implementation
-        // oracles[token].length = oracles[token].length.sub(1);
+        if (index != oracles[token].length - 1) {
+            oracles[token][index] = oracles[token][oracles[token].length - 1];
+        }
+        oracles[token].pop();
         if (reportExists(token, oracleAddress)) {
             removeReport(token, oracleAddress);
         }
@@ -184,7 +183,7 @@ contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initi
             token != address(0) && n < timestamps[token].getNumElements(),
             "token addr null or trying to remove too many reports"
         );
-        for (uint256 i = 0; i < n; i = i.add(1)) {
+        for (uint256 i = 0; i < n; i++) {
             (bool isExpired, address oldestAddress) = isOldestReportExpired(token);
             if (isExpired) {
                 removeReport(token, oldestAddress);
@@ -206,7 +205,7 @@ contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initi
         address oldest = timestamps[token].getTail();
         uint256 timestamp = timestamps[token].getValue(oldest);
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp.sub(timestamp) >= getTokenReportExpirySeconds(token)) {
+        if (block.timestamp - timestamp >= getTokenReportExpirySeconds(token)) {
             return (true, oldest);
         }
         return (false, oldest);

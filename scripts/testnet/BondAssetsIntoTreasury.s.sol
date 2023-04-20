@@ -32,14 +32,14 @@ contract BondAssetsIntoTreasury is Script {
     Oracle token2Oracle;
     Oracle token3Oracle;
     Oracle geoNFT1Oracle;
-    uint token1Amount;
-    uint token2Amount;
-    uint token3Amount;
-    uint token1Price;
-    uint token2Price;
-    uint token3Price;
-    uint geoNFT1Price;
-    
+    uint256 token1Amount;
+    uint256 token2Amount;
+    uint256 token3Amount;
+    uint256 token1Price;
+    uint256 token2Price;
+    uint256 token3Price;
+    uint256 geoNFT1Price;
+
     function run() external {
         treasury = Treasury(vm.envAddress("DEPLOYMENT_TREASURY"));
         token1 = ERC20Mock(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1"));
@@ -77,35 +77,16 @@ contract BondAssetsIntoTreasury is Script {
             geoNFT.mint(vm.envAddress("WALLET_DEPLOYER"), 1, 1, "Test GeoNFT #1");
 
             // Approve tokens to Treasury.
-            token1.approve(address(treasury), type(uint).max);
-            token2.approve(address(treasury), type(uint).max);
-            token3.approve(address(treasury), type(uint).max);
+            token1.approve(address(treasury), type(uint256).max);
+            token2.approve(address(treasury), type(uint256).max);
+            token3.approve(address(treasury), type(uint256).max);
             geoNFT.approve(address(treasury), 1);
 
             // Register token inside the Treasury.
-            treasury.registerERC20(
-                address(token1),
-                address(token1Oracle),
-                assetTypeToken1,
-                riskLevelToken1
-            );
-            treasury.registerERC20(
-                address(token2),
-                address(token2Oracle),
-                assetTypeToken2,
-                riskLevelToken2
-            );
-            treasury.registerERC20(
-                address(token3),
-                address(token3Oracle),
-                assetTypeToken3,
-                riskLevelToken3
-            );
-            treasury.registerERC721Id(
-                address(geoNFT),
-                1,
-                address(geoNFT1Oracle)
-            );
+            treasury.registerERC20(address(token1), address(token1Oracle), assetTypeToken1, riskLevelToken1);
+            treasury.registerERC20(address(token2), address(token2Oracle), assetTypeToken2, riskLevelToken2);
+            treasury.registerERC20(address(token3), address(token3Oracle), assetTypeToken3, riskLevelToken3);
+            treasury.registerERC721Id(address(geoNFT), 1, address(geoNFT1Oracle));
 
             // List token as bondable inside the Treasury.
             treasury.listERC20AsBondable(address(token1));
@@ -123,14 +104,9 @@ contract BondAssetsIntoTreasury is Script {
 
         // Check balances.
         require(
-            treasury.balanceOf(vm.envAddress("WALLET_DEPLOYER")) ==
-                (token1Price * token1Amount) /
-                    1e18 +
-                    (token2Price * token2Amount) /
-                    1e18 +
-                    (token3Price * token3Amount) /
-                    1e18 + 
-                    geoNFT1Price,
+            treasury.balanceOf(vm.envAddress("WALLET_DEPLOYER"))
+                == (token1Price * token1Amount) / 1e18 + (token2Price * token2Amount) / 1e18
+                    + (token3Price * token3Amount) / 1e18 + geoNFT1Price,
             "BondAssetsIntoTreasury: Invalid amount of treasury tokens received through bonding"
         );
         require(
@@ -146,7 +122,7 @@ contract BondAssetsIntoTreasury is Script {
             "BondAssetsIntoTreasury: Treasury fetched wrong amount of tokens during bonding"
         );
         require(
-            geoNFT.ownerOf(1) == address(treasury), 
+            geoNFT.ownerOf(1) == address(treasury),
             "BondAssetsIntoTreasury: Treasury fetched wrong amount of tokens during bonding"
         );
 
@@ -163,14 +139,9 @@ contract BondAssetsIntoTreasury is Script {
 
         // Check balance.
         require(
-            treasury.balanceOf(vm.envAddress("WALLET_DEPLOYER")) ==
-                ((token1Price / 2) * token1Amount) /
-                    1e18 +
-                    (token2Price * token2Amount) /
-                    1e18 +
-                    (token3Price * token3Amount) /
-                    1e18 +
-                    geoNFT1Price,
+            treasury.balanceOf(vm.envAddress("WALLET_DEPLOYER"))
+                == ((token1Price / 2) * token1Amount) / 1e18 + (token2Price * token2Amount) / 1e18
+                    + (token3Price * token3Amount) / 1e18 + geoNFT1Price,
             "BondAssetsIntoTreasury: Invalid amount of treasury tokens after rebase"
         );
     }

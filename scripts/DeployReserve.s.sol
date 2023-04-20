@@ -3,6 +3,7 @@ pragma solidity 0.8.10;
 import "forge-std/Script.sol";
 
 import {Reserve} from "../src/Reserve.sol";
+import {TimeLockVault} from "../src/vesting/TimeLockVault.sol";
 
 /**
  * @title Reserve Deployment Script
@@ -28,7 +29,9 @@ contract DeployReserve is Script {
         // Check settings.
         require(token != address(0), "DeployReserve: Missing env variable: token");
         require(tokenOracle != address(0), "DeployReserve: Missing env variable: token oracle");
+
         require(vestingVault != address(0), "DeployReserve: Missing env variable: vesting vault");
+
         require(minBacking != 0, "DeployReserve: Missing env variable: min backing");
 
         // Deploy the Reserve.

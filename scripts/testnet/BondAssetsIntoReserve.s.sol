@@ -38,20 +38,18 @@ contract BondAssetsIntoReserve is Script {
     Oracle token3Oracle;
     Oracle geoNFT2Oracle;
 
-    uint token1Amount;
-    uint token2Amount;
-    uint token3Amount;
-    uint geoNFT2Price;
+    uint256 token1Amount;
+    uint256 token2Amount;
+    uint256 token3Amount;
+    uint256 geoNFT2Price;
 
     function run() external {
         reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
-        reserveTokenOracle =
-            Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+        reserveTokenOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
 
         treasury = Treasury(vm.envAddress("DEPLOYMENT_TREASURY"));
-        treasuryTokenOracle =
-            Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
+        treasuryTokenOracle = Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
 
         token1 = ERC20Mock(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1"));
         token2 = ERC20Mock(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2"));
@@ -80,48 +78,24 @@ contract BondAssetsIntoReserve is Script {
             geoNFT.mint(vm.envAddress("WALLET_DEPLOYER"), 1, 1, "Test GeoNFT #2");
 
             // Approve tokens to Reserve.
-            token1.approve(address(reserve), type(uint).max);
-            token2.approve(address(reserve), type(uint).max);
-            token3.approve(address(reserve), type(uint).max);
+            token1.approve(address(reserve), type(uint256).max);
+            token2.approve(address(reserve), type(uint256).max);
+            token3.approve(address(reserve), type(uint256).max);
             geoNFT.approve(address(reserve), 2);
-            treasury.approve(address(reserve), type(uint).max);
+            treasury.approve(address(reserve), type(uint256).max);
 
-            reserveTokenOracle.pushReport(vm.envUint("DEPLOYMENT_RESERVE_TOKEN_PRICE_"));
-            treasuryTokenOracle.pushReport(vm.envUint("DEPLOYMENT_TREASURY_TOKEN_PRICE_"));
+            reserveTokenOracle.pushReport(vm.envUint("DEPLOYMENT_RESERVE_TOKEN_PRICE"));
+            treasuryTokenOracle.pushReport(vm.envUint("DEPLOYMENT_TREASURY_TOKEN_PRICE"));
 
             // Register token inside the Reserve.
-            reserve.registerERC20(
-                address(token1),
-                address(token1Oracle),
-                assetTypeToken1,
-                riskLevelToken1
-            );
+            reserve.registerERC20(address(token1), address(token1Oracle), assetTypeToken1, riskLevelToken1);
 
-            reserve.registerERC20(
-                address(token2),
-                address(token2Oracle),
-                assetTypeToken2,
-                riskLevelToken2
-            );
+            reserve.registerERC20(address(token2), address(token2Oracle), assetTypeToken2, riskLevelToken2);
 
-            reserve.registerERC20(
-                address(token3),
-                address(token3Oracle),
-                assetTypeToken3,
-                riskLevelToken3
-            );
+            reserve.registerERC20(address(token3), address(token3Oracle), assetTypeToken3, riskLevelToken3);
 
-            reserve.registerERC20(
-                address(treasury),
-                address(treasuryTokenOracle),
-                assetTypeToken1,
-                riskLevelToken1
-            );
-            reserve.registerERC721Id(
-                address(geoNFT),
-                2,
-                address(geoNFT2Oracle)
-            );
+            reserve.registerERC20(address(treasury), address(treasuryTokenOracle), assetTypeToken1, riskLevelToken1);
+            reserve.registerERC721Id(address(geoNFT), 2, address(geoNFT2Oracle));
 
             // List token as bondable inside the Reserve.
             reserve.listERC20AsBondable(address(token1));
@@ -136,7 +110,7 @@ contract BondAssetsIntoReserve is Script {
             reserve.bondERC20(address(token3), token3Amount);
             reserve.bondERC20All(address(treasury));
             reserve.bondERC721Id(address(geoNFT), 2);
-            
+
             // Send kCUR to Reserve (just to store them there)
             reserveToken.transfer(address(reserve), reserveToken.balanceOf(vm.envAddress("WALLET_DEPLOYER")));
         }

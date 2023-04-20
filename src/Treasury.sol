@@ -576,7 +576,7 @@ contract Treasury is ElasticReceiptToken, TSOwnable, IERC721Receiver {
     /// @dev Computes the total valuation of assets held in the treasury and
     ///      uses that value as KTT's supply target.
     /// @dev Has to be in same decimal precision as token, i.e. 18.
-    function _supplyTarget() internal view override (ElasticReceiptToken) returns (uint256) {
+    function _supplyTarget() internal view override(ElasticReceiptToken) returns (uint256) {
         // Return the total valuation of assets in the treasury.
         return _treasuryERC20sValuation() + _treasuryERC721IdsValuation();
     }

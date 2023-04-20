@@ -17,19 +17,16 @@ contract IncurDebt is Script {
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         ReserveToken reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
 
-        Oracle reserveTokenOracle =
-            Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+        Oracle reserveTokenOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
 
-        uint desiredBackingAmount = vm.envUint("DEPLOYMENT_DESIRED_BACKING_AMOUNT_RESERVE");
-
+        uint256 desiredBackingAmount = vm.envUint("DEPLOYMENT_DESIRED_BACKING_AMOUNT_RESERVE");
 
         vm.startBroadcast();
         {
-            uint oldReserveValuation;
-            uint oldSupplyValuation;
-            uint oldBacking;
-            (oldReserveValuation, oldSupplyValuation, oldBacking) = reserve
-                .reserveStatus();
+            uint256 oldReserveValuation;
+            uint256 oldSupplyValuation;
+            uint256 oldBacking;
+            (oldReserveValuation, oldSupplyValuation, oldBacking) = reserve.reserveStatus();
 
             console2.log("Old Reserve Value: ", oldReserveValuation / 1e18);
             console2.log("Old Supply Value: ", oldSupplyValuation / 1e18);
@@ -38,24 +35,15 @@ contract IncurDebt is Script {
             if (oldBacking == desiredBackingAmount) {
                 return;
             }
-            uint requiredSupply = (oldReserveValuation * 10000) /
-                desiredBackingAmount;
+            uint256 requiredSupply = (oldReserveValuation * 10000) / desiredBackingAmount;
 
             console2.log("Required Supply Value: ", requiredSupply / 1e18);
             if (requiredSupply > oldSupplyValuation) {
-                console2.log(
-                    "Minting Value: ",
-                    (requiredSupply - oldSupplyValuation) / 1e18
-                );
-                (uint price, bool valid) = reserveTokenOracle.getData();
+                console2.log("Minting Value: ", (requiredSupply - oldSupplyValuation) / 1e18);
+                (uint256 price, bool valid) = reserveTokenOracle.getData();
                 require(valid);
-                console2.log(
-                    "Minting Value: ",
-                    (requiredSupply - oldSupplyValuation) / price
-                );
-                reserve.incurDebt(
-                    ((requiredSupply - oldSupplyValuation) * 1e18) / price
-                );
+                console2.log("Minting Value: ", (requiredSupply - oldSupplyValuation) / price);
+                reserve.incurDebt(((requiredSupply - oldSupplyValuation) * 1e18) / price);
             } else {
                 reserve.payDebt(oldSupplyValuation - requiredSupply);
             }

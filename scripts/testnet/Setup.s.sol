@@ -15,16 +15,12 @@ import {Reserve} from "../../src/Reserve.sol";
  */
 contract Setup is Script {
     function run() external {
-        ReserveToken reserveToken =
-            ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        ReserveToken reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
         Oracle treasuryOracle = Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
         Oracle reserveOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
-        Oracle erc20Mock1Oracle =
-            Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
-        Oracle erc20Mock2Oracle =
-            Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"));
-        Oracle erc20Mock3Oracle =
-            Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"));
+        Oracle erc20Mock1Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
+        Oracle erc20Mock2Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"));
+        Oracle erc20Mock3Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"));
         Oracle geoNFT1Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_1_ORACLE"));
         Oracle geoNFT2Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_2_ORACLE"));
 
@@ -48,17 +44,17 @@ contract Setup is Script {
             erc20Mock3Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
             geoNFT1Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
             geoNFT2Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
-            
-            address ownOracle = vm.envAddress("OWN_ORACLE_ADDRESS");
-            if(ownOracle != address(0)) {
-                treasuryOracle.addProvider(ownOracle);
-                reserveOracle.addProvider(ownOracle);
-                erc20Mock1Oracle.addProvider(ownOracle);
-                erc20Mock2Oracle.addProvider(ownOracle);
-                erc20Mock3Oracle.addProvider(ownOracle);
-                geoNFT1Oracle.addProvider(ownOracle);
-                geoNFT2Oracle.addProvider(ownOracle);
-            }
+
+            // address ownOracle = vm.envAddress("OWN_ORACLE_ADDRESS");
+            // if(ownOracle != address(0)) {
+            //     treasuryOracle.addProvider(ownOracle);
+            //     reserveOracle.addProvider(ownOracle);
+            //     erc20Mock1Oracle.addProvider(ownOracle);
+            //     erc20Mock2Oracle.addProvider(ownOracle);
+            //     erc20Mock3Oracle.addProvider(ownOracle);
+            //     geoNFT1Oracle.addProvider(ownOracle);
+            //     geoNFT2Oracle.addProvider(ownOracle);
+            // }
         }
         vm.stopBroadcast();
     }

@@ -9660,7 +9660,7 @@
       "id": 2,
       "abi": "ERC721"
     },
-    "StablePool": {
+    "kGuilder Pool": {
       "address": "0x637A8Dc2343ef517451bE63f1D5164AD7fF53FC9",
       "abi": [
         {
@@ -10747,7 +10747,7 @@
         }
       ]
     },
-    "WeightedPool": {
+    "kCur Pool": {
       "address": "0xfe4a8b11fd4735e96454b056cf6422aacad1c880",
       "abi": [
         {

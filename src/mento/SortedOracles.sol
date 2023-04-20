@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "@oz-up/access/OwnableUpgradeable.sol";
+import "@oz/access/Ownable.sol";
+import "@oz/proxy/utils/Initializable.sol";
 
 import "./lib/ISortedOracles.sol";
 import "./lib/ICeloVersionedContract.sol";
@@ -35,7 +36,7 @@ import "./lib/SortedLinkedListWithMedian.sol";
  *          protocol documentation to learn more about the rateFeedId and how it is derived.
  *
  */
-contract SortedOracles is ISortedOracles, ICeloVersionedContract, OwnableUpgradeable {
+contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initializable {
     using AddressSortedLinkedListWithMedian for SortedLinkedListWithMedian.List;
     using FixidityLib for FixidityLib.Fraction;
 

@@ -13,6 +13,7 @@ contract DeployERC20Mock is Script {
     ERC20Mock token;
 
     function run() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         string memory name = "MockToken";
         if (bytes(vm.envString("DEPLOYMENT_TOKEN_NAME")).length != 0) {
             name = vm.envString("DEPLOYMENT_TOKEN_NAME");
@@ -25,7 +26,7 @@ contract DeployERC20Mock is Script {
 
         uint8 decimals = uint8(18);
 
-        vm.startBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
         {
             token = new ERC20Mock(name, symbol, decimals);
         }

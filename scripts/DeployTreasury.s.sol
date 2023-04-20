@@ -18,7 +18,9 @@ contract DeployTreasury is Script {
 
     function run() external {
         // Deploy the treasury.
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
         {
             treasury = new Treasury();
         }

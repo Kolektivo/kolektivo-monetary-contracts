@@ -107,10 +107,7 @@ contract DeployReserveSystem is Script {
         );
         exportValues = string(
             abi.encodePacked(
-                exportValues,
-                "export DEPLOYMENT_RESERVE_TOKEN_ORACLE=",
-                vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE"),
-                " && "
+                exportValues, "export DEPLOYMENT_RESERVE_TOKEN_ORACLE=", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE")
             )
         );
 

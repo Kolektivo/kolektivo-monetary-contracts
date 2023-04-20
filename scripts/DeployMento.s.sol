@@ -98,12 +98,10 @@ contract DeployMento is Script {
             );
             exchange = Exchange(deployUupsProxy(exchangeImplementation, proxyAdmin, initData));
 
-            address sortedOraclesImplementation = address(new SortedOracles(true));
-            initData = abi.encodeWithSignature(
-                "initialize(uint256)",
+            sortedOracles = new SortedOracles(false);
+            sortedOracles.initialize(
                 24 * 60 * 60 // report validity
             );
-            sortedOracles = SortedOracles(deployUupsProxy(sortedOraclesImplementation, proxyAdmin, initData));
 
             registry.setAddressFor("Freezer", address(freezer));
             registry.setAddressFor("GoldToken", reserveToken);

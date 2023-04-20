@@ -173,7 +173,7 @@ contract Oracle is TSOwnable, IOracle {
 
     /// @notice Returns the oracle data and a boolean indicating if data is
     ///         valid.
-    function getData() external view override (IOracle) returns (uint256, bool) {
+    function getData() external view override(IOracle) returns (uint256, bool) {
         // Return early if oracle is marked as invalid.
         if (!isValid) {
             return (0, false);

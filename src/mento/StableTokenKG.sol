@@ -101,6 +101,14 @@ contract StableTokenKG is
     }
 
     /**
+     * @notice Sets initialized == true on implementation contracts
+     * @param isImplementation Set to true to lock he initialization
+     */
+    constructor(bool isImplementation) {
+        if (isImplementation) _disableInitializers();
+    }
+
+    /**
      * @param _name The name of the stable token (English)
      * @param _symbol A short symbol identifying the token (e.g. "cUSD")
      * @param _decimals Tokens are divisible to this many decimal places.
@@ -164,7 +172,7 @@ contract StableTokenKG is
             updatePeriod,
             // solhint-disable-next-line not-rely-on-time
             block.timestamp
-            );
+        );
     }
 
     /**
@@ -347,7 +355,7 @@ contract StableTokenKG is
      * @param accountOwner The address to query the balance of.
      * @return The balance of the specified address.
      */
-    function balanceOf(address accountOwner) public view override (IStableToken, IERC20Upgradeable) returns (uint256) {
+    function balanceOf(address accountOwner) public view override(IStableToken, IERC20Upgradeable) returns (uint256) {
         return unitsToValue(balances[accountOwner]);
     }
 

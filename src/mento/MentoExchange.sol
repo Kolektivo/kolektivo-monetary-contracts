@@ -71,6 +71,14 @@ contract Exchange is
     }
 
     /**
+     * @notice Sets initialized == true on implementation contracts
+     * @param isImplementation Set to true to lock he initialization
+     */
+    constructor(bool isImplementation) {
+        if (isImplementation) _disableInitializers();
+    }
+
+    /**
      * @notice Used in place of the constructor to allow the contract to be upgradable via proxy.
      * @param registryAddress The address of the registry core smart contract.
      * @param stableTokenIdentifier String identifier of stabletoken in registry

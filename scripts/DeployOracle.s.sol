@@ -21,28 +21,18 @@ contract DeployOracle is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint reportExpirationTime = vm.envUint(
-            "DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME"
-        );
-        uint reportDelay = vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
-        uint minimumProviders = vm.envUint(
-            "DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS"
-        );
+        uint256 reportExpirationTime = vm.envUint("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME");
+        uint256 reportDelay = vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
+        uint256 minimumProviders = vm.envUint("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS");
 
         // Check settings.
-        require(
-            reportExpirationTime != 0,
-            "DeployOracle: Missing env variable: report expiration time"
-        );
+        require(reportExpirationTime != 0, "DeployOracle: Missing env variable: report expiration time");
         // @todo Is allowed to be 0 for simulation.
         //require(
         //    reportDelay != 0,
         //    "DeployOracle: Missing env variable: report delay"
         //);
-        require(
-            minimumProviders != 0,
-            "DeployOracle: Missing env variable: minimum providers"
-        );
+        require(minimumProviders != 0, "DeployOracle: Missing env variable: minimum providers");
 
         // Deploy the oracle.
         vm.startBroadcast();
@@ -54,7 +44,7 @@ contract DeployOracle is Script {
             );
         }
         vm.stopBroadcast();
-        
+
         // Store deployment address in env
         vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(oracle)));
 

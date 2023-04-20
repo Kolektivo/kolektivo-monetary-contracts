@@ -2,13 +2,13 @@
 pragma solidity 0.8.10;
 
 import "@oz/access/Ownable.sol";
+import "@oz/proxy/utils/Initializable.sol";
 
 import "./lib/ISortedOracles.sol";
 import "./lib/ICeloVersionedContract.sol";
 import "./lib/IBreakerBox.sol";
 
 import "./lib/FixidityLib.sol";
-import "./lib/Initializable.sol";
 import "./lib/AddressSortedLinkedListWithMedian.sol";
 import "./lib/SortedLinkedListWithMedian.sol";
 
@@ -87,9 +87,11 @@ contract SortedOracles is ISortedOracles, ICeloVersionedContract, Ownable, Initi
 
     /**
      * @notice Sets initialized == true on implementation contracts
-     * @param test Set to true to skip implementation initialization
+     * @param isImplementation Set to true to lock he initialization
      */
-    constructor(bool test) public Initializable(test) {}
+    constructor(bool isImplementation) {
+        if (isImplementation) _disableInitializers();
+    }
 
     /**
      * @notice Used in place of the constructor to allow the contract to be upgradable via proxy.

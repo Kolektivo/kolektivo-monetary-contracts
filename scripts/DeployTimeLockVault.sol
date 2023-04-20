@@ -5,14 +5,12 @@ import "forge-std/Script.sol";
 import {TimeLockVault} from "../src/vesting/TimeLockVault.sol";
 
 /**
- * @title Reserve Deployment Script
+ * @title TimeLockVault Deployment Script
  *
- * @dev Script to deploy a new Reserve and initiating an owner switch from
- *      the deployer address to another address given via environment
- *      variable.
+ * @dev Script to deploy a new TimelockVault
  *
  *      The following environment variables MUST be provided:
- *      - TRUSTED_OWNER
+ *      - PRIVATE_KEY
  */
 contract DeployTimeLockVault is Script {
     TimeLockVault timeLockVault;

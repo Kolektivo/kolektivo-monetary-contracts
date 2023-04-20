@@ -26,12 +26,20 @@ contract DeployReserveSystem is Script {
         // Deployment
         console2.log("Running deployment script, deploying the MVP Test scenario to Celo.");
 
-        // Deploy Oracles - cUSD & kCUR
-        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", "1660744843");
-        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_DELAY", "0");
-        vm.setEnv("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS", "1");
+        // Deploy Oracles
+        // cUSD
+        vm.setEnv("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS", vm.envString("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS"));
+        vm.setEnv(
+            "DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", vm.envString("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME_CUSD")
+        );
+        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_DELAY", vm.envString("DEPLOYMENT_ORACLE_REPORT_DELAY_CUSD"));
         deployOracle.run();
         vm.setEnv("DEPLOYMENT_cUSD_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        // kCUR
+        vm.setEnv(
+            "DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", vm.envString("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME_KCUR")
+        );
+        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_DELAY", vm.envString("DEPLOYMENT_ORACLE_REPORT_DELAY_KCUR"));
         deployOracle.run();
         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
 

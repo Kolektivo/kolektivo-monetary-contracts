@@ -81,3 +81,26 @@ contract RegisterERC20 is Script {
     //     }
     // }
 }
+
+contract GetTokenOracle is Script {
+    function run() external {
+        // Get env variables
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        address tokenOracle;
+
+        // Set new DataProvider to Oracle
+        vm.startBroadcast(deployerPrivateKey);
+        {
+            tokenOracle = reserve.tokenOracle();
+        }
+        vm.stopBroadcast();
+
+        console2.log(
+            "kCUR Oracle with address  ",
+            tokenOracle,
+            " set for Reserve with address ",
+            vm.envString("DEPLOYMENT_RESERVE")
+        );
+    }
+}

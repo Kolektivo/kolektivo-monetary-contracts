@@ -32,8 +32,12 @@ contract DeployMento is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address reserveToken = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
+
+        // The backend service for the MVP deployment
+        address dataProvider = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
 
         string memory tokenName = vm.envString("DEPLOYMENT_MENTO_TOKEN_NAME");
         string memory tokenSymbol = vm.envString("DEPLOYMENT_MENTO_TOKEN_SYMBOL");
@@ -41,7 +45,7 @@ contract DeployMento is Script {
         require(reserveToken != address(0), "DeployMento: Missing env variable: token");
 
         // Deploy the Reserve.
-        vm.startBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
         {
             address proxyAdmin = address(new ProxyAdmin());
 
@@ -102,6 +106,9 @@ contract DeployMento is Script {
             sortedOracles.initialize(
                 24 * 60 * 60 // report validity
             );
+            // Add Oracles, i.e. data providers to contract
+            sortedOracles.addOracle(address(token), dataProvider);
+            sortedOracles.addOracle(reserveToken, dataProvider);
 
             registry.setAddressFor("Freezer", address(freezer));
             registry.setAddressFor("GoldToken", reserveToken);

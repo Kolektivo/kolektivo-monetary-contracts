@@ -42,3 +42,75 @@ contract GetData is Script {
         console2.log("Pushed price in Oracle ", vm.envString("TASK_ORACLE"), "is ", price);
     }
 }
+
+contract GetProviders is Script {
+    function run() external {
+        // Get env variables
+        Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
+        address provider;
+
+        // Get first DataProvider from Oracle
+        vm.startBroadcast();
+        {
+            provider = oracle.providers(0);
+        }
+        vm.stopBroadcast();
+
+        console2.log("Providers for Oracle ", vm.envString("TASK_ORACLE"), "are ", provider);
+    }
+}
+
+contract PushReport is Script {
+    function run() external {
+        // Get env variables
+        Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
+        uint256 report = 1e18;
+
+        // Push new report to Oracle
+        vm.startBroadcast();
+        {
+            oracle.pushReport(report);
+        }
+        vm.stopBroadcast();
+
+        console2.log("Price for Oracle ", vm.envString("TASK_ORACLE"), "pushed with value ", report);
+    }
+}
+
+contract GetMinimumProviders is Script {
+    function run() external {
+        // Get env variables
+        Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
+        uint256 minProviders;
+
+        // Get minimum number of providers for Oracle
+        vm.startBroadcast();
+        {
+            minProviders = oracle.minimumProviders();
+        }
+        vm.stopBroadcast();
+
+        console2.log(
+            "Minimum number of providers for Oracle ", vm.envString("TASK_ORACLE"), "is set to: ", minProviders
+        );
+    }
+}
+
+contract SetMinimumProviders is Script {
+    function run() external {
+        // Get env variables
+        Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
+        uint256 minProviders = vm.envUint("TASK_ORACLE_MINIMUM_PROVIDERS");
+
+        // Set minimum number of providers for Oracle
+        vm.startBroadcast();
+        {
+            oracle.setMinimumProviders(minProviders);
+        }
+        vm.stopBroadcast();
+
+        console2.log(
+            "Minimum number of providers for Oracle ", vm.envString("TASK_ORACLE"), "is set to: ", minProviders
+        );
+    }
+}

@@ -101,3 +101,59 @@ contract GetTokenOracle is Script {
         );
     }
 }
+
+contract SetMinBacking is Script {
+    function run() external {
+        // Get env variables
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        uint256 minBacking = vm.envUint("DEPLOYMENT_RESERVE_MIN_BACKING");
+
+        // Set new DataProvider to Oracle
+        vm.startBroadcast();
+        {
+            reserve.setMinBacking(minBacking);
+        }
+        vm.stopBroadcast();
+
+        console2.log("For Reserve with address: ", address(reserve), ", minimum backing set to: ", minBacking);
+    }
+}
+
+contract IncurDebt is Script {
+    function run() external {
+        // Get env variables
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        uint256 amount = vm.envUint("TASK_RESERVE_INCUR_DEBT");
+
+        // Set new DataProvider to Oracle
+        vm.startBroadcast();
+        {
+            reserve.incurDebt(amount);
+        }
+        vm.stopBroadcast();
+
+        console2.log("For Reserve with address: ", address(reserve), ", mint amount kCUR: ", amount);
+    }
+}
+
+contract GetReserveStatus is Script {
+    function run() external {
+        // Get env variables
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        uint256 reserveValuation;
+        uint256 reserveSupply;
+        uint256 minBacking;
+
+        // Get Reserve status
+        vm.startBroadcast();
+        {
+            (reserveValuation, reserveSupply, minBacking) = reserve.reserveStatus();
+        }
+        vm.stopBroadcast();
+
+        console2.log(
+            "Reserve Status of Reserve with address ", address(reserve), "reserve valuation: ", reserveValuation
+        );
+        console2.log(", reserve supply: ", reserveSupply, ", backing: ", minBacking);
+    }
+}

@@ -121,6 +121,7 @@ contract Exchange is
     /**
      * @notice Exchanges a specific amount of one token for an unspecified amount
      * (greater than a threshold) of another.
+     * @param from The address representing the message sender
      * @param sellAmount The number of tokens to send to the exchange.
      * @param minBuyAmount The minimum number of tokens for the exchange to send in return.
      * @param sellGold True if the caller is sending CELO to the exchange, false otherwise.
@@ -128,9 +129,8 @@ contract Exchange is
      * @dev The caller must first have approved `sellAmount` to the exchange.
      * @dev This function can be frozen via the Freezable interface.
      */
-    function sell(uint256 sellAmount, uint256 minBuyAmount, bool sellGold)
+    function sell(address from, uint256 sellAmount, uint256 minBuyAmount, bool sellGold)
         public
-        onlyOwner
         onlyWhenNotFrozen
         updateBucketsIfNecessary
         nonReentrant
@@ -141,7 +141,7 @@ contract Exchange is
 
         require(buyAmount >= minBuyAmount, "Calculated buyAmount was less than specified minBuyAmount");
 
-        _exchange(sellAmount, buyAmount, sellGold);
+        _exchange(from, sellAmount, buyAmount, sellGold);
         return buyAmount;
     }
 
@@ -149,6 +149,7 @@ contract Exchange is
      * @dev DEPRECATED - Use `buy` or `sell`.
      * @notice Exchanges a specific amount of one token for an unspecified amount
      * (greater than a threshold) of another.
+     * @param from The address representing the message sender
      * @param sellAmount The number of tokens to send to the exchange.
      * @param minBuyAmount The minimum number of tokens for the exchange to send in return.
      * @param sellGold True if the caller is sending CELO to the exchange, false otherwise.
@@ -156,13 +157,17 @@ contract Exchange is
      * @dev The caller must first have approved `sellAmount` to the exchange.
      * @dev This function can be frozen via the Freezable interface.
      */
-    function exchange(uint256 sellAmount, uint256 minBuyAmount, bool sellGold) external returns (uint256) {
-        return sell(sellAmount, minBuyAmount, sellGold);
+    function exchange(address from, uint256 sellAmount, uint256 minBuyAmount, bool sellGold)
+        external
+        returns (uint256)
+    {
+        return sell(from, sellAmount, minBuyAmount, sellGold);
     }
 
     /**
      * @notice Exchanges an unspecified amount (up to a threshold) of one token for
      * a specific amount of another.
+     * @param from The address representing the message sender
      * @param buyAmount The number of tokens for the exchange to send in return.
      * @param maxSellAmount The maximum number of tokens to send to the exchange.
      * @param buyGold True if the exchange is sending CELO to the caller, false otherwise.
@@ -170,9 +175,8 @@ contract Exchange is
      * @dev The caller must first have approved `maxSellAmount` to the exchange.
      * @dev This function can be frozen via the Freezable interface.
      */
-    function buy(uint256 buyAmount, uint256 maxSellAmount, bool buyGold)
+    function buy(address from, uint256 buyAmount, uint256 maxSellAmount, bool buyGold)
         external
-        onlyOwner
         onlyWhenNotFrozen
         updateBucketsIfNecessary
         nonReentrant
@@ -184,36 +188,35 @@ contract Exchange is
 
         require(sellAmount <= maxSellAmount, "Calculated sellAmount was greater than specified maxSellAmount");
 
-        _exchange(sellAmount, buyAmount, sellGold);
+        _exchange(from, sellAmount, buyAmount, sellGold);
         return sellAmount;
     }
 
     /**
      * @notice Exchanges a specific amount of one token for a specific amount of another.
+     * @param from The address representing the message sender
      * @param sellAmount The number of tokens to send to the exchange.
      * @param buyAmount The number of tokens for the exchange to send in return.
-     * @param sellGold True if the msg.sender is sending CELO to the exchange, false otherwise.
+     * @param sellGold True if the msg.sender (from address) is sending CELO to the exchange, false otherwise.
      */
-    function _exchange(uint256 sellAmount, uint256 buyAmount, bool sellGold) private {
+    function _exchange(address from, uint256 sellAmount, uint256 buyAmount, bool sellGold) private {
         IReserve reserve = IReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));
 
         if (sellGold) {
             goldBucket += sellAmount;
             stableBucket -= buyAmount;
-            require(
-                getGoldToken().transferFrom(msg.sender, address(reserve), sellAmount), "Transfer of sell token failed"
-            );
-            require(IStableToken(stable).mint(msg.sender, buyAmount), "Mint of stable token failed");
+            require(getGoldToken().transferFrom(from, address(reserve), sellAmount), "Transfer of sell token failed");
+            require(IStableToken(stable).mint(from, buyAmount), "Mint of stable token failed");
         } else {
             stableBucket += sellAmount;
             goldBucket -= buyAmount;
-            require(IERC20(stable).transferFrom(msg.sender, address(this), sellAmount), "Transfer of sell token failed");
+            require(IERC20(stable).transferFrom(from, address(this), sellAmount), "Transfer of sell token failed");
             IStableToken(stable).burn(sellAmount);
 
-            require(reserve.transferExchangeGold(payable(msg.sender), buyAmount), "Transfer of buyToken failed");
+            require(reserve.transferExchangeGold(payable(from), buyAmount), "Transfer of buyToken failed");
         }
 
-        emit Exchanged(msg.sender, sellAmount, buyAmount, sellGold);
+        emit Exchanged(from, sellAmount, buyAmount, sellGold);
     }
 
     /**

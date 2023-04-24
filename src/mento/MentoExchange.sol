@@ -197,7 +197,7 @@ contract Exchange is
      * @param from The address representing the message sender
      * @param sellAmount The number of tokens to send to the exchange.
      * @param buyAmount The number of tokens for the exchange to send in return.
-     * @param sellGold True if the msg.sender (from address) is sending CELO to the exchange, false otherwise.
+     * @param sellGold True if the from address is sending CELO to the exchange, false otherwise.
      */
     function _exchange(address from, uint256 sellAmount, uint256 buyAmount, bool sellGold) private {
         IReserve reserve = IReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));

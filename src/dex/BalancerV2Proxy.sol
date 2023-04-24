@@ -7,7 +7,7 @@ import {TSOwnable} from "solrocket/TSOwnable.sol";
 import "./lib/IUniswapV2Router02.sol";
 import "../interfaces/IReserve.sol";
 
-interface ReserveToken {
+interface CuracaoReserveToken {
     function mint(address to, uint256 amount) external;
     function burn(address from, uint256 amount) external;
 }
@@ -197,7 +197,7 @@ contract BalancerV2Proxy is TSOwnable {
             pairToken.transfer(msg.sender, outBalanceAfter - outBalanceBefore);
 
             // Burn the surplus of Reserve Tokens that we didn't see on the exchange
-            ReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
+            CuracaoReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
         } else if (address(tokenOut) == reserveToken) {
             // User buys Reserve Token with the Pair Token
             uint256 balanceBefore = ERC20(reserveToken).balanceOf(address(this));
@@ -215,7 +215,7 @@ contract BalancerV2Proxy is TSOwnable {
             // (for floor we don't care if a user buys Reserve Tokens since it helps us)
             if (breach && !isFloor) {
                 // Mint the corresponding amount from the Reserve
-                ReserveToken(reserveToken).mint(address(this), mintAmount);
+                CuracaoReserveToken(reserveToken).mint(address(this), mintAmount);
                 thisAmountIn = thisAmountIn * mintAmount / thisAmountIn;
                 thisAmountOutMin = thisAmountOutMin - mintAmount;
 
@@ -286,7 +286,7 @@ contract BalancerV2Proxy is TSOwnable {
             pairToken.transfer(msg.sender, outBalanceAfter - outBalanceBefore);
 
             // Burn the surplus of Reserve Tokens
-            ReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
+            CuracaoReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
         } else if (address(tokenOut) == reserveToken) {
             // User buys Reserve Token with the Pair Token
             uint256 inBalanceBefore = pairToken.balanceOf(address(this));
@@ -305,7 +305,7 @@ contract BalancerV2Proxy is TSOwnable {
             // (for floor we don't care if a user buys Reserve Tokens since it helps us)
             if (breach && !isFloor) {
                 // Mint the corresponding amount from the Reserve
-                ReserveToken(reserveToken).mint(address(this), mintAmount);
+                CuracaoReserveToken(reserveToken).mint(address(this), mintAmount);
                 thisAmountInMax = thisAmountInMax * mintAmount / thisAmountOut;
                 thisAmountOut = thisAmountOut - mintAmount;
             }

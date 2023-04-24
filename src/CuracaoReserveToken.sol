@@ -16,7 +16,7 @@ import {TSOwnable} from "solrocket/TSOwnable.sol";
  *
  * @author byterocket
  */
-contract ReserveToken is ERC20, TSOwnable {
+contract CuracaoReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Errors
 

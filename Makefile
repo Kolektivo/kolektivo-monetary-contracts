@@ -55,8 +55,8 @@ testElasticToken: ## Run Elastic Receipt Token tests
 	@forge test -vvv --match-contract "ElasticReceiptToken"
 
 .PHONY: testReserveToken
-testReserveToken: ## Run ReserveToken tests
-	@forge test -vvv --match-contract "ReserveToken"
+testReserveToken: ## Run CuracaoReserveToken tests
+	@forge test -vvv --match-contract "CuracaoReserveToken"
 
 .PHONY: testReserve
 testReserve: ## Run Reserve tests

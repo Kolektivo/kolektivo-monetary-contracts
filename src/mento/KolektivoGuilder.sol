@@ -18,7 +18,7 @@ import {Freezable} from "./lib/Freezable.sol";
  * @title An ERC20 compliant token with adjustable supply.
  */
 // solhint-disable-next-line max-line-length
-contract StableTokenKG is
+contract KolektivoGuilder is
     ICeloVersionedContract,
     OwnableUpgradeable,
     UsingRegistry,

@@ -3499,7 +3499,7 @@
         }
       ]
     },
-    "Kolektivo Curacao Reserve Token": {
+    "CuracaoReserveToken": {
       "address": "0xeB22fD1Dc0F480faA0D5cce673364b31E5f1e772",
       "abi": "ERC20"
     },
@@ -8885,7 +8885,7 @@
         }
       ]
     },
-    "Symmetric-Vault": {
+    "Vault": {
       "address": "0xD25E02047E76b688445ab154785F2642c6fe3f73",
       "abi": [
         {
@@ -12588,7 +12588,7 @@
         }
       ]
     },
-    "KGuilder": {
+    "KolektivoGuilder": {
       "address": "0xA7631e5770B7c8B5BD02dEbfb0f3B0f70045C70F",
       "abi": [
         {

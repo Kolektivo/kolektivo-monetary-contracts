@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {ReserveToken} from "../../src/ReserveToken.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {Reserve} from "../../src/Reserve.sol";
 import {IReserve} from "../../src/interfaces/IReserve.sol";
 
@@ -10,12 +10,11 @@ import {IReserve} from "../../src/interfaces/IReserve.sol";
 contract SetMintBurner is Script {
     function run() external {
         // Get env variables
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        ReserveToken reserveToken = ReserveToken(vm.envAddress("TASK_RESERVE_TOKEN"));
+        CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("TASK_RESERVE_TOKEN"));
         address mintBurner = vm.envAddress("TASK_MINT_BURNER");
 
         // Set new mintBurner
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             reserveToken.setMintBurner(mintBurner, true);
         }
@@ -24,7 +23,7 @@ contract SetMintBurner is Script {
         console2.log(
             "MintBurner with address ",
             vm.envString("TASK_MINT_BURNER"),
-            "set within ReserveToken ",
+            "set within CuracaoReserveToken ",
             vm.envString("TASK_RESERVE_TOKEN")
         );
     }
@@ -32,7 +31,6 @@ contract SetMintBurner is Script {
 
 contract RegisterERC20 is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         address erc20 = vm.envAddress("TASK_REGISTERERC20_TOKEN");
         address oracle = vm.envAddress("TASK_ORACLE");
@@ -40,7 +38,7 @@ contract RegisterERC20 is Script {
         IReserve.AssetType tokenAssetType = IReserve.AssetType.Stable;
         IReserve.RiskLevel tokenRiskLevel = IReserve.RiskLevel.Low;
 
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             reserve.registerERC20(erc20, oracle, tokenAssetType, tokenRiskLevel);
         }
@@ -85,12 +83,11 @@ contract RegisterERC20 is Script {
 contract GetTokenOracle is Script {
     function run() external {
         // Get env variables
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         address tokenOracle;
 
         // Set new DataProvider to Oracle
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             tokenOracle = reserve.tokenOracle();
         }

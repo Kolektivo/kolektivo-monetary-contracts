@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 import "forge-std/Script.sol";
 
 import {Reserve} from "../../src/Reserve.sol";
-import {ReserveToken} from "../../src/ReserveToken.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {IReserve} from "../../src/interfaces/IReserve.sol";
 import {Treasury} from "../../src/Treasury.sol";
 import {Oracle} from "../../src/Oracle.sol";
@@ -19,7 +19,7 @@ import {ERC20Mock} from "../../test/utils/mocks/ERC20Mock.sol";
  */
 contract BondAssetsIntoReserve is Script {
     Reserve reserve;
-    ReserveToken reserveToken;
+    CuracaoReserveToken reserveToken;
     Oracle reserveTokenOracle;
     Treasury treasury;
     Oracle treasuryTokenOracle;
@@ -45,7 +45,7 @@ contract BondAssetsIntoReserve is Script {
 
     function run() external {
         reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
-        reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        reserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
         reserveTokenOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
 
         treasury = Treasury(vm.envAddress("DEPLOYMENT_TREASURY"));

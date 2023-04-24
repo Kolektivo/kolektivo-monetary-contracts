@@ -20,7 +20,6 @@ contract DeployReserve is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address token = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         address tokenOracle = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE");
         address vestingVault = vm.envAddress("DEPLOYMENT_RESERVE_VESTING_VAULT");
@@ -35,7 +34,7 @@ contract DeployReserve is Script {
         require(minBacking != 0, "DeployReserve: Missing env variable: min backing");
 
         // Deploy the Reserve.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             reserve = new Reserve(token, tokenOracle, vestingVault, minBacking);
         }
@@ -45,7 +44,7 @@ contract DeployReserve is Script {
         vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(reserve)));
 
         // Possible command for verifying
-        // forge verify-contract 0xdc43e196c5057355e3f8b4c2e998ca5874d43546 StableTokenKG --chain ID?
+        // forge verify-contract 0xdc43e196c5057355e3f8b4c2e998ca5874d43546 KolektivoGuilder --chain ID?
 
         // Log the deployed Reserve contract address.
         console2.log("Deployment of Reserve at address", address(reserve));

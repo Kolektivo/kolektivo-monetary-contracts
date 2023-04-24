@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {ReserveToken} from "../../src/ReserveToken.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {Oracle} from "../../src/Oracle.sol";
 
 import {Reserve} from "../../src/Reserve.sol";
@@ -10,12 +10,12 @@ import {Reserve} from "../../src/Reserve.sol";
 /**
  * @dev Setups the testnet contracts. NEEDS TO BE RUN ONLY ONCE.
  *
- *      - Sets the ReserveToken's mintBurner allowance to the Reserve
+ *      - Sets the CuracaoReserveToken's mintBurner allowance to the Reserve
  *      - Sets the Oracle providers
  */
 contract Setup is Script {
     function run() external {
-        ReserveToken reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
         Oracle treasuryOracle = Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
         Oracle reserveOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
         Oracle erc20Mock1Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
@@ -26,7 +26,7 @@ contract Setup is Script {
 
         address reserve = vm.envAddress("DEPLOYMENT_RESERVE");
 
-        // Set ReserveToken's mintBurner allowance to Reserve.
+        // Set CuracaoReserveToken's mintBurner allowance to Reserve.
         vm.startBroadcast();
         {
             reserveToken.setMintBurner(reserve, true);

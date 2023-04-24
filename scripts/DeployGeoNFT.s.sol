@@ -20,7 +20,6 @@ contract DeployGeoNFT is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         string memory name = vm.envString("DEPLOYMENT_GEONFT_NAME");
         string memory symbol = vm.envString("DEPLOYMENT_GEONFT_SYMBOL");
 
@@ -29,7 +28,7 @@ contract DeployGeoNFT is Script {
         require(bytes(symbol).length != 0, "DeployGeoNFT: Missing env variable: symbol");
 
         // Deploy the GeoNFT.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             nft = new GeoNFT(name, symbol);
         }

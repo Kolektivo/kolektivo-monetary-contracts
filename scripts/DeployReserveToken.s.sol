@@ -22,7 +22,6 @@ contract DeployReserveToken is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         string memory name = vm.envString("DEPLOYMENT_RESERVE_TOKEN_NAME");
         string memory symbol = vm.envString("DEPLOYMENT_RESERVE_TOKEN_SYMBOL");
         address mintBurner = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER");
@@ -33,7 +32,7 @@ contract DeployReserveToken is Script {
         require(mintBurner != address(0), "DeployReserveToken: Missing env variable: mint burner");
 
         // Deploy the CuracaoReserveToken.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             token = new CuracaoReserveToken(name, symbol);
             token.setMintBurner(mintBurner, true);

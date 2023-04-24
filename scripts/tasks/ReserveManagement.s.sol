@@ -10,12 +10,11 @@ import {IReserve} from "../../src/interfaces/IReserve.sol";
 contract SetMintBurner is Script {
     function run() external {
         // Get env variables
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("TASK_RESERVE_TOKEN"));
         address mintBurner = vm.envAddress("TASK_MINT_BURNER");
 
         // Set new mintBurner
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             reserveToken.setMintBurner(mintBurner, true);
         }
@@ -32,7 +31,6 @@ contract SetMintBurner is Script {
 
 contract RegisterERC20 is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         address erc20 = vm.envAddress("TASK_REGISTERERC20_TOKEN");
         address oracle = vm.envAddress("TASK_ORACLE");
@@ -40,7 +38,7 @@ contract RegisterERC20 is Script {
         IReserve.AssetType tokenAssetType = IReserve.AssetType.Stable;
         IReserve.RiskLevel tokenRiskLevel = IReserve.RiskLevel.Low;
 
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             reserve.registerERC20(erc20, oracle, tokenAssetType, tokenRiskLevel);
         }
@@ -85,12 +83,11 @@ contract RegisterERC20 is Script {
 contract GetTokenOracle is Script {
     function run() external {
         // Get env variables
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         address tokenOracle;
 
         // Set new DataProvider to Oracle
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             tokenOracle = reserve.tokenOracle();
         }

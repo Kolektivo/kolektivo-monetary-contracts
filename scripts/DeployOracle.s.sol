@@ -21,7 +21,6 @@ contract DeployOracle is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         uint256 reportExpirationTime = vm.envUint("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME");
         uint256 reportDelay = vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
         uint256 minimumProviders = vm.envUint("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS");
@@ -36,7 +35,7 @@ contract DeployOracle is Script {
         require(minimumProviders != 0, "DeployOracle: Missing env variable: minimum providers");
 
         // Deploy the oracle.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             oracle = new Oracle(
                 reportExpirationTime,

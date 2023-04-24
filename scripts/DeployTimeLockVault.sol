@@ -17,9 +17,8 @@ contract DeployTimeLockVault is Script {
 
     function run() external {
         // Deploy the TimeLockVault.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             timeLockVault = new TimeLockVault();
         }

@@ -7,11 +7,10 @@ import {Oracle} from "../../src/Oracle.sol";
 contract AddProvider is Script {
     function run() external {
         // Get env variables
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
 
         // Set new DataProvider to Oracle
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             oracle.addProvider(vm.envAddress("TASK_DATA_PROVIDER"));
         }
@@ -29,13 +28,12 @@ contract AddProvider is Script {
 contract GetData is Script {
     function run() external {
         // Get env variables
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
         uint256 price;
         bool valid;
 
         // Set new DataProvider to Oracle
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             (price, valid) = oracle.getData();
         }

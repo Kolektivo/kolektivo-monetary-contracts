@@ -32,7 +32,6 @@ contract DeployMento is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address reserveToken = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
 
@@ -45,7 +44,7 @@ contract DeployMento is Script {
         require(reserveToken != address(0), "DeployMento: Missing env variable: token");
 
         // Deploy the Reserve.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             address proxyAdmin = address(new ProxyAdmin());
 

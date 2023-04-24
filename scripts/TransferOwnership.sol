@@ -18,7 +18,6 @@ import {Oracle} from "../src/Oracle.sol";
  */
 contract TransferOwnership is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         Treasury treasury = Treasury(vm.envAddress("DEPLOYMENT_TREASURY"));
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
@@ -35,7 +34,7 @@ contract TransferOwnership is Script {
         require(newOwner != address(0), "DeployTreasury: Missing env variable: trusted owner");
 
         // Initiate owner switch.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             treasury.setPendingOwner(newOwner);
             reserve.setPendingOwner(newOwner);

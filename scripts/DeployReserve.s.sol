@@ -20,7 +20,6 @@ contract DeployReserve is Script {
 
     function run() external {
         // Read deployment settings from environment variables.
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address token = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         address tokenOracle = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE");
         address vestingVault = vm.envAddress("DEPLOYMENT_RESERVE_VESTING_VAULT");
@@ -35,7 +34,7 @@ contract DeployReserve is Script {
         require(minBacking != 0, "DeployReserve: Missing env variable: min backing");
 
         // Deploy the Reserve.
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         {
             reserve = new Reserve(token, tokenOracle, vestingVault, minBacking);
         }

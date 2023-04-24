@@ -45,7 +45,7 @@ contract DeployReserve is Script {
         vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(reserve)));
 
         // Possible command for verifying
-        // forge verify-contract 0xdc43e196c5057355e3f8b4c2e998ca5874d43546 StableTokenKG --chain ID?
+        // forge verify-contract 0xdc43e196c5057355e3f8b4c2e998ca5874d43546 KolektivoGuilder --chain ID?
 
         // Log the deployed Reserve contract address.
         console2.log("Deployment of Reserve at address", address(reserve));

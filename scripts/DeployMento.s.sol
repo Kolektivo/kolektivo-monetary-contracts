@@ -6,7 +6,7 @@ import "@oz/token/ERC20/ERC20.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-import {StableTokenKG} from "../src/mento/StableTokenKG.sol";
+import {KolektivoGuilder} from "../src/mento/KolektivoGuilder.sol";
 import {Exchange} from "../src/mento/MentoExchange.sol";
 import {MentoReserve} from "../src/mento/MentoReserve.sol";
 import {Registry} from "../src/mento/MentoRegistry.sol";
@@ -26,7 +26,7 @@ contract DeployMento is Script {
     Exchange exchange;
     Registry registry;
     MentoReserve reserve;
-    StableTokenKG token;
+    KolektivoGuilder token;
     Freezer freezer;
     SortedOracles sortedOracles;
 
@@ -57,7 +57,7 @@ contract DeployMento is Script {
             initData = abi.encodeWithSignature("initialize()");
             registry = Registry(deployUupsProxy(registryImplementation, proxyAdmin, initData));
 
-            address tokenImplementation = address(new StableTokenKG(true));
+            address tokenImplementation = address(new KolektivoGuilder(true));
             initData = abi.encodeWithSignature(
                 "initialize(string,string,uint8,address,uint256,uint256,string)",
                 tokenName, // _name
@@ -68,7 +68,7 @@ contract DeployMento is Script {
                 1 * 365 * 24 * 60 * 60, // inflationFactorUpdatePeriod
                 tokenSymbol // exchangeIdentifier
             );
-            token = StableTokenKG(deployUupsProxy(tokenImplementation, proxyAdmin, initData));
+            token = KolektivoGuilder(deployUupsProxy(tokenImplementation, proxyAdmin, initData));
 
             bytes32[] memory assetAllocationSymbols = new bytes32[](1);
             assetAllocationSymbols[0] = bytes32(bytes(reserveTokenSymbol));
@@ -127,7 +127,7 @@ contract DeployMento is Script {
         console2.log("Deployment of Mento Registry at address", address(registry));
         console2.log("Deployment of Mento Reserve at address", address(reserve));
         console2.log("Deployment of Mento Exchange at address", address(exchange));
-        console2.log("Deployment of Mento Token at address", address(token));
+        console2.log("Deployment of Kolektivo Guilder at address", address(token));
         console2.log("Deployment of Mento Freezer at address", address(freezer));
     }
 

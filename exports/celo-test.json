@@ -8885,7 +8885,7 @@
         }
       ]
     },
-    "Symmetric-Vault": {
+    "Vault": {
       "address": "0xD25E02047E76b688445ab154785F2642c6fe3f73",
       "abi": [
         {

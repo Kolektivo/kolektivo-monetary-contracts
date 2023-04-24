@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {ReserveToken} from "../../src/ReserveToken.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {Reserve} from "../../src/Reserve.sol";
 import {IReserve} from "../../src/interfaces/IReserve.sol";
 
@@ -11,7 +11,7 @@ contract SetMintBurner is Script {
     function run() external {
         // Get env variables
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        ReserveToken reserveToken = ReserveToken(vm.envAddress("TASK_RESERVE_TOKEN"));
+        CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("TASK_RESERVE_TOKEN"));
         address mintBurner = vm.envAddress("TASK_MINT_BURNER");
 
         // Set new mintBurner
@@ -24,7 +24,7 @@ contract SetMintBurner is Script {
         console2.log(
             "MintBurner with address ",
             vm.envString("TASK_MINT_BURNER"),
-            "set within ReserveToken ",
+            "set within CuracaoReserveToken ",
             vm.envString("TASK_RESERVE_TOKEN")
         );
     }

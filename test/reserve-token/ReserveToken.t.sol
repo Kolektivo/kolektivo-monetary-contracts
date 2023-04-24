@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
-import "src/ReserveToken.sol";
+import "src/CuracaoReserveToken.sol";
 
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
@@ -24,17 +24,17 @@ library Errors {
 }
 
 /**
- * @dev ReserveToken Tests.
+ * @dev CuracaoReserveToken Tests.
  */
 contract ReserveTokenTest is Test {
     // SuT.
-    ReserveToken token;
+    CuracaoReserveToken token;
 
     // Events copied from SuT.
     event UpdateMintBurner(address indexed mintBurner, bool newStatus);
 
     function setUp() public {
-        token = new ReserveToken("Reserve Token", "RT");
+        token = new CuracaoReserveToken("Reserve Token", "RT");
         token.setMintBurner(address(this), true);
     }
 

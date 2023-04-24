@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 import "forge-std/Script.sol";
 
 import {Reserve} from "../../src/Reserve.sol";
-import {ReserveToken} from "../../src/ReserveToken.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {Oracle} from "../../src/Oracle.sol";
 
 /**
@@ -15,7 +15,7 @@ import {Oracle} from "../../src/Oracle.sol";
 contract IncurDebt is Script {
     function run() external {
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
-        ReserveToken reserveToken = ReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
 
         Oracle reserveTokenOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
 

@@ -9,6 +9,7 @@ import "../DeployReserve.s.sol";
 import "../DeployTreasury.s.sol";
 import "../DeployMento.s.sol";
 import "../mocks/DeployERC20Mock.s.sol";
+import "../DeployTimeLockVault.sol";
 
 import "../testnet/Setup.s.sol";
 import "../testnet/IncurDebt.s.sol";
@@ -51,6 +52,7 @@ contract DeployFullTestSetup is Script {
         DeployReserve deployReserve = new DeployReserve();
         DeployTreasury deployTreasury = new DeployTreasury();
         DeployMento deployMento = new DeployMento();
+        DeployTimeLockVault deployTimeLockVault = new DeployTimeLockVault();
 
         console2.log("Running deployment script, deploying...");
 
@@ -69,7 +71,12 @@ contract DeployFullTestSetup is Script {
         deployReserveToken.run();
         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
 
+        // Deploy VestingVault
+        deployTimeLockVault.run();
+        vm.setEnv("DEPLOYMENT_TIMELOCKVAULT", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
+
         vm.setEnv("DEPLOYMENT_RESERVE_MIN_BACKING", vm.toString(ReserveMinBacking));
+        vm.setEnv("DEPLOYMENT_RESERVE_VESTING_VAULT", vm.envString("DEPLOYMENT_TIMELOCKVAULT"));
         deployReserve.run();
         vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
         address vestingVault = Reserve(vm.envAddress("DEPLOYMENT_RESERVE")).timeLockVault();

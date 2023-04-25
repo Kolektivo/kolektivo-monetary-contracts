@@ -34,13 +34,25 @@ contract RegisterERC20 is Script {
         Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
         address erc20 = vm.envAddress("TASK_REGISTERERC20_TOKEN");
         address oracle = vm.envAddress("TASK_ORACLE");
-
-        IReserve.AssetType tokenAssetType = IReserve.AssetType.Stable;
-        IReserve.RiskLevel tokenRiskLevel = IReserve.RiskLevel.Low;
+        uint256 assetType = vm.envUint("TASK_TOKEN_ASSET_TYPE");
+        uint256 riskLevel = vm.envUint("TASK_TOKEN_RISK_LEVEL");
 
         vm.startBroadcast();
         {
-            reserve.registerERC20(erc20, oracle, tokenAssetType, tokenRiskLevel);
+            reserve.registerERC20(erc20, oracle, IReserve.AssetType(assetType), IReserve.RiskLevel(riskLevel));
+        }
+        vm.stopBroadcast();
+    }
+}
+
+contract DeregisterERC20 is Script {
+    function run() external {
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        address erc20 = vm.envAddress("TASK_REGISTERERC20_TOKEN");
+
+        vm.startBroadcast();
+        {
+            reserve.deregisterERC20(erc20);
         }
         vm.stopBroadcast();
     }
@@ -119,6 +131,23 @@ contract SetMinBacking is Script {
     }
 }
 
+contract GetMinBacking is Script {
+    function run() external {
+        // Get env variables
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        uint256 minBacking;
+
+        // Set new DataProvider to Oracle
+        vm.startBroadcast();
+        {
+            minBacking = reserve.minBacking();
+        }
+        vm.stopBroadcast();
+
+        console2.log("For Reserve with address: ", address(reserve), ", minimum backing is at: ", minBacking);
+    }
+}
+
 contract IncurDebt is Script {
     function run() external {
         // Get env variables
@@ -155,5 +184,24 @@ contract GetReserveStatus is Script {
             "Reserve Status of Reserve with address ", address(reserve), "reserve valuation: ", reserveValuation
         );
         console2.log(", reserve supply: ", reserveSupply, ", backing: ", minBacking);
+    }
+}
+
+contract GetOraclePerERC20 is Script {
+    function run() external {
+        // Get env variables
+        Reserve reserve = Reserve(vm.envAddress("DEPLOYMENT_RESERVE"));
+        address erc20 = vm.envAddress("TASK_REGISTERERC20_TOKEN");
+        address oracle;
+
+        // Get Reserve status
+        vm.startBroadcast();
+        {
+            oracle = reserve.oraclePerERC20(erc20);
+        }
+        vm.stopBroadcast();
+
+        console2.log("For Reserve with address ", address(reserve), " , for the ERC20 token ", erc20);
+        console2.log(" , the Oracle address is ", oracle);
     }
 }

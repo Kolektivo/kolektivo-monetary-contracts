@@ -30,7 +30,7 @@ contract DeployFullTestSetup is Script {
     uint256 constant OracleMinimumProviders = 1;
     // Kolektivo Reserve
     string constant kCurTokenName = "Kolektivo Curacao Test Token";
-    string constant kCurTokenSymbol = "kCur-T";
+    string constant kCurTokenSymbol = "kCUR-T";
     uint256 constant ReserveMinBacking = 5500; // in BPS
     uint256 constant DesiredBackingAmountReserve = 6750; // in BPS
     // Mento
@@ -84,8 +84,8 @@ contract DeployFullTestSetup is Script {
         deployTreasury.run();
         vm.setEnv("DEPLOYMENT_TREASURY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
 
-        vm.setEnv("DEPLOYMENT_MENTO_TOKEN_NAME", MentoTokenName);
-        vm.setEnv("DEPLOYMENT_MENTO_TOKEN_SYMBOL", MentoTokenSymbol);
+        vm.setEnv("DEPLOYMENT_MENTO_STABLE_TOKEN_NAME", MentoTokenName);
+        vm.setEnv("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL", MentoTokenSymbol);
         deployMento.run();
         vm.setEnv("DEPLOYMENT_MENTO_REGISTRY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
         Registry mentoRegistry = Registry(vm.envAddress("DEPLOYMENT_MENTO_REGISTRY"));

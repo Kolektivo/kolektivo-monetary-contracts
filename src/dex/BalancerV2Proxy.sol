@@ -6,97 +6,12 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {TSOwnable} from "solrocket/TSOwnable.sol";
 import "./lib/IUniswapV2Router02.sol";
 import "../interfaces/IReserve.sol";
+import "./IVault.sol";
 
 interface CuracaoReserveToken {
     function mint(address to, uint256 amount) external;
+
     function burn(address from, uint256 amount) external;
-}
-
-interface TokenInterface {
-    function balanceOf(address) external view returns (uint256);
-    function allowance(address, address) external view returns (uint256);
-    function approve(address, uint256) external returns (bool);
-    function transfer(address, uint256) external returns (bool);
-    function transferFrom(address, address, uint256) external returns (bool);
-    function deposit() external payable;
-    function withdraw(uint256) external;
-}
-
-interface ExchangeProxy {
-    struct Pool {
-        address pool;
-        uint256 tokenBalanceIn;
-        uint256 tokenWeightIn;
-        uint256 tokenBalanceOut;
-        uint256 tokenWeightOut;
-        uint256 swapFee;
-        uint256 effectiveLiquidity;
-    }
-
-    struct Swap {
-        address pool;
-        address tokenIn;
-        address tokenOut;
-        uint256 swapAmount; // tokenInAmount / tokenOutAmount
-        uint256 limitReturnAmount; // minAmountOut / maxAmountIn
-        uint256 maxPrice;
-    }
-
-    function batchSwapExactIn(
-        Swap[] memory swaps,
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) external payable returns (uint256 totalAmountOut);
-
-    function batchSwapExactOut(
-        Swap[] memory swaps,
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 maxTotalAmountIn
-    ) external payable returns (uint256 totalAmountIn);
-
-    function multihopBatchSwapExactIn(
-        Swap[][] memory swapSequences,
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) external payable returns (uint256 totalAmountOut);
-
-    function multihopBatchSwapExactOut(
-        Swap[][] memory swapSequences,
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 maxTotalAmountIn
-    ) external payable returns (uint256 totalAmountIn);
-
-    function smartSwapExactIn(
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 totalAmountIn,
-        uint256 minTotalAmountOut,
-        uint256 nPools
-    ) external payable returns (uint256 totalAmountOut);
-
-    function smartSwapExactOut(
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 totalAmountOut,
-        uint256 maxTotalAmountIn,
-        uint256 nPools
-    ) external payable returns (uint256 totalAmountIn);
-
-    function viewSplitExactIn(address tokenIn, address tokenOut, uint256 swapAmount, uint256 nPools)
-        external
-        view
-        returns (Swap[] memory swaps, uint256 totalOutput);
-
-    function viewSplitExactOut(address tokenIn, address tokenOut, uint256 swapAmount, uint256 nPools)
-        external
-        view
-        returns (Swap[] memory swaps, uint256 totalOutput);
 }
 
 contract BalancerV2Proxy is TSOwnable {
@@ -109,23 +24,32 @@ contract BalancerV2Proxy is TSOwnable {
     uint256 private constant BPS = 10_000;
 
     ERC20 public pairToken;
-    ExchangeProxy public exchange;
+    IVault public vault;
     IReserve public reserve;
     address public reserveToken;
     uint256 public ceilingMultiplier;
     uint256 public ceilingTradeShare;
     uint256 public floorTradeShare;
 
+    // following varaibles are used by functions as temporary variables to store temporary data
+    // at the start of functional calls, their value is always zero
+    // at the end of functional calls, their value is again set to zero
+    // this is done to prevent call stack being exceeded
+    uint256 public inBalanceBefore;
+    uint256 public inBalanceAfter;
+    uint256 public outBalanceBefore;
+    uint256 public outBalanceAfter;
+
     constructor(
         address pairToken_,
-        address exchange_,
+        address vault_,
         address reserve_,
         uint256 ceilingMultiplier_,
         uint256 ceilingTradeShare_,
         uint256 floorTradeShare_
     ) {
         require(pairToken_ != address(0));
-        require(exchange_ != address(0));
+        require(vault_ != address(0));
         require(reserve_ != address(0));
         require(ceilingMultiplier_ != 0);
         require(ceilingTradeShare_ <= BPS);
@@ -133,7 +57,7 @@ contract BalancerV2Proxy is TSOwnable {
 
         // Set storage.
         pairToken = ERC20(pairToken_);
-        exchange = ExchangeProxy(exchange_);
+        vault = IVault(vault_);
         reserve = IReserve(reserve_);
         ceilingMultiplier = ceilingMultiplier_;
         ceilingTradeShare = ceilingTradeShare_;
@@ -143,189 +67,307 @@ contract BalancerV2Proxy is TSOwnable {
     }
 
     function batchSwapExactIn(
-        ExchangeProxy.Swap[] memory swaps,
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
+        IVault.BatchSwapStep[] memory swaps,
+        IAsset[] memory assets,
         uint256 totalAmountIn,
-        uint256 minTotalAmountOut
-    ) external payable returns (uint256 totalAmountOut) {
-        (bool breach, bool isFloor) = _checkReserveLimits();
+        uint256 minTotalAmountOut,
+        IVault.FundManagement memory funds,
+        int256[] memory limits,
+        uint256 deadline
+    ) external payable {
         require(
-            (address(tokenIn) == reserveToken && address(tokenOut) == address(pairToken))
-                || (address(tokenIn) == address(pairToken) && address(tokenOut) == reserveToken)
+            (address(assets[0]) == reserveToken &&
+                address(assets[1]) == address(pairToken)) ||
+                (address(assets[0]) == address(pairToken) &&
+                    address(assets[1]) == reserveToken)
         );
         require(swaps.length == 1);
 
-        if (address(tokenIn) == reserveToken) {
+        if (address(assets[0]) == reserveToken) {
             // User sells Reserve Token for the Pair Token
-            uint256 inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
-            uint256 outBalanceBefore = pairToken.balanceOf(address(this));
+            inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
+            outBalanceBefore = pairToken.balanceOf(address(this));
 
             // Transfer the Reserve Token to us
-            ERC20(reserveToken).safeTransferFrom(msg.sender, address(this), totalAmountIn);
+            ERC20(reserveToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                totalAmountIn
+            );
             uint256 thisAmountIn = totalAmountIn;
             uint256 thisAmountOutMin = minTotalAmountOut;
 
             // Calculate the amount that we will withdraw from the Reserve instead of
-            // acquiring it on the exchange
-            uint256 withdrawAmount = thisAmountOutMin * floorTradeShare / BPS;
+            // acquiring it on the vault
+            uint256 withdrawAmount = (thisAmountOutMin * floorTradeShare) / BPS;
 
-            // If a limit is breached in the Reserve and it is the floor
-            // (for ceiling we don't care if a user sells Reserve Tokens since it helps us)
-            if (breach && isFloor) {
-                // Retrieve the corresponding amount from the Reserve
-                reserve.withdrawERC20(address(pairToken), address(this), withdrawAmount);
-                thisAmountIn = thisAmountIn * withdrawAmount / thisAmountOutMin;
-                thisAmountOutMin = thisAmountOutMin - withdrawAmount;
+            {
+                (bool breach, bool isFloor) = _checkReserveLimits();
+                // If a limit is breached in the Reserve and it is the floor
+                // (for ceiling we don't care if a user sells Reserve Tokens since it helps us)
+                if (breach && isFloor) {
+                    // Retrieve the corresponding amount from the Reserve
+                    reserve.withdrawERC20(
+                        address(pairToken),
+                        address(this),
+                        withdrawAmount
+                    );
+                    thisAmountIn =
+                        (thisAmountIn * withdrawAmount) /
+                        thisAmountOutMin;
+                    thisAmountOutMin = thisAmountOutMin - withdrawAmount;
 
-                swaps[0].swapAmount = thisAmountIn / thisAmountOutMin;
-                swaps[0].limitReturnAmount = thisAmountOutMin / thisAmountIn;
+                    swaps[0].amount = thisAmountIn / thisAmountOutMin;
+                }
             }
 
-            // Approve and execute the exchange swap
-            ERC20(reserveToken).approve(address(exchange), thisAmountIn);
-            uint256 outAmount = exchange.batchSwapExactIn(swaps, tokenIn, tokenOut, thisAmountIn, thisAmountOutMin);
+            // Approve and execute the vault swap
+            {
+                ERC20(reserveToken).approve(address(vault), thisAmountIn);
+                uint256 outAmount = uint256(
+                    vault.batchSwap( // exact in
+                        IVault.SwapKind.GIVEN_IN,
+                        swaps,
+                        assets,
+                        funds,
+                        limits,
+                        deadline
+                    )[1]
+                );
 
-            // Update the exchange return value with our additional amount
-            outAmount += withdrawAmount;
-            require(outAmount >= minTotalAmountOut);
+                // Update the exchange return value with our additional amount
+                outAmount += withdrawAmount;
+                require(outAmount >= minTotalAmountOut);
+            }
 
-            uint256 inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
-            uint256 outBalanceAfter = pairToken.balanceOf(address(this));
+            inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
+            outBalanceAfter = pairToken.balanceOf(address(this));
 
             // Transfer the resulting tokens to the user
             pairToken.transfer(msg.sender, outBalanceAfter - outBalanceBefore);
 
             // Burn the surplus of Reserve Tokens that we didn't see on the exchange
-            CuracaoReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
-        } else if (address(tokenOut) == reserveToken) {
+            CuracaoReserveToken(reserveToken).burn(
+                address(this),
+                inBalanceAfter - inBalanceBefore
+            );
+            outBalanceBefore = 0;
+            outBalanceAfter = 0;
+        } else if (address(assets[1]) == reserveToken) {
             // User buys Reserve Token with the Pair Token
-            uint256 balanceBefore = ERC20(reserveToken).balanceOf(address(this));
+            inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the Pair Token to us
-            pairToken.safeTransferFrom(msg.sender, address(this), totalAmountIn);
+            pairToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                totalAmountIn
+            );
             uint256 thisAmountIn = totalAmountIn;
             uint256 thisAmountOutMin = minTotalAmountOut;
 
             // Calculate the amount that we will mint from the Reserve instead of
             // acquiring it on the exchange
-            uint256 mintAmount = thisAmountOutMin * ceilingTradeShare / BPS;
+            uint256 mintAmount = (thisAmountOutMin * ceilingTradeShare) / BPS;
 
-            // If a limit is breached in the Reserve and it is the ceiling
-            // (for floor we don't care if a user buys Reserve Tokens since it helps us)
-            if (breach && !isFloor) {
-                // Mint the corresponding amount from the Reserve
-                CuracaoReserveToken(reserveToken).mint(address(this), mintAmount);
-                thisAmountIn = thisAmountIn * mintAmount / thisAmountIn;
-                thisAmountOutMin = thisAmountOutMin - mintAmount;
+            {
+                (bool breach, bool isFloor) = _checkReserveLimits();
+                // If a limit is breached in the Reserve and it is the ceiling
+                // (for floor we don't care if a user buys Reserve Tokens since it helps us)
+                if (breach && !isFloor) {
+                    // Mint the corresponding amount from the Reserve
+                    CuracaoReserveToken(reserveToken).mint(
+                        address(this),
+                        mintAmount
+                    );
+                    thisAmountIn = (thisAmountIn * mintAmount) / thisAmountIn;
+                    thisAmountOutMin = thisAmountOutMin - mintAmount;
 
-                swaps[0].swapAmount = thisAmountIn / thisAmountOutMin;
-                swaps[0].limitReturnAmount = thisAmountOutMin / thisAmountIn;
+                    swaps[0].amount = thisAmountIn / thisAmountOutMin;
+                }
             }
             // Approve and execute the exchange swap
-            pairToken.approve(address(exchange), thisAmountIn);
-            uint256 outAmount = exchange.batchSwapExactIn(swaps, tokenIn, tokenOut, thisAmountIn, thisAmountOutMin);
+            {
+                pairToken.approve(address(vault), thisAmountIn);
+                uint256 outAmount = uint256(
+                    vault.batchSwap( // exact in
+                        IVault.SwapKind.GIVEN_IN,
+                        swaps,
+                        assets,
+                        funds,
+                        limits,
+                        deadline
+                    )[1]
+                );
 
-            // Update the exchange return value with our additional amount
-            outAmount += mintAmount;
-            require(outAmount >= minTotalAmountOut);
+                // Update the exchange return value with our additional amount
+                outAmount += mintAmount;
+                require(outAmount >= minTotalAmountOut);
+            }
 
-            uint256 balanceAfter = ERC20(reserveToken).balanceOf(address(this));
+            inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the resulting tokens to the user
-            ERC20(reserveToken).transfer(msg.sender, balanceAfter - balanceBefore);
+            ERC20(reserveToken).transfer(
+                msg.sender,
+                inBalanceAfter - inBalanceBefore
+            );
         }
+        inBalanceBefore = 0;
+        inBalanceAfter = 0;
     }
 
     function batchSwapExactOut(
-        ExchangeProxy.Swap[] memory swaps,
-        TokenInterface tokenIn,
-        TokenInterface tokenOut,
-        uint256 maxTotalAmountIn
-    ) external payable returns (uint256 totalAmountIn) {
-        (bool breach, bool isFloor) = _checkReserveLimits();
+        IVault.BatchSwapStep[] memory swaps,
+        IAsset[] memory assets,
+        uint256 maxTotalAmountIn,
+        IVault.FundManagement memory funds,
+        int256[] memory limits,
+        uint256 deadline
+    ) external payable {
         require(
-            (address(tokenIn) == reserveToken && address(tokenOut) == address(pairToken))
-                || (address(tokenIn) == address(pairToken) && address(tokenOut) == reserveToken)
+            (address(assets[0]) == reserveToken &&
+                address(assets[1]) == address(pairToken)) ||
+                (address(assets[0]) == address(pairToken) &&
+                    address(assets[1]) == reserveToken)
         );
         require(swaps.length == 1);
 
-        if (address(tokenIn) == reserveToken) {
+        if (address(assets[0]) == reserveToken) {
             // User sells Reserve Token for the Pair Token
-            uint256 inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
-            uint256 outBalanceBefore = pairToken.balanceOf(address(this));
+            // check the existing balance of the Proxy Pool Contract
+            inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
+            outBalanceBefore = pairToken.balanceOf(address(this));
 
             // Transfer the Reserve Token to us
-            ERC20(reserveToken).safeTransferFrom(msg.sender, address(this), maxTotalAmountIn);
-            uint256 thisAmountOut = swaps[0].limitReturnAmount * maxTotalAmountIn;
+            ERC20(reserveToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                maxTotalAmountIn
+            );
+            uint256 thisAmountOut = swaps[0].amount; // if swap kind is GEVEN_OUT, swap.amount -> exact amout out
             uint256 thisAmountInMax = maxTotalAmountIn;
 
             // Calculate the amount that we will withdraw from the Reserve instead of
             // acquiring it on the exchange
-            uint256 withdrawAmount = thisAmountOut * floorTradeShare / BPS;
+            uint256 withdrawAmount = (thisAmountOut * floorTradeShare) / BPS;
 
-            // If a limit is breached in the Reserve and it is the floor
-            // (for ceiling we don't care if a user sells Reserve Tokens since it helps us)
-            if (breach && isFloor) {
-                // Retrieve the corresponding amount from the Reserve
-                reserve.withdrawERC20(address(pairToken), address(this), withdrawAmount);
-                thisAmountInMax = thisAmountInMax * withdrawAmount / thisAmountOut;
-                thisAmountOut = thisAmountOut - withdrawAmount;
+            {
+                (bool breach, bool isFloor) = _checkReserveLimits();
+                // If a limit is breached in the Reserve and it is the floor
+                // (for ceiling we don't care if a user sells Reserve Tokens since it helps us)
+                if (breach && isFloor) {
+                    // Retrieve the corresponding amount from the Reserve
+                    reserve.withdrawERC20(
+                        address(pairToken),
+                        address(this),
+                        withdrawAmount
+                    );
+                    thisAmountInMax =
+                        (thisAmountInMax * withdrawAmount) /
+                        thisAmountOut;
+                    thisAmountOut = thisAmountOut - withdrawAmount;
+                }
             }
             // Approve and execute the exchange swap
-            ERC20(reserveToken).approve(address(exchange), thisAmountInMax);
-            exchange.batchSwapExactOut(swaps, tokenIn, tokenOut, maxTotalAmountIn);
+            ERC20(reserveToken).approve(address(vault), thisAmountInMax);
+            vault.batchSwap( // exact out
+                IVault.SwapKind.GIVEN_OUT,
+                swaps,
+                assets,
+                funds,
+                limits,
+                deadline
+            );
 
-            uint256 inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
-            uint256 inAmount = inBalanceAfter - inBalanceBefore;
-            uint256 outBalanceAfter = pairToken.balanceOf(address(this));
-            uint256 outAmount = outBalanceAfter - outBalanceBefore + withdrawAmount;
-            require(inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut);
+            inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
+            outBalanceAfter = pairToken.balanceOf(address(this));
+            {
+                uint256 inAmount = inBalanceAfter - inBalanceBefore;
+                uint256 outAmount = outBalanceAfter -
+                    outBalanceBefore +
+                    withdrawAmount;
+                require(
+                    inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
+                );
+            }
 
             // Transfer the resulting tokens to the user
             pairToken.transfer(msg.sender, outBalanceAfter - outBalanceBefore);
 
             // Burn the surplus of Reserve Tokens
-            CuracaoReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
-        } else if (address(tokenOut) == reserveToken) {
+            CuracaoReserveToken(reserveToken).burn(
+                address(this),
+                inBalanceAfter - inBalanceBefore
+            );
+        } else if (address(assets[1]) == reserveToken) {
             // User buys Reserve Token with the Pair Token
-            uint256 inBalanceBefore = pairToken.balanceOf(address(this));
-            uint256 outBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
+            inBalanceBefore = pairToken.balanceOf(address(this));
+            outBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the Pair Token to us
-            pairToken.safeTransferFrom(msg.sender, address(this), maxTotalAmountIn);
-            uint256 thisAmountOut = swaps[0].limitReturnAmount * maxTotalAmountIn;
+            pairToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                maxTotalAmountIn
+            );
+            uint256 thisAmountOut = swaps[0].amount; // if swap kind is GEVEN_OUT, swap.amount -> exact amout out
             uint256 thisAmountInMax = maxTotalAmountIn;
 
             // Calculate the amount that we will mint from the Reserve instead of
             // acquiring it on the exchange
-            uint256 mintAmount = thisAmountOut * ceilingTradeShare / BPS;
+            uint256 mintAmount = (thisAmountOut * ceilingTradeShare) / BPS;
 
-            // If a limit is breached in the Reserve and it is the ceiling
-            // (for floor we don't care if a user buys Reserve Tokens since it helps us)
-            if (breach && !isFloor) {
-                // Mint the corresponding amount from the Reserve
-                CuracaoReserveToken(reserveToken).mint(address(this), mintAmount);
-                thisAmountInMax = thisAmountInMax * mintAmount / thisAmountOut;
-                thisAmountOut = thisAmountOut - mintAmount;
+            {
+                (bool breach, bool isFloor) = _checkReserveLimits();
+                // If a limit is breached in the Reserve and it is the ceiling
+                // (for floor we don't care if a user buys Reserve Tokens since it helps us)
+                if (breach && !isFloor) {
+                    // Mint the corresponding amount from the Reserve
+                    CuracaoReserveToken(reserveToken).mint(
+                        address(this),
+                        mintAmount
+                    );
+                    thisAmountInMax =
+                        (thisAmountInMax * mintAmount) /
+                        thisAmountOut;
+                    thisAmountOut = thisAmountOut - mintAmount;
+                }
             }
             // Approve and execute the exchange swap
-            pairToken.approve(address(exchange), thisAmountInMax);
-            exchange.batchSwapExactOut(swaps, tokenIn, tokenOut, maxTotalAmountIn);
+            pairToken.approve(address(vault), thisAmountInMax);
+            vault.batchSwap( // exact out
+                IVault.SwapKind.GIVEN_OUT,
+                swaps,
+                assets,
+                funds,
+                limits,
+                deadline
+            ); // exact out
 
-            uint256 inBalanceAfter = pairToken.balanceOf(address(this));
-            uint256 inAmount = inBalanceBefore - inBalanceAfter;
-            uint256 outBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
-            uint256 outAmount = outBalanceAfter - outBalanceBefore + mintAmount;
-            require(inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut);
+            inBalanceAfter = pairToken.balanceOf(address(this));
+            outBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
+            {
+                uint256 inAmount = inBalanceBefore - inBalanceAfter;
+                uint256 outAmount = outBalanceAfter -
+                    outBalanceBefore +
+                    mintAmount;
+                require(
+                    inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
+                );
 
-            // Transfer the resulting tokens to the user
-            ERC20(reserveToken).transfer(msg.sender, outAmount);
+                // Transfer the resulting tokens to the user
+                ERC20(reserveToken).transfer(msg.sender, outAmount);
+            }
         }
+        outBalanceAfter = 0;
+        outBalanceBefore = 0;
+        inBalanceAfter = 0;
+        inBalanceBefore = 0;
     }
 
-    function _checkReserveLimits() internal returns (bool, bool) {
-        (,, uint256 reserveBacking) = reserve.reserveStatus();
+    function _checkReserveLimits() internal view returns (bool, bool) {
+        (, , uint256 reserveBacking) = reserve.reserveStatus();
 
         // Floor
         if (reserveBacking <= BPS) {

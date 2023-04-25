@@ -64,7 +64,8 @@ contract PushReport is Script {
     function run() external {
         // Get env variables
         Oracle oracle = Oracle(vm.envAddress("TASK_ORACLE"));
-        uint256 report = 1e18;
+
+        uint256 report = vm.envUint("TASK_PUSH_PRICE");
 
         // Push new report to Oracle
         vm.startBroadcast();

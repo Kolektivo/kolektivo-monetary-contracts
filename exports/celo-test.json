@@ -5610,9 +5610,6 @@
       "abi": "ERC20"
     },
     "KolektivoMultiSig": {
-      "address": "0xcE960DcafC201a1B4440ed5F6B63A7772a34b2Ab"
-    },
-    "KolektivoMultiSig-Test": {
       "address": "0x33a0F694DFEDEFa3e98205E9712f4d8FA422E70a"
     },
     "Vault": {

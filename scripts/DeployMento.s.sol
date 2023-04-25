@@ -36,10 +36,10 @@ contract DeployMento is Script {
         string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
 
         // The backend service for the MVP deployment
-        address dataProvider = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
+        address oracle = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
 
-        string memory tokenName = vm.envString("DEPLOYMENT_MENTO_TOKEN_NAME");
-        string memory tokenSymbol = vm.envString("DEPLOYMENT_MENTO_TOKEN_SYMBOL");
+        string memory tokenName = vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_NAME");
+        string memory tokenSymbol = vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL");
         // Check settings.
         require(reserveToken != address(0), "DeployMento: Missing env variable: token");
 
@@ -105,9 +105,10 @@ contract DeployMento is Script {
             sortedOracles.initialize(
                 24 * 60 * 60 // report validity
             );
+
             // Add Oracles, i.e. data providers to contract
-            sortedOracles.addOracle(address(token), dataProvider);
-            sortedOracles.addOracle(reserveToken, dataProvider);
+            sortedOracles.addOracle(address(token), oracle);
+            sortedOracles.addOracle(reserveToken, oracle);
 
             registry.setAddressFor("Freezer", address(freezer));
             registry.setAddressFor("GoldToken", reserveToken);
@@ -126,8 +127,9 @@ contract DeployMento is Script {
         console2.log("Deployment of Mento Registry at address", address(registry));
         console2.log("Deployment of Mento Reserve at address", address(reserve));
         console2.log("Deployment of Mento Exchange at address", address(exchange));
-        console2.log("Deployment of Kolektivo Guilder at address", address(token));
         console2.log("Deployment of Mento Freezer at address", address(freezer));
+        console2.log("Deployment of Mento SortedOracle at address", address(sortedOracles));
+        console2.log("Deployment of Kolektivo Guilder at address", address(token));
     }
 
     function deployUupsProxy(address contractImplementation, address admin, bytes memory data)

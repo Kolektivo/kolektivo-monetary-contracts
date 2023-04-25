@@ -66,6 +66,12 @@ contract BalancerV2Proxy is TSOwnable {
         require(reserveToken != address(0));
     }
 
+    // assets array [addressOfTokenIn, addressOfTokenOut]
+    // totalAmountIn - exact amount in
+    // minTotalAmountOut - minimum total amount the swap should withdraw
+    // funds - struct of FundManagement where all the internal balance option is false
+    // limits - [] empty array
+    // deadline - can be set to an hour (used previously in Prime Launch)
     function batchSwapExactIn(
         IVault.BatchSwapStep[] memory swaps,
         IAsset[] memory assets,
@@ -132,7 +138,7 @@ contract BalancerV2Proxy is TSOwnable {
                         funds,
                         limits,
                         deadline
-                    )[1]
+                    )[1] // token out is at index 1, hence the balance delta at index 1 is the balance of tokenOut which was withdrawn from vault/pool
                 );
 
                 // Update the exchange return value with our additional amount
@@ -197,7 +203,7 @@ contract BalancerV2Proxy is TSOwnable {
                         funds,
                         limits,
                         deadline
-                    )[1]
+                    )[1] // token out is at index 1, hence the balance delta at index 1 is the balance of tokenOut which was withdrawn from vault/pool
                 );
 
                 // Update the exchange return value with our additional amount

@@ -27,3 +27,19 @@ contract AddOracle is Script {
         console2.log("for SortedOracle with address: ", address(sortedOracles));
     }
 }
+
+contract AddToken is Script {
+    function run() external {
+        // Token address to add to the MentoReserve
+        address token = vm.envAddress("TASK_MENTO_RESERVE_ADD_TOKEN");
+        MentoReserve mentoReserve = MentoReserve(vm.envAddress("DEPLOYMENT_MENTO_RESERVE"));
+
+        vm.startBroadcast();
+        {
+            mentoReserve.addToken(token);
+        }
+        vm.stopBroadcast();
+
+        console2.log("Add token: ", token, " to MentoReserve with address: ", address(mentoReserve));
+    }
+}

@@ -36,7 +36,7 @@ contract DeployMento is Script {
         string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
 
         // The backend service for the MVP deployment
-        address oracle = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
+        // address oracle = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
 
         string memory tokenName = vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_NAME");
         string memory tokenSymbol = vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL");
@@ -65,7 +65,7 @@ contract DeployMento is Script {
                 address(registry), // registryAddress
                 FixidityLib.newFixed(1).unwrap(), // inflationRate
                 1 * 365 * 24 * 60 * 60, // inflationFactorUpdatePeriod
-                tokenSymbol // exchangeIdentifier
+                "Exchange" // exchangeIdentifier
             );
             token = KolektivoGuilder(deployUupsProxy(tokenImplementation, proxyAdmin, initData));
 
@@ -85,7 +85,7 @@ contract DeployMento is Script {
                 assetAllocationSymbols, // _assetAllocationSymbols
                 assetAllocationWeights, // _assetAllocationWeights
                 0, // _tobinTax
-                FixidityLib.newFixed(1).unwrap() // _tobinTaxReserveRatio
+                FixidityLib.newFixed(1).unwrap() // _tobinTaxReserveRatio,
             );
             reserve = MentoReserve(deployUupsProxy(reserveImplementation, proxyAdmin, initData));
 
@@ -94,8 +94,8 @@ contract DeployMento is Script {
                 "initialize(address,string,uint256,uint256,uint256,uint256)",
                 address(registry), // registryAddress
                 tokenSymbol, // stableTokenIdentifier
-                FixidityLib.newFixedFraction(3, 1000).unwrap(), // _spread
-                FixidityLib.newFixedFraction(1, 2).unwrap(), // _reserveFraction
+                FixidityLib.newFixedFraction(25, 10000).unwrap(), // _spread
+                FixidityLib.newFixedFraction(9999, 10000).unwrap(), // _reserveFraction
                 60 * 60, // _updateFrequency
                 1 // _minimumReports
             );
@@ -107,8 +107,8 @@ contract DeployMento is Script {
             );
 
             // Add Oracles, i.e. data providers to contract
-            sortedOracles.addOracle(address(token), oracle);
-            sortedOracles.addOracle(reserveToken, oracle);
+            sortedOracles.addOracle(address(token), 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+            // sortedOracles.addOracle(reserveToken, oracle);
 
             registry.setAddressFor("Freezer", address(freezer));
             registry.setAddressFor("GoldToken", reserveToken);

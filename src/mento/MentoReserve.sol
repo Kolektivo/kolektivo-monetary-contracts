@@ -30,6 +30,7 @@ contract MentoReserve is
         uint128 timestamp;
     }
 
+    address reserveToken;
     mapping(address => bool) public isToken;
     address[] private _tokens;
     TobinTaxCache public tobinTaxCache;
@@ -148,6 +149,11 @@ contract MentoReserve is
         emit TobinTaxSet(value);
     }
 
+    function setReserveToken(address _reserveToken) public onlyOwner {
+        // add requires
+        reserveToken = _reserveToken;
+    }
+
     /**
      * @notice Sets the reserve ratio at which the tobin tax sets in.
      * @param value The reserve ratio at which the tobin tax sets in.
@@ -181,7 +187,10 @@ contract MentoReserve is
      * @param frozenDays The number of days the frozen CELO thaws over.
      */
     function setFrozenGold(uint256 frozenGold, uint256 frozenDays) public onlyOwner {
-        require(frozenGold <= address(this).balance, "Cannot freeze more than balance");
+        require(
+            reserveToken == address(0) || frozenGold <= IERC20(reserveToken).balanceOf(address(this)),
+            "Cannot freeze more than balance"
+        );
         frozenReserveGoldStartBalance = frozenGold;
         frozenReserveGoldStartDay = block.timestamp / 1 days;
         frozenReserveGoldDays = frozenDays;
@@ -384,7 +393,7 @@ contract MentoReserve is
      */
     function _transferGold(address payable to, uint256 value) internal returns (bool) {
         require(value <= getUnfrozenBalance(), "Exceeding unfrozen reserves");
-        to.sendValue(value);
+        IERC20(reserveToken).transfer(to, value);
         emit ReserveGoldTransferred(msg.sender, to, value);
         return true;
     }
@@ -459,7 +468,7 @@ contract MentoReserve is
      * @return The total unfrozen CELO in the reserve.
      */
     function getUnfrozenBalance() public view returns (uint256) {
-        uint256 balance = address(this).balance;
+        uint256 balance = IERC20(reserveToken).balanceOf(address(this));
         uint256 frozenReserveGold = getFrozenReserveGoldBalance();
         return balance > frozenReserveGold ? balance - frozenReserveGold : 0;
     }
@@ -469,7 +478,7 @@ contract MentoReserve is
      * @return The CELO amount included in the reserve.
      */
     function getReserveGoldBalance() public view returns (uint256) {
-        return address(this).balance + getOtherReserveAddressesGoldBalance();
+        return IERC20(reserveToken).balanceOf(address(this)) + getOtherReserveAddressesGoldBalance();
     }
 
     /**
@@ -512,7 +521,7 @@ contract MentoReserve is
         ISortedOracles sortedOracles = ISortedOracles(sortedOraclesAddress);
         uint256 reserveGoldBalance = getUnfrozenReserveGoldBalance();
         uint256 stableTokensValueInGold = 0;
-        FixidityLib.Fraction memory cgldWeight = FixidityLib.wrap(assetAllocationWeights["cGLD"]);
+        FixidityLib.Fraction memory cgldWeight = FixidityLib.wrap(assetAllocationWeights[assetAllocationSymbols[0]]);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
             uint256 stableAmount;

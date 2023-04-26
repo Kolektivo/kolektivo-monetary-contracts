@@ -50,7 +50,7 @@ contract IncurDebt is Script {
         }
 
         // Send kCUR to Reserve (just to store them there)
-        reserveToken.transfer(address(reserve), reserveToken.balanceOf(vm.envAddress("WALLET_DEPLOYER")));
+        // reserveToken.transfer(address(reserve), reserveToken.balanceOf(vm.envAddress("WALLET_DEPLOYER")));
 
         vm.stopBroadcast();
     }

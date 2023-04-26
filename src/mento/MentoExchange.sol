@@ -12,6 +12,7 @@ import "./lib/FixidityLib.sol";
 import "./lib/Freezable.sol";
 import "./lib/UsingRegistry.sol";
 import "./lib/ICeloVersionedContract.sol";
+import "forge-std/console.sol";
 
 /**
  * @title Contract that allows to exchange StableToken for GoldToken and vice versa
@@ -136,7 +137,12 @@ contract Exchange is
         nonReentrant
         returns (uint256)
     {
+        // Function can be used to trade in two ways:
+        // - kCUR -> kG: sellGold=false
+        // - kG -> kCUR: sellGold=true
         (uint256 buyTokenBucket, uint256 sellTokenBucket) = _getBuyAndSellBuckets(sellGold);
+
+        // amount of token that will be bought for the sellAmount. Must be bigger than
         uint256 buyAmount = _getBuyTokenAmount(buyTokenBucket, sellTokenBucket, sellAmount);
 
         require(buyAmount >= minBuyAmount, "Calculated buyAmount was less than specified minBuyAmount");
@@ -182,8 +188,13 @@ contract Exchange is
         nonReentrant
         returns (uint256)
     {
+        console.logString("buy 0");
+        // Function can be used to trade in two ways:
+        // - kCUR -> kG: sellGold=false
+        // - kG -> kCUR: sellGold=true
         bool sellGold = !buyGold;
         (uint256 buyTokenBucket, uint256 sellTokenBucket) = _getBuyAndSellBuckets(sellGold);
+        // amount of token that need to be sold to receive the buy amount
         uint256 sellAmount = _getSellTokenAmount(buyTokenBucket, sellTokenBucket, buyAmount);
 
         require(sellAmount <= maxSellAmount, "Calculated sellAmount was greater than specified maxSellAmount");
@@ -202,17 +213,23 @@ contract Exchange is
     function _exchange(address from, uint256 sellAmount, uint256 buyAmount, bool sellGold) private {
         IReserve reserve = IReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));
 
+        // Trade kCUR -> kG, i.e. kCUR is swapped in and kG returned
         if (sellGold) {
             goldBucket += sellAmount;
             stableBucket -= buyAmount;
+            // Transfer kCUR from -> reserver, for sell amount
             require(getGoldToken().transferFrom(from, address(reserve), sellAmount), "Transfer of sell token failed");
+            // Mint kG -> from address, for buy amount
             require(IStableToken(stable).mint(from, buyAmount), "Mint of stable token failed");
         } else {
+            // Trade kG -> kCUR, i.e. kG is swapped in and kCUR returned
             stableBucket += sellAmount;
             goldBucket -= buyAmount;
+            // Transfer kG from -> reserver, for sell amount
             require(IERC20(stable).transferFrom(from, address(this), sellAmount), "Transfer of sell token failed");
+            // Burn the kG token, for sell amount
             IStableToken(stable).burn(sellAmount);
-
+            // Transfer kCUR from Reserve -> from, for buy amount
             require(reserve.transferExchangeGold(payable(from), buyAmount), "Transfer of buyToken failed");
         }
 
@@ -370,10 +387,13 @@ contract Exchange is
     {
         if (buyAmount == 0) return 0;
 
+        console.logString("_getSellToken0");
         FixidityLib.Fraction memory numerator = FixidityLib.newFixed(buyAmount * sellTokenBucket);
         FixidityLib.Fraction memory denominator =
             FixidityLib.newFixed(buyTokenBucket - buyAmount).multiply(FixidityLib.fixed1().subtract(spread));
-
+        console.logString("_getSellToken1");
+        console.logUint(numerator.unwrap());
+        console.logUint(denominator.unwrap());
         // See comment in _getBuyTokenAmount
         return numerator.unwrap() / denominator.unwrap();
     }

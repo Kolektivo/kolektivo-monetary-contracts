@@ -34,6 +34,7 @@ contract DeployMento is Script {
         // Read deployment settings from environment variables.
         address reserveToken = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
         string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
+        console2.log(reserveTokenSymbol, reserveToken);
 
         // The backend service for the MVP deployment
         // address oracle = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
@@ -107,7 +108,7 @@ contract DeployMento is Script {
             );
 
             // Add Oracles, i.e. data providers to contract
-            sortedOracles.addOracle(address(token), 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+            sortedOracles.addOracle(address(token), vm.envAddress("PUBLIC_KEY"));
             // sortedOracles.addOracle(reserveToken, oracle);
 
             registry.setAddressFor("Freezer", address(freezer));

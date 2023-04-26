@@ -11,6 +11,3 @@ optimizer_runs = 10_000
 fuzz_runs = 1_000
 verbosity = 4
 solc = "0.8.10"
-
-[rpc_endpoints]
-celo = "${CELO_RPC_URL}"

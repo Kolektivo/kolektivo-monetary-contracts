@@ -8617,7 +8617,7 @@
       ]
     },
     "SortedOracles": {
-      "address": "0xe2eeb028008f42Ca8d86e5CF2638F06F4651131C",
+      "address": "0x00ac7f5624a3aeC93CD37271FD687bD9Ca95f83E",
       "abi": [
         {
           "inputs": [
@@ -9316,7 +9316,7 @@
       ]
     },
     "KolektivoGuilder": {
-      "address": "0x76658A30cEc19FA312781dB3e9AB7AeAF17ecA87",
+      "address": "0x629198134b4e85aE612Eef7A7931e68aEC68D777",
       "abi": [
         {
           "inputs": [
@@ -10407,7 +10407,7 @@
       ]
     },
     "MentoExchange": {
-      "address": "0x9f66Fc3C9608f5690fE878c9f6E73AEA389ac338",
+      "address": "0x7A9F7B9C0D38fCb76B71500bac32DBF2BeE9B06D",
       "abi": [
         {
           "inputs": [
@@ -11071,7 +11071,7 @@
       ]
     },
     "MentoReserve": {
-      "address": "0x41032125C55E5C362c7E1c85b3183E7d4eB99e07",
+      "address": "0xbFCDEf65bF1415bD2f650214bFc2fe2309f1D3D4",
       "abi": [
         {
           "inputs": [
@@ -12041,6 +12041,19 @@
         {
           "inputs": [
             {
+              "internalType": "address",
+              "name": "_reserveToken",
+              "type": "address"
+            }
+          ],
+          "name": "setReserveToken",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "uint256",
               "name": "value",
               "type": "uint256"
@@ -12211,7 +12224,7 @@
       ]
     },
     "MentoRegistry": {
-      "address": "0xE72ef442Edb4EF609A2d8F3731b16D29A5365b9c",
+      "address": "0x0cE69A9599f7B3faF5b2E5485CDAfA9Dc2A61375",
       "abi": [
         {
           "inputs": [
@@ -12461,7 +12474,7 @@
       ]
     },
     "Freezer": {
-      "address": "0xBCE9d359b89Ab36744aF01785B016fB62aE24819",
+      "address": "0x773Fba6bBdE040866f9f0354Ab6A8139994b4E7A",
       "abi": [
         {
           "inputs": [

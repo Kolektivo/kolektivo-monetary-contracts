@@ -7,6 +7,7 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 import {KolektivoGuilder} from "../src/mento/KolektivoGuilder.sol";
+import {CuracaoReserveToken} from "../src/CuracaoReserveToken.sol";
 import {Exchange} from "../src/mento/MentoExchange.sol";
 import {MentoReserve} from "../src/mento/MentoReserve.sol";
 import {Registry} from "../src/mento/MentoRegistry.sol";
@@ -33,7 +34,8 @@ contract DeployMento is Script {
     function run() external {
         // Read deployment settings from environment variables.
         address reserveToken = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
-        string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
+        // string memory reserveTokenSymbol = CuracaoReserveToken(reserveToken).symbol();
+        string memory reserveTokenSymbol = "kCUR-T";
         console2.log(reserveTokenSymbol, reserveToken);
 
         // The backend service for the MVP deployment
@@ -104,11 +106,11 @@ contract DeployMento is Script {
 
             sortedOracles = new SortedOracles(false);
             sortedOracles.initialize(
-                24 * 60 * 60 // report validity
+                60 * 60 // report validity
             );
 
             // Add Oracles, i.e. data providers to contract
-            sortedOracles.addOracle(address(token), vm.envAddress("PUBLIC_KEY"));
+            sortedOracles.addOracle(address(token), vm.envAddress("TASK_DATAPROVIDER_CUSD_1"));
             // sortedOracles.addOracle(reserveToken, oracle);
 
             registry.setAddressFor("Freezer", address(freezer));
@@ -118,6 +120,7 @@ contract DeployMento is Script {
             registry.setAddressFor("GrandaMento", address(0x1));
             registry.setAddressFor("Exchange", address(exchange));
             registry.setAddressFor("SortedOracles", address(sortedOracles));
+            registry.setAddressFor("KolektivoCuracaoReserve", vm.envAddress("DEPLOYMENT_RESERVE"));
         }
         vm.stopBroadcast();
 

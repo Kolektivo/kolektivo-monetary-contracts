@@ -193,7 +193,6 @@ contract Exchange is
         bool sellGold = !buyGold;
         // Get current kCUR and kG buckets. These are calculated through the kCUR supply and querying the oracle for the ratio
         (uint256 buyTokenBucket, uint256 sellTokenBucket) = _getBuyAndSellBuckets(sellGold);
-
         // amount of token that need to be sold to receive the buy amount
         uint256 sellAmount = _getSellTokenAmount(buyTokenBucket, sellTokenBucket, buyAmount);
 
@@ -224,7 +223,6 @@ contract Exchange is
             // Trade kG -> kCUR, i.e. kG is swapped in and kCUR returned
             stableBucket += sellAmount;
             goldBucket -= buyAmount;
-
             // Transfer kG from -> reserver, for sell amount
             require(IERC20(stable).transferFrom(from, address(this), sellAmount), "Transfer of sell token failed");
             // Burn the kG token, for sell amount
@@ -404,7 +402,6 @@ contract Exchange is
         uint256 exchangeRateNumerator;
         uint256 exchangeRateDenominator;
         (exchangeRateNumerator, exchangeRateDenominator) = getOracleExchangeRate();
-
         uint256 updatedStableBucket = exchangeRateNumerator * updatedGoldBucket / exchangeRateDenominator;
         return (updatedGoldBucket, updatedStableBucket);
     }

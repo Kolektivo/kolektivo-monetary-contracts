@@ -46,8 +46,8 @@ contract DeployFullTestSetupMento is Script {
     // string constant MockGeoNFTContractName = "Test GeoNFT Contract #1";
     // string constant MockGeoNFTContractSymbol = "GeoT1";
     // Kolektivo Reserve
-    // string constant kCurTokenName = "Kolektivo Curacao Test Token";
-    // string constant kCurTokenSymbol = "kCur-T";
+    string constant kCurTokenName = "Kolektivo Curacao Test Token";
+    string constant kCurTokenSymbol = "kCur-T";
     // uint256 constant ReserveMinBacking = 5500; // in BPS
     // Mento
     string constant MentoTokenName = "KolektivoGuilder-T";
@@ -134,11 +134,11 @@ contract DeployFullTestSetupMento is Script {
         // deployGeoNFT.run();
         // vm.setEnv("DEPLOYMENT_GEO_NFT_1", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
 
-        // vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_NAME", kCurTokenName);
-        // vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_SYMBOL", kCurTokenSymbol);
-        // vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER", vm.toString(msg.sender));
-        // deployReserveToken.run();
-        // vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
+         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_NAME", kCurTokenName);
+         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_SYMBOL", kCurTokenSymbol);
+         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER", vm.envString("WALLET_DEPLOYER"));
+         deployReserveToken.run();
+         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
 
         // // Deploy VestingVault
         // deployTimeLockVault.run();
@@ -151,6 +151,12 @@ contract DeployFullTestSetupMento is Script {
 
         // deployTreasury.run();
         // vm.setEnv("DEPLOYMENT_TREASURY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+
+        // WARNING THIS IS JUST TO TEST THE MINTING
+        //  SINCE THIS SCRIPT DOESNT DEPLOY THE KOLEKTIVO RESERVE        
+        vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("PUBLIC_KEY"));
+        /// END
+
 
         vm.setEnv("DEPLOYMENT_MENTO_STABLE_TOKEN_NAME", MentoTokenName);
         vm.setEnv("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL", MentoTokenSymbol);
@@ -206,8 +212,8 @@ contract DeployFullTestSetupMento is Script {
             // kG need to be added so the MentoReserve finds knows the ratio
             mentoReserveInstance.addToken(mentoToken);
             mentoReserveInstance.setReserveToken(address(reserveToken));
-
-            reserveToken.transfer(address(mentoReserveInstance), 10e18);
+            
+            //reserveToken.transfer(address(mentoReserveInstance), 10e18);
             // The addresses need to refer to the other oracles allowed to push. In our case there are non
             sortedOracles.report(mentoToken, value, address(0), address(0));
             mentoExchangeInstance.activateStable();
@@ -217,7 +223,12 @@ contract DeployFullTestSetupMento is Script {
             console2.log("Exchange ratio: ", kG, kCUR);
             console2.log(block.timestamp);
             reserveToken.approve(mentoExchange, maxSellAmount);
-            mentoExchangeInstance.buy(vm.envAddress("PUBLIC_KEY"), buyAmount, maxSellAmount, false);
+            
+            // we dont buy it, we mint it
+            // mentoExchangeInstance.buy(vm.envAddress("PUBLIC_KEY"), buyAmount, maxSellAmount, false);
+            kolektivoGuilder.mint(vm.envAddress("PUBLIC_KEY"), buyAmount);
+            reserveToken.mint(address(mentoReserveInstance), buyAmount * value / 1e24);
+            
             console2.log("kG balance: ", kolektivoGuilder.balanceOf(vm.envAddress("PUBLIC_KEY")));
             (kG, kCUR) = mentoExchangeInstance.getBuyAndSellBuckets(true);
             console2.log("Exchange ratio: ", kG, kCUR);

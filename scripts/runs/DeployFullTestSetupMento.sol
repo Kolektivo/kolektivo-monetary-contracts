@@ -22,6 +22,7 @@ import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {KolektivoGuilder} from "../../src/mento/KolektivoGuilder.sol";
 import {Exchange} from "../../src/mento/MentoExchange.sol";
 import {SortedOracles} from "../../src/mento/SortedOracles.sol";
+import {IReserve} from "../../src/interfaces/IReserve.sol";
 
 contract DeployFullTestSetupMento is Script {
     MentoReserve mentoReserve;
@@ -48,7 +49,7 @@ contract DeployFullTestSetupMento is Script {
     // Kolektivo Reserve
     string constant kCurTokenName = "Kolektivo Curacao Test Token";
     string constant kCurTokenSymbol = "kCur-T";
-    // uint256 constant ReserveMinBacking = 5500; // in BPS
+    uint256 constant ReserveMinBacking = 5500; // in BPS
     // Mento
     string constant MentoTokenName = "KolektivoGuilder-T";
     string constant MentoTokenSymbol = "kG-T";
@@ -69,8 +70,8 @@ contract DeployFullTestSetupMento is Script {
     // uint256 constant DeploymentToken3AmountReserve = 152500000000000000000000;
     // uint256 constant DeploymentGeoNFT2PriceReserve = 43887320000000000000000;
     // uint256 constant DeploymentToken5AmountReserve = 119000000000000000000;
-    // uint256 constant DeploymentReserveTokenPrice = 9870000000000000000; // kCUR
-    // uint256 constant DeploymentDesiredBackingAmountReserve = 6750; // in BPS
+     uint256 constant DeploymentReserveTokenPrice = 9870000000000000000; // kCUR
+     uint256 constant DeploymentDesiredBackingAmountReserve = 6750; // in BPS
 
     function run() external {
         // Push the Timestamp forward 1.5m blocks if we are on a local test node,
@@ -103,8 +104,8 @@ contract DeployFullTestSetupMento is Script {
         // vm.setEnv("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS", vm.toString(OracleMinimumProviders));
         // deployOracle.run();
         // vm.setEnv("DEPLOYMENT_TREASURY_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
-        // deployOracle.run();
-        // vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        deployOracle.run();
+        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
         // deployOracle.run();
         // vm.setEnv("DEPLOYMENT_MOCK_TOKEN_1_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
         // deployOracle.run();
@@ -140,13 +141,13 @@ contract DeployFullTestSetupMento is Script {
          deployReserveToken.run();
          vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
 
-        // // Deploy VestingVault
-        // deployTimeLockVault.run();
-        // vm.setEnv("DEPLOYMENT_RESERVE_VESTING_VAULT", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
+        // Deploy VestingVault
+        deployTimeLockVault.run();
+        vm.setEnv("DEPLOYMENT_RESERVE_VESTING_VAULT", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
 
-        // vm.setEnv("DEPLOYMENT_RESERVE_MIN_BACKING", vm.toString(ReserveMinBacking));
-        // deployReserve.run();
-        // vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        vm.setEnv("DEPLOYMENT_RESERVE_MIN_BACKING", vm.toString(ReserveMinBacking));
+        deployReserve.run();
+        vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
         // address vestingVault = Reserve(vm.envAddress("DEPLOYMENT_RESERVE")).timeLockVault();
 
         // deployTreasury.run();
@@ -154,8 +155,8 @@ contract DeployFullTestSetupMento is Script {
 
         // WARNING THIS IS JUST TO TEST THE MINTING
         //  SINCE THIS SCRIPT DOESNT DEPLOY THE KOLEKTIVO RESERVE        
-        vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("PUBLIC_KEY"));
-        /// END
+        // vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("PUBLIC_KEY"));
+        /// END TODO
 
 
         vm.setEnv("DEPLOYMENT_MENTO_STABLE_TOKEN_NAME", MentoTokenName);
@@ -190,7 +191,7 @@ contract DeployFullTestSetupMento is Script {
         // vm.setEnv("DEPLOYMENT_TOKEN_3_AMOUNT_RESERVE", vm.toString(DeploymentToken3AmountReserve));
         // vm.setEnv("DEPLOYMENT_GEO_NFT_2_PRICE_RESERVE", vm.toString(DeploymentGeoNFT2PriceReserve));
 
-        // vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_PRICE", vm.toString(DeploymentReserveTokenPrice));
+        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_PRICE", vm.toString(DeploymentReserveTokenPrice));
         // vm.setEnv("DEPLOYMENT_TREASURY_TOKEN_PRICE", vm.toString(DeploymentTreasuryTokenPrice));
         // bondAssetsIntoReserve.run();
 
@@ -214,6 +215,7 @@ contract DeployFullTestSetupMento is Script {
             mentoReserveInstance.setReserveToken(address(reserveToken));
             
             //reserveToken.transfer(address(mentoReserveInstance), 10e18);
+            reserveToken.mint(address(mentoReserveInstance), 10e18);
             // The addresses need to refer to the other oracles allowed to push. In our case there are non
             sortedOracles.report(mentoToken, value, address(0), address(0));
             mentoExchangeInstance.activateStable();
@@ -226,7 +228,14 @@ contract DeployFullTestSetupMento is Script {
             
             // we dont buy it, we mint it
             // mentoExchangeInstance.buy(vm.envAddress("PUBLIC_KEY"), buyAmount, maxSellAmount, false);
-            kolektivoGuilder.mint(vm.envAddress("PUBLIC_KEY"), buyAmount);
+            address callTarget = address(kolektivoGuilder);
+            bytes memory callData = abi.encodeWithSignature(
+                "mint(address,uint256)",
+                vm.envAddress("PUBLIC_KEY"),
+                buyAmount
+            );
+            IReserve(vm.envAddress("DEPLOYMENT_RESERVE")).executeTx(callTarget, callData);
+            
             reserveToken.mint(address(mentoReserveInstance), buyAmount * value / 1e24);
             
             console2.log("kG balance: ", kolektivoGuilder.balanceOf(vm.envAddress("PUBLIC_KEY")));

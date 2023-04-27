@@ -118,6 +118,7 @@ contract DeployMento is Script {
             registry.setAddressFor("GrandaMento", address(0x1));
             registry.setAddressFor("Exchange", address(exchange));
             registry.setAddressFor("SortedOracles", address(sortedOracles));
+            registry.setAddressFor("KolektivoCuracaoReserve", vm.envAddress("DEPLOYMENT_RESERVE"));
         }
         vm.stopBroadcast();
 

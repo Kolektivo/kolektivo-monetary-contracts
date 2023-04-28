@@ -373,14 +373,22 @@ contract BalancerV2Proxy is TSOwnable {
     }
 
     function _checkReserveLimits() internal view returns (bool, bool) {
+        // reserve backing - percentage of supply backed by reserve
+        // as we take some leverage, not whole supply is backed by reserve
         (, , uint256 reserveBacking) = reserve.reserveStatus();
 
         // Floor
+        // checks following
+        // current floor price <= current kCur price
+        // below condition is a derived condition which in the end checks same logic
         if (reserveBacking <= BPS) {
             return (true, true);
         }
 
         // Ceiling
+        // check following
+        // current kCur price > current floor price * ceiling multiplier
+        // below condition is a derived condition which in the end checks the same logic
         if (reserveBacking >= BPS * ceilingMultiplier) {
             return (true, false);
         }

@@ -27,6 +27,8 @@ contract BalancerV2Proxy is TSOwnable {
     IVault public vault;
     IReserve public reserve;
     address public reserveToken;
+    // @dev 10,000 is 10 | 50,000 is 50
+    // @note ceiling multiplier is not a percent but a constant number
     uint256 public ceilingMultiplier;
     uint256 public ceilingTradeShare;
     uint256 public floorTradeShare;
@@ -381,7 +383,7 @@ contract BalancerV2Proxy is TSOwnable {
         // checks following
         // current floor price <= current kCur price
         // below condition is a derived condition which in the end checks same logic
-        if (reserveBacking <= BPS) {
+        if (reserveBacking > BPS) {
             return (true, true);
         }
 
@@ -389,7 +391,8 @@ contract BalancerV2Proxy is TSOwnable {
         // check following
         // current kCur price > current floor price * ceiling multiplier
         // below condition is a derived condition which in the end checks the same logic
-        if (reserveBacking * ceilingMultiplier <= BPS) {
+        // ceilingMultiplier -> if 3.5 = 35000
+        if (reserveBacking * ceilingMultiplier < BPS * BPS) {
             return (true, false);
         }
 

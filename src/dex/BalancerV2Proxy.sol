@@ -389,7 +389,7 @@ contract BalancerV2Proxy is TSOwnable {
         // check following
         // current kCur price > current floor price * ceiling multiplier
         // below condition is a derived condition which in the end checks the same logic
-        if (reserveBacking >= BPS * ceilingMultiplier) {
+        if (reserveBacking * ceilingMultiplier <= BPS) {
             return (true, false);
         }
 

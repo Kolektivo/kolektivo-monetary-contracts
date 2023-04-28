@@ -5,7 +5,7 @@ import "@oz-up/access/OwnableUpgradeable.sol";
 import "@oz-up/utils/AddressUpgradeable.sol";
 import "@oz-up/security/ReentrancyGuardUpgradeable.sol";
 
-import "./lib/IReserve.sol";
+import "./lib/IMentoReserve.sol";
 import "./lib/ISortedOracles.sol";
 
 import "./lib/FixidityLib.sol";
@@ -16,7 +16,7 @@ import "./lib/ICeloVersionedContract.sol";
  * @title Ensures price stability of StableTokens with respect to their pegs
  */
 contract MentoReserve is
-    IReserve,
+    IMentoReserve,
     ICeloVersionedContract,
     OwnableUpgradeable,
     UsingRegistry,

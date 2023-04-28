@@ -12,7 +12,7 @@ import {IGovernance} from "./IGovernance.sol";
 import {ILockedGold} from "./ILockedGold.sol";
 import {IRegistry} from "./IRegistry.sol";
 import {IRandom} from "./IRandom.sol";
-import {IReserve} from "./IReserve.sol";
+import {IMentoReserve} from "./IMentoReserve.sol";
 import {ISortedOracles} from "./ISortedOracles.sol";
 import {IStableToken} from "./IStableToken.sol";
 import {IFeeCurrencyWhitelist} from "./IFeeCurrencyWhitelist.sol";
@@ -103,8 +103,8 @@ contract UsingRegistry is OwnableUpgradeable {
         return IRandom(registry.getAddressForOrDie(RANDOM_REGISTRY_ID));
     }
 
-    function getReserve() internal view returns (IReserve) {
-        return IReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));
+    function getReserve() internal view returns (IMentoReserve) {
+        return IMentoReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));
     }
 
     function getSortedOracles() internal view returns (ISortedOracles) {

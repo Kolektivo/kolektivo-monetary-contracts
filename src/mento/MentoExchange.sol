@@ -6,7 +6,7 @@ import "@oz-up/security/ReentrancyGuardUpgradeable.sol";
 
 import "./lib/IExchange.sol";
 import "./lib/ISortedOracles.sol";
-import "./lib/IReserve.sol";
+import "./lib/IMentoReserve.sol";
 import "./lib/IStableToken.sol";
 import "./lib/FixidityLib.sol";
 import "./lib/Freezable.sol";
@@ -211,7 +211,7 @@ contract Exchange is
      * @param sellGold True if the from address is sending CELO to the exchange, false otherwise.
      */
     function _exchange(address from, uint256 sellAmount, uint256 buyAmount, bool sellGold) private {
-        IReserve reserve = IReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));
+        IMentoReserve reserve = IMentoReserve(registry.getAddressForOrDie(RESERVE_REGISTRY_ID));
 
         // Trade kCUR -> kG, i.e. kCUR is swapped in and kG returned
         if (sellGold) {

@@ -132,6 +132,7 @@ contract Exchange is
     function sell(address from, uint256 sellAmount, uint256 minBuyAmount, bool sellGold)
         public
         onlyWhenNotFrozen
+        onlyOwner
         updateBucketsIfNecessary
         nonReentrant
         returns (uint256)
@@ -183,6 +184,7 @@ contract Exchange is
     function buy(address from, uint256 buyAmount, uint256 maxSellAmount, bool buyGold)
         external
         onlyWhenNotFrozen
+        onlyOwner
         updateBucketsIfNecessary
         nonReentrant
         returns (uint256)

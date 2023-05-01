@@ -20,7 +20,7 @@ import {MentoReserve} from "../../src/mento/MentoReserve.sol";
 import {Registry} from "../../src/mento/MentoRegistry.sol";
 import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {KolektivoGuilder} from "../../src/mento/KolektivoGuilder.sol";
-import {Exchange} from "../../src/mento/MentoExchange.sol";
+import {Exchange} from "../../src/mento/Exchange.sol";
 import {SortedOracles} from "../../src/mento/SortedOracles.sol";
 
 contract DeployFullTestSetupWithUsage is Script {

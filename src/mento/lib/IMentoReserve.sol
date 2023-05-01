@@ -1,6 +1,6 @@
 pragma solidity 0.8.10;
 
-interface IReserve {
+interface IMentoReserve {
     function setTobinTaxStalenessThreshold(uint256) external;
     function addToken(address) external returns (bool);
     function removeToken(address, uint256) external returns (bool);

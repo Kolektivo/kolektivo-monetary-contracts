@@ -9,15 +9,24 @@ import "../DeployReserve.s.sol";
 import "../DeployTreasury.s.sol";
 import "../DeployMento.s.sol";
 import "../mocks/DeployERC20Mock.s.sol";
+import "../DeployTimeLockVault.sol";
 
 import "../testnet/Setup.s.sol";
 import "../testnet/IncurDebt.s.sol";
 import "../testnet/BondAssetsIntoReserve.s.sol";
 import "../testnet/BondAssetsIntoTreasury.s.sol";
 
+import {MentoReserve} from "../../src/mento/MentoReserve.sol";
 import {Registry} from "../../src/mento/MentoRegistry.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
+import {KolektivoGuilder} from "../../src/mento/KolektivoGuilder.sol";
+import {Exchange} from "../../src/mento/MentoExchange.sol";
+import {SortedOracles} from "../../src/mento/SortedOracles.sol";
 
 contract DeployFullTestSetupWithUsage is Script {
+    MentoReserve mentoReserve;
+    KolektivoGuilder kolektivoGuilder;
+    SortedOracles sortedOracles;
     // ------------------------------------------
     // INPUTS
     // Here are inputs that can be updated depending on the
@@ -78,6 +87,9 @@ contract DeployFullTestSetupWithUsage is Script {
         DeployReserve deployReserve = new DeployReserve();
         DeployTreasury deployTreasury = new DeployTreasury();
         DeployMento deployMento = new DeployMento();
+        DeployTimeLockVault deployTimeLockVault = new DeployTimeLockVault();
+
+        // addToken = new AddToken();
 
         Setup setup = new Setup();
         IncurDebt incurDebt = new IncurDebt();
@@ -128,6 +140,10 @@ contract DeployFullTestSetupWithUsage is Script {
         deployReserveToken.run();
         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
 
+        // Deploy VestingVault
+        deployTimeLockVault.run();
+        vm.setEnv("DEPLOYMENT_RESERVE_VESTING_VAULT", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
+
         vm.setEnv("DEPLOYMENT_RESERVE_MIN_BACKING", vm.toString(ReserveMinBacking));
         deployReserve.run();
         vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
@@ -147,6 +163,9 @@ contract DeployFullTestSetupWithUsage is Script {
         address mentoFreezer = mentoRegistry.getAddressForStringOrDie("Freezer");
         address mentoOracle = mentoRegistry.getAddressForStringOrDie("SortedOracles");
         vm.setEnv("DEPLOYMENT_MENTO_TOKEN", vm.toString(mentoToken));
+
+        vm.setEnv("DEPLOYMENT_MENTO_EXCHANGE", vm.toString(mentoExchange));
+        vm.setEnv("DEPLOYMENT_MENTO_RESERVE", vm.toString(mentoReserve));
 
         setup.run();
 
@@ -170,6 +189,40 @@ contract DeployFullTestSetupWithUsage is Script {
 
         vm.setEnv("DEPLOYMENT_DESIRED_BACKING_AMOUNT_RESERVE", vm.toString(DeploymentDesiredBackingAmountReserve));
         incurDebt.run();
+
+        MentoReserve mentoReserveInstance = MentoReserve(mentoReserve);
+        Exchange mentoExchangeInstance = Exchange(mentoExchange);
+        CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        kolektivoGuilder = KolektivoGuilder(mentoToken);
+        sortedOracles = SortedOracles(mentoOracle);
+        // Fiat value of kCUR * value of kG. Example $0.55 kCUR / $0.55 = 1,0 exchange rate
+        uint256 value = 1000000000000000000000000;
+        uint256 buyAmount = 1e18;
+        uint256 maxSellAmount = 10010e18;
+        vm.warp(1500000);
+        vm.startBroadcast();
+        {
+            // kG need to be added so the MentoReserve finds knows the ratio
+            mentoReserveInstance.addToken(mentoToken);
+            mentoReserveInstance.setReserveToken(address(reserveToken));
+
+            reserveToken.transfer(address(mentoReserveInstance), 10e18);
+            // The addresses need to refer to the other oracles allowed to push. In our case there are non
+            sortedOracles.report(mentoToken, value, address(0), address(0));
+            mentoExchangeInstance.activateStable();
+
+            console2.log("cKUR balance: ", reserveToken.balanceOf(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266));
+            (uint256 kG, uint256 kCUR) = mentoExchangeInstance.getBuyAndSellBuckets(true);
+            console2.log("Exchange ratio: ", kG, kCUR);
+            console2.log(block.timestamp);
+            reserveToken.approve(mentoExchange, maxSellAmount);
+            mentoExchangeInstance.buy(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, buyAmount, maxSellAmount, false);
+            console2.log("kG balance: ", kolektivoGuilder.balanceOf(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266));
+            (kG, kCUR) = mentoExchangeInstance.getBuyAndSellBuckets(true);
+            console2.log("Exchange ratio: ", kG, kCUR);
+        }
+        vm.stopBroadcast();
+        // addToken.run();
 
         console2.log(" ");
         console2.log("| Kolektivo Contracts    | Address                                    |");

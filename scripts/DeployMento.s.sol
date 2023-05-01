@@ -7,6 +7,7 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 import {KolektivoGuilder} from "../src/mento/KolektivoGuilder.sol";
+import {CuracaoReserveToken} from "../src/CuracaoReserveToken.sol";
 import {Exchange} from "../src/mento/MentoExchange.sol";
 import {MentoReserve} from "../src/mento/MentoReserve.sol";
 import {Registry} from "../src/mento/MentoRegistry.sol";
@@ -33,13 +34,15 @@ contract DeployMento is Script {
     function run() external {
         // Read deployment settings from environment variables.
         address reserveToken = vm.envAddress("DEPLOYMENT_RESERVE_TOKEN");
-        string memory reserveTokenSymbol = ERC20(reserveToken).symbol();
+        // string memory reserveTokenSymbol = CuracaoReserveToken(reserveToken).symbol();
+        string memory reserveTokenSymbol = "kCUR-T";
+        console2.log(reserveTokenSymbol, reserveToken);
 
         // The backend service for the MVP deployment
-        address dataProvider = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
+        // address oracle = vm.envAddress("TASK_DATAPROVIDER_RESERVE_TOKEN_1");
 
-        string memory tokenName = vm.envString("DEPLOYMENT_MENTO_TOKEN_NAME");
-        string memory tokenSymbol = vm.envString("DEPLOYMENT_MENTO_TOKEN_SYMBOL");
+        string memory tokenName = vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_NAME");
+        string memory tokenSymbol = vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL");
         // Check settings.
         require(reserveToken != address(0), "DeployMento: Missing env variable: token");
 
@@ -65,7 +68,7 @@ contract DeployMento is Script {
                 address(registry), // registryAddress
                 FixidityLib.newFixed(1).unwrap(), // inflationRate
                 1 * 365 * 24 * 60 * 60, // inflationFactorUpdatePeriod
-                tokenSymbol // exchangeIdentifier
+                "Exchange" // exchangeIdentifier
             );
             token = KolektivoGuilder(deployUupsProxy(tokenImplementation, proxyAdmin, initData));
 
@@ -85,7 +88,7 @@ contract DeployMento is Script {
                 assetAllocationSymbols, // _assetAllocationSymbols
                 assetAllocationWeights, // _assetAllocationWeights
                 0, // _tobinTax
-                FixidityLib.newFixed(1).unwrap() // _tobinTaxReserveRatio
+                FixidityLib.newFixed(1).unwrap() // _tobinTaxReserveRatio,
             );
             reserve = MentoReserve(deployUupsProxy(reserveImplementation, proxyAdmin, initData));
 
@@ -94,8 +97,8 @@ contract DeployMento is Script {
                 "initialize(address,string,uint256,uint256,uint256,uint256)",
                 address(registry), // registryAddress
                 tokenSymbol, // stableTokenIdentifier
-                FixidityLib.newFixedFraction(3, 1000).unwrap(), // _spread
-                FixidityLib.newFixedFraction(1, 2).unwrap(), // _reserveFraction
+                FixidityLib.newFixedFraction(25, 10000).unwrap(), // _spread
+                FixidityLib.newFixedFraction(9999, 10000).unwrap(), // _reserveFraction
                 60 * 60, // _updateFrequency
                 1 // _minimumReports
             );
@@ -103,11 +106,12 @@ contract DeployMento is Script {
 
             sortedOracles = new SortedOracles(false);
             sortedOracles.initialize(
-                24 * 60 * 60 // report validity
+                60 * 60 // report validity
             );
+
             // Add Oracles, i.e. data providers to contract
-            sortedOracles.addOracle(address(token), dataProvider);
-            sortedOracles.addOracle(reserveToken, dataProvider);
+            sortedOracles.addOracle(address(token), vm.envAddress("TASK_DATAPROVIDER_CUSD_1"));
+            // sortedOracles.addOracle(reserveToken, oracle);
 
             registry.setAddressFor("Freezer", address(freezer));
             registry.setAddressFor("GoldToken", reserveToken);
@@ -116,6 +120,7 @@ contract DeployMento is Script {
             registry.setAddressFor("GrandaMento", address(0x1));
             registry.setAddressFor("Exchange", address(exchange));
             registry.setAddressFor("SortedOracles", address(sortedOracles));
+            registry.setAddressFor("KolektivoCuracaoReserve", vm.envAddress("DEPLOYMENT_RESERVE"));
         }
         vm.stopBroadcast();
 
@@ -126,8 +131,9 @@ contract DeployMento is Script {
         console2.log("Deployment of Mento Registry at address", address(registry));
         console2.log("Deployment of Mento Reserve at address", address(reserve));
         console2.log("Deployment of Mento Exchange at address", address(exchange));
-        console2.log("Deployment of Kolektivo Guilder at address", address(token));
         console2.log("Deployment of Mento Freezer at address", address(freezer));
+        console2.log("Deployment of Mento SortedOracle at address", address(sortedOracles));
+        console2.log("Deployment of Kolektivo Guilder at address", address(token));
     }
 
     function deployUupsProxy(address contractImplementation, address admin, bytes memory data)

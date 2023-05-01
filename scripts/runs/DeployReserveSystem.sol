@@ -5,10 +5,11 @@ import "forge-std/Test.sol";
 import "../DeployOracle.s.sol";
 import "../DeployReserveToken.s.sol";
 import "../DeployReserve.s.sol";
-import "../DeployTimeLockVault.sol";
+import "../DeployTimeLockVault.s.sol";
 
 import {AddProvider} from "../tasks/OracleManagement.s.sol";
 import {SetMintBurner, RegisterERC20} from "../tasks/ReserveManagement.s.sol";
+import {Oracle} from "../../src/Oracle.sol";
 
 contract DeployReserveSystem is Script {
     function run() external {
@@ -61,13 +62,13 @@ contract DeployReserveSystem is Script {
         vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
 
         // Add DataProviders
-        // cUSD
-        vm.setEnv("TASK_DATA_PROVIDER", vm.envString("TASK_DATAPROVIDER_CUSD_1"));
-        vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
-        addProvider.run();
         // kCUR
         vm.setEnv("TASK_DATA_PROVIDER", vm.envString("TASK_DATAPROVIDER_RESERVE_TOKEN_1"));
         vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+        addProvider.run();
+        // cUSD
+        vm.setEnv("TASK_DATA_PROVIDER", vm.envString("TASK_DATAPROVIDER_CUSD_1"));
+        vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
         addProvider.run();
 
         // Set Mintburner
@@ -75,10 +76,29 @@ contract DeployReserveSystem is Script {
         vm.setEnv("TASK_RESERVE_TOKEN", vm.envString("DEPLOYMENT_RESERVE_TOKEN"));
         setMintBurner.run();
 
+        Oracle cUSDOracle = Oracle(vm.envAddress("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
+        Oracle kCUROracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+        uint256 kCURPrice = 550000000000000000;
+        uint256 cUSDPrice = 1e18;
+        vm.startBroadcast();
+        {
+            cUSDOracle.addProvider(vm.envAddress("PUBLIC_KEY"));
+            kCUROracle.addProvider(vm.envAddress("PUBLIC_KEY"));
+            cUSDOracle.pushReport(cUSDPrice);
+            kCUROracle.pushReport(kCURPrice);
+        }
+        vm.stopBroadcast();
+
         // Register cUSD in Reserve
-        // vm.setEnv("TASK_REGISTERERC20_TOKEN", vm.envString("CUSD"));
-        // vm.setEnv("TASK_REGISTER_ERC20_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
-        // registerERC20.run();
+        vm.setEnv("TASK_REGISTERERC20_TOKEN", vm.envString("CUSD"));
+        // For cUSD - asset type = Stable
+        uint256 assetType = 1;
+        // For cUSD - risk level = Low
+        uint256 riskLevel = 0;
+        vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
+        vm.setEnv("TASK_TOKEN_ASSET_TYPE", vm.toString(assetType));
+        vm.setEnv("TASK_TOKEN_RISK_LEVEL", vm.toString(riskLevel));
+        registerERC20.run();
 
         console2.log(" ");
         console2.log("| Kolektivo Contracts    | Address                                    |");

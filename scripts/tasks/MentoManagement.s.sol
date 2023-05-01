@@ -9,6 +9,7 @@ import {Registry} from "../../src/mento/MentoRegistry.sol";
 import {Freezer} from "../../src/mento/lib/Freezer.sol";
 import {FixidityLib} from "../../src/mento/lib/FixidityLib.sol";
 import {SortedOracles} from "../../src/mento/SortedOracles.sol";
+import {IReserve} from "../../src/interfaces/IReserve.sol";
 
 contract AddOracle is Script {
     function run() external {
@@ -84,5 +85,25 @@ contract GetInflationParameters is Script {
         console2.log("Inflation rate: ", rate, "- inflation factor: ", factor);
         console2.log("- update period: ", updatePeriod, "- fatorLastUpdated: ", factorLastUpdated);
         console2.log("for KolektivoGuilder with address: ", address(kolektivoGuilder));
+    }
+}
+
+contract MintInitalKG is Script {
+    function run() external {
+        // Mint the intial supply of kG, which should be the exact amount of initial kCUR backing
+        address kolektivoGuilder = vm.envAddress("DEPLOYMENT_MENTO_KOLEKTIVO_GUILDER");
+        uint256 initialKGAmount = vm.envUint("TASK_MENTO_INITIAL_KG");
+
+        vm.startBroadcast();
+        {
+            bytes memory callData =
+                abi.encodeWithSignature("mint(address,uint256)", vm.envAddress("PUBLIC_KEY"), initialKGAmount);
+            IReserve(vm.envAddress("DEPLOYMENT_RESERVE")).executeTx(kolektivoGuilder, callData);
+        }
+        vm.stopBroadcast();
+
+        console2.log(
+            "Initial amount of kG minted: ", initialKGAmount, " from kG contract with address: ", kolektivoGuilder
+        );
     }
 }

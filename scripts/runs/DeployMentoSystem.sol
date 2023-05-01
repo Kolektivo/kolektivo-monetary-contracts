@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../DeployMento.s.sol";
 import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {MentoReserve} from "../../src/mento/MentoReserve.sol";
-import {Exchange} from "../../src/mento/MentoExchange.sol";
+import {Exchange} from "../../src/mento/Exchange.sol";
 import {Registry} from "../../src/mento/MentoRegistry.sol";
 
 // import {KolektivoGuilder} from "../../src/mento/KolektivoGuilder.sol";

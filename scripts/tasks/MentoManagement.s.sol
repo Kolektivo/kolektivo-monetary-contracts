@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {Exchange} from "../../src/mento/MentoExchange.sol";
+import {Exchange} from "../../src/mento/Exchange.sol";
 import {KolektivoGuilder} from "../../src/mento/KolektivoGuilder.sol";
 import {MentoReserve} from "../../src/mento/MentoReserve.sol";
 import {Registry} from "../../src/mento/MentoRegistry.sol";
@@ -46,26 +46,21 @@ contract AddToken is Script {
     }
 }
 
-// contract Report is Script {
-//     function run() external {
-//         // Push report to Oracle
-//         uint256 fixed1 = FixidityLib.unwrap(FixidityLib.fixed1());
-//         console2.log(fixed1);
+contract TransferExchangeGold is Script {
+    function run() external {
+        address toAddress = vm.envAddress("TASK_MENTO_KCUR_WITHDRAW_ADDRESS");
+        MentoReserve mentoReserve = MentoReserve(vm.envAddress("DEPLOYMENT_MENTO_RESERVE"));
+        uint256 value = vm.envUint("TASK_MENTO_KCUR_WITHDRAW_AMOUNT");
 
-//         uint256 exchangeRatio = 100000000000000000000000; // 1 to 1, kG - kCUR
+        vm.startBroadcast();
+        {
+            mentoReserve.transferExchangeGold(payable(toAddress), value);
+        }
+        vm.stopBroadcast();
 
-//         address kolektivoGuilder = vm.envAddress("TASK_MENTO_RESERVE_ADD_TOKEN");
-//         SortedOracles sortedOracles = SortedOracles(vm.envAddress("DEPLOYMENT_MENTO_SORTED_ORACLES"));
-
-//         vm.startBroadcast();
-//         {
-//             // mentoReserve.addToken(token);
-//         }
-//         vm.stopBroadcast();
-
-//         // console2.log("Add token: ", token, " to MentoReserve with address: ", address(mentoReserve));
-//     }
-// }
+        console2.log("Amount kCUR: ", value, " withdrawn to address: ", toAddress);
+    }
+}
 
 contract GetInflationParameters is Script {
     function run() external {

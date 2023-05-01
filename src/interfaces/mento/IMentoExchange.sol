@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-interface IMentoExchange {
+interface IExchange {
     function buy(uint256, uint256, bool) external returns (uint256);
     function sell(uint256, uint256, bool) external returns (uint256);
     function exchange(uint256, uint256, bool) external returns (uint256);

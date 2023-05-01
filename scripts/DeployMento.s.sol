@@ -8,7 +8,7 @@ import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 import {KolektivoGuilder} from "../src/mento/KolektivoGuilder.sol";
 import {CuracaoReserveToken} from "../src/CuracaoReserveToken.sol";
-import {Exchange} from "../src/mento/MentoExchange.sol";
+import {Exchange} from "../src/mento/Exchange.sol";
 import {MentoReserve} from "../src/mento/MentoReserve.sol";
 import {Registry} from "../src/mento/MentoRegistry.sol";
 import {Freezer} from "../src/mento/lib/Freezer.sol";
@@ -125,6 +125,9 @@ contract DeployMento is Script {
             // kG need to be added, so the MentoReserve finds knows the ratio
             reserve.addToken(address(token));
             reserve.setReserveToken(address(reserveToken));
+
+            // Add a way for the dev wallet to withdraw kCUR to balance the Mento system
+            reserve.addExchangeSpender(vm.envAddress("PUBLIC_KEY"));
         }
         vm.stopBroadcast();
 

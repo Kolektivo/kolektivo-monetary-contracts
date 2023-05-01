@@ -11,7 +11,7 @@
 // import "src/vesting/TimeLockVault.sol";
 // import "src/mento/lib/IMentoReserve.sol";
 
-// import "src/mento/MentoExchange.sol";
+// import "src/mento/Exchange.sol";
 // import "src/mento/MentoReserve.sol";
 // import "src/mento/MentoRegistry.sol";
 // import "src/mento/SortedOracles.sol";
@@ -47,7 +47,7 @@
 
 //     MentoReserve mentoReserve;
 //     Registry mentoRegistry;
-//     MentoExchange mentoExchange;
+//     Exchange mentoExchange;
 //     SortedOracles sortedOracles;
 //     KolektivoGuilder kolektivoGuilder;
 //     Freezer freezer;

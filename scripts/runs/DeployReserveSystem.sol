@@ -45,9 +45,6 @@ contract DeployReserveSystem is Script {
         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
 
         // Deploy ReserveToken
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_NAME", "Kolektivo Curacao Test Token");
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_SYMBOL", "kCUR-T");
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER", vm.toString(msg.sender));
         deployReserveToken.run();
         vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
 

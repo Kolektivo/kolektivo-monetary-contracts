@@ -86,14 +86,18 @@ contract DeployReserveSystem is Script {
             kCUROracle.addProvider(vm.envAddress("PUBLIC_KEY"));
             cUSDOracle.pushReport(cUSDPrice);
             kCUROracle.pushReport(kCURPrice);
-            cUSDOracle.removeProvider(vm.envAddress("PUBLIC_KEY"));
-            kCUROracle.removeProvider(vm.envAddress("PUBLIC_KEY"));
         }
         vm.stopBroadcast();
 
         // Register cUSD in Reserve
         vm.setEnv("TASK_REGISTERERC20_TOKEN", vm.envString("CUSD"));
-        vm.setEnv("TASK_REGISTER_ERC20_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
+        // For cUSD - asset type = Stable
+        uint256 assetType = 1;
+        // For cUSD - risk level = Low
+        uint256 riskLevel = 0;
+        vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
+        vm.setEnv("TASK_TOKEN_ASSET_TYPE", vm.toString(assetType));
+        vm.setEnv("TASK_TOKEN_RISK_LEVEL", vm.toString(riskLevel));
         registerERC20.run();
 
         console2.log(" ");

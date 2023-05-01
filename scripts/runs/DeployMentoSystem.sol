@@ -56,7 +56,7 @@ contract DeployMentoSystem is Script {
             // console2.log(curacaoReserveToken.totalSupply());
             // console2.log(msg.sender);
             // // transfer kCUR tokens to the MentoReserve as backing
-            // curacaoReserveToken.transfer(mentoReserveAddress, initialKgSupply);
+            curacaoReserveToken.transfer(mentoReserveAddress, initialKgSupply);
 
             // activate the mento exchange
             mentoExchange.activateStable();

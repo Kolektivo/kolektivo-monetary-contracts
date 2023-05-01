@@ -66,6 +66,10 @@ testReserve: ## Run Reserve tests
 testGeoNFT: ## Run GeoNFT tests
 	@forge test -vvv --match-contract "GeoNFT"
 
+.PHONY: testMento
+testMento: ## Run Mento tests
+	@forge test -vvv --match-contract "Mento"
+
 # -----------------------------------------------------------------------------
 # Static Analyzers
 

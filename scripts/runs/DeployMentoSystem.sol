@@ -2,123 +2,112 @@ pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
-import "../DeployOracle.s.sol";
-import "../DeployReserveToken.s.sol";
-import "../DeployReserve.s.sol";
-import "../DeployTimeLockVault.sol";
+import "../DeployMento.s.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
+import {MentoReserve} from "../../src/mento/MentoReserve.sol";
+import {Exchange} from "../../src/mento/MentoExchange.sol";
+import {Registry} from "../../src/mento/MentoRegistry.sol";
 
-import {AddProvider} from "../tasks/OracleManagement.s.sol";
-import {SetMintBurner, RegisterERC20} from "../tasks/ReserveManagement.s.sol";
+// import {KolektivoGuilder} from "../../src/mento/KolektivoGuilder.sol";
+import {IReserve} from "../../src/interfaces/IReserve.sol";
 
 contract DeployMentoSystem is Script {
     function run() external {
-        // Deployment Contracts
-        DeployOracle deployOracle = new DeployOracle();
-        DeployReserveToken deployReserveToken = new DeployReserveToken();
-        DeployReserve deployReserve = new DeployReserve();
-        DeployTimeLockVault deployTimeLockVault = new DeployTimeLockVault();
-
-        // Tasks
-        AddProvider addProvider = new AddProvider();
-        SetMintBurner setMintBurner = new SetMintBurner();
-        RegisterERC20 registerERC20 = new RegisterERC20();
+        // Deployment Mento
+        DeployMento deployMento = new DeployMento();
 
         // Deployment
-        console2.log("Running deployment script, deploying the MVP Test scenario to Celo.");
+        console2.log("Running deployment script, deploying Mento system om Celo.");
 
-        // Deploy Oracles
-        // cUSD
-        vm.setEnv("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS", vm.envString("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS"));
-        vm.setEnv(
-            "DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", vm.envString("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME_CUSD")
-        );
-        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_DELAY", vm.envString("DEPLOYMENT_ORACLE_REPORT_DELAY_CUSD"));
-        deployOracle.run();
-        vm.setEnv("DEPLOYMENT_cUSD_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
-        // kCUR
-        vm.setEnv(
-            "DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME", vm.envString("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME_KCUR")
-        );
-        vm.setEnv("DEPLOYMENT_ORACLE_REPORT_DELAY", vm.envString("DEPLOYMENT_ORACLE_REPORT_DELAY_KCUR"));
-        deployOracle.run();
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_ORACLE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        deployMento.run();
+        console2.log("Out of DeployMento0");
+        vm.setEnv("DEPLOYMENT_MENTO_REGISTRY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        Registry mentoRegistry = Registry(vm.envAddress("DEPLOYMENT_MENTO_REGISTRY"));
+        console2.log("Out of DeployMento1");
+        address mentoExchangeAddress = mentoRegistry.getAddressForStringOrDie("Exchange");
+        address kolektivoGuilderAddress =
+            mentoRegistry.getAddressForStringOrDie(vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL"));
+        address mentoReserveAddress = mentoRegistry.getAddressForStringOrDie("Reserve");
+        address mentoFreezer = mentoRegistry.getAddressForStringOrDie("Freezer");
+        address sortedOraclesAddress = mentoRegistry.getAddressForStringOrDie("SortedOracles");
+        vm.setEnv("DEPLOYMENT_MENTO_KOLEKTIVO_GUILDER", vm.toString(kolektivoGuilderAddress));
 
-        // Deploy ReserveToken
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_NAME", "Kolektivo Curacao Test Token");
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_SYMBOL", "kCUR-T");
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN_MINT_BURNER", vm.toString(msg.sender));
-        deployReserveToken.run();
-        vm.setEnv("DEPLOYMENT_RESERVE_TOKEN", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
+        vm.setEnv("DEPLOYMENT_MENTO_EXCHANGE", vm.toString(mentoExchangeAddress));
+        vm.setEnv("DEPLOYMENT_MENTO_RESERVE", vm.toString(mentoReserveAddress));
 
-        // Deploy VestingVault
-        deployTimeLockVault.run();
-        vm.setEnv("DEPLOYMENT_TIMELOCKVAULT", vm.toString(vm.envAddress("LAST_DEPLOYED_CONTRACT_ADDRESS")));
+        MentoReserve mentoReserve = MentoReserve(mentoReserveAddress);
+        Exchange mentoExchange = Exchange(mentoExchangeAddress);
+        CuracaoReserveToken curacaoReserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        // KolektivoGuilder kolektivoGuilder = KolektivoGuilder(kolektivoGuilderAddress);
+        console.log(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        console2.log(address(curacaoReserveToken));
 
-        // Deploy Reserve
-        vm.setEnv("DEPLOYMENT_RESERVE_MIN_BACKING", vm.envString("DEPLOYMENT_RESERVE_MIN_BACKING"));
-        vm.setEnv("DEPLOYMENT_RESERVE_VESTING_VAULT", vm.envString("DEPLOYMENT_TIMELOCKVAULT"));
-        deployReserve.run();
-        vm.setEnv("DEPLOYMENT_RESERVE", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
+        uint256 initialKgSupply = 8000e18;
 
-        // Add DataProviders
-        // cUSD
-        vm.setEnv("TASK_DATA_PROVIDER", vm.envString("TASK_DATAPROVIDER_CUSD_1"));
-        vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
-        addProvider.run();
-        // kCUR
-        vm.setEnv("TASK_DATA_PROVIDER", vm.envString("TASK_DATAPROVIDER_RESERVE_TOKEN_1"));
-        vm.setEnv("TASK_ORACLE", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
-        addProvider.run();
+        console2.log("Out of DeployMento2");
+        vm.startBroadcast();
+        {
+            // kG need to be added, so the MentoReserve finds knows the ratio
+            mentoReserve.addToken(kolektivoGuilderAddress);
+            console2.log("Out of DeployMento3");
+            mentoReserve.setReserveToken(address(curacaoReserveToken));
+            console2.log("Out of DeployMento4");
 
-        // Set Mintburner
-        vm.setEnv("TASK_MINT_BURNER", vm.envString("DEPLOYMENT_RESERVE"));
-        vm.setEnv("TASK_RESERVE_TOKEN", vm.envString("DEPLOYMENT_RESERVE_TOKEN"));
-        setMintBurner.run();
+            // console2.log(curacaoReserveToken.totalSupply());
+            // console2.log(msg.sender);
+            // // transfer kCUR tokens to the MentoReserve as backing
+            curacaoReserveToken.transfer(mentoReserveAddress, initialKgSupply);
 
-        // Register cUSD in Reserve
-        // vm.setEnv("TASK_REGISTERERC20_TOKEN", vm.envString("CUSD"));
-        // vm.setEnv("TASK_REGISTER_ERC20_ORACLE", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"));
-        // registerERC20.run();
+            // activate the mento exchange
+            mentoExchange.activateStable();
+
+            // we dont buy it, we mint it
+            bytes memory callData =
+                abi.encodeWithSignature("mint(address,uint256)", vm.envAddress("PUBLIC_KEY"), initialKgSupply);
+            IReserve(vm.envAddress("DEPLOYMENT_RESERVE")).executeTx(kolektivoGuilderAddress, callData);
+        }
+        vm.stopBroadcast();
 
         console2.log(" ");
-        console2.log("| Kolektivo Contracts    | Address                                    |");
+        console2.log("| Mento Contracts        | Address                                    |");
         console2.log("| ---------------------- | ------------------------------------------ |");
-        console2.log("| Reserve                |", vm.envString("DEPLOYMENT_RESERVE"), "|");
-        console2.log("| Reserve Token          |", vm.envString("DEPLOYMENT_RESERVE_TOKEN"), "|");
-        console2.log("| TimeLockVaul           |", vm.envString("DEPLOYMENT_TIMELOCKVAULT"), "|");
-        console2.log("| Oracle: cUSD           |", vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"), "|");
-        console2.log("| Oracle: Reserve Token  |", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE"), "|");
+        console2.log("| Mento Registry         |", address(mentoRegistry), "|");
+        console2.log("| Mento Reserve          |", mentoReserveAddress, "|");
+        console2.log("| Mento Exchange         |", mentoExchangeAddress, "|");
+        console2.log("| Freezer                |", mentoFreezer, "|");
+        console2.log("| Kolektivo Guilder      |", kolektivoGuilderAddress, "|");
+        console2.log("| SortedOracles          |", sortedOraclesAddress, "|");
         console2.log(" ");
 
         console2.log("To initiate the ownership switch at a later time, ");
         console2.log("copy these and put into console: ");
 
-        string memory exportValues =
-            string(abi.encodePacked("export DEPLOYMENT_RESERVE=", vm.envString("DEPLOYMENT_RESERVE"), " && "));
-        exportValues = string(
-            abi.encodePacked(
-                exportValues, "export DEPLOYMENT_RESERVE_TOKEN=", vm.envString("DEPLOYMENT_RESERVE_TOKEN"), " && "
-            )
-        );
-        exportValues = string(
-            abi.encodePacked(
-                exportValues, "export DEPLOYMENT_TIMELOCKVAULT=", vm.envString("DEPLOYMENT_TIMELOCKVAULT"), " && "
-            )
-        );
-        exportValues = string(
-            abi.encodePacked(
-                exportValues,
-                "export DEPLOYMENT_cUSD_TOKEN_ORACLE=",
-                vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"),
-                " && "
-            )
-        );
-        exportValues = string(
-            abi.encodePacked(
-                exportValues, "export DEPLOYMENT_RESERVE_TOKEN_ORACLE=", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE")
-            )
-        );
+        // string memory exportValues =
+        //     string(abi.encodePacked("export DEPLOYMENT_RESERVE=", vm.envString("DEPLOYMENT_RESERVE"), " && "));
+        // exportValues = string(
+        //     abi.encodePacked(
+        //         exportValues, "export DEPLOYMENT_RESERVE_TOKEN=", vm.envString("DEPLOYMENT_RESERVE_TOKEN"), " && "
+        //     )
+        // );
+        // exportValues = string(
+        //     abi.encodePacked(
+        //         exportValues, "export DEPLOYMENT_TIMELOCKVAULT=", vm.envString("DEPLOYMENT_TIMELOCKVAULT"), " && "
+        //     )
+        // );
+        // exportValues = string(
+        //     abi.encodePacked(
+        //         exportValues,
+        //         "export DEPLOYMENT_cUSD_TOKEN_ORACLE=",
+        //         vm.envString("DEPLOYMENT_cUSD_TOKEN_ORACLE"),
+        //         " && "
+        //     )
+        // );
+        // exportValues = string(
+        //     abi.encodePacked(
+        //         exportValues, "export DEPLOYMENT_RESERVE_TOKEN_ORACLE=", vm.envString("DEPLOYMENT_RESERVE_TOKEN_ORACLE")
+        //     )
+        // );
 
-        console2.log(exportValues);
+        // console2.log(exportValues);
     }
 }

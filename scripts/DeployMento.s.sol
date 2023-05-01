@@ -109,7 +109,7 @@ contract DeployMento is Script {
                 60 * 60 // report validity
             );
 
-            // Add Oracles, i.e. data providers to contract
+            // Add Oracles, i.e. data providers to contract which is the backend service
             sortedOracles.addOracle(address(token), vm.envAddress("TASK_DATAPROVIDER_CUSD_1"));
             // sortedOracles.addOracle(reserveToken, oracle);
 
@@ -121,6 +121,10 @@ contract DeployMento is Script {
             registry.setAddressFor("Exchange", address(exchange));
             registry.setAddressFor("SortedOracles", address(sortedOracles));
             registry.setAddressFor("KolektivoCuracaoReserve", vm.envAddress("DEPLOYMENT_RESERVE"));
+
+            // kG need to be added, so the MentoReserve finds knows the ratio
+            reserve.addToken(address(token));
+            reserve.setReserveToken(address(reserveToken));
         }
         vm.stopBroadcast();
 

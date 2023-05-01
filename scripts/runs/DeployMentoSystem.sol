@@ -20,10 +20,8 @@ contract DeployMentoSystem is Script {
         console2.log("Running deployment script, deploying Mento system om Celo.");
 
         deployMento.run();
-        console2.log("Out of DeployMento0");
         vm.setEnv("DEPLOYMENT_MENTO_REGISTRY", vm.envString("LAST_DEPLOYED_CONTRACT_ADDRESS"));
         Registry mentoRegistry = Registry(vm.envAddress("DEPLOYMENT_MENTO_REGISTRY"));
-        console2.log("Out of DeployMento1");
         address mentoExchangeAddress = mentoRegistry.getAddressForStringOrDie("Exchange");
         address kolektivoGuilderAddress =
             mentoRegistry.getAddressForStringOrDie(vm.envString("DEPLOYMENT_MENTO_STABLE_TOKEN_SYMBOL"));
@@ -39,19 +37,14 @@ contract DeployMentoSystem is Script {
         Exchange mentoExchange = Exchange(mentoExchangeAddress);
         CuracaoReserveToken curacaoReserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
         // KolektivoGuilder kolektivoGuilder = KolektivoGuilder(kolektivoGuilderAddress);
-        console.log(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
-        console2.log(address(curacaoReserveToken));
 
         uint256 initialKgSupply = 8000e18;
 
-        console2.log("Out of DeployMento2");
         vm.startBroadcast();
         {
             // kG need to be added, so the MentoReserve finds knows the ratio
             mentoReserve.addToken(kolektivoGuilderAddress);
-            console2.log("Out of DeployMento3");
             mentoReserve.setReserveToken(address(curacaoReserveToken));
-            console2.log("Out of DeployMento4");
 
             // console2.log(curacaoReserveToken.totalSupply());
             // console2.log(msg.sender);

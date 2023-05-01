@@ -40,19 +40,19 @@ contract DeployAndRegisterERC20 is Script {
         token1Amount = uint256(1e18);
 
         // Mock token variables
-        string memory tokenName = "MedRiskToken";
-        string memory tokenSymbol = "MRT";
-        uint256 amount = 1000e18;
+        string memory tokenName = "Celo Dollar Mock";
+        string memory tokenSymbol = "cUSD-T";
+        uint256 amount = 10000e18;
         // Oracle variables
         uint256 reportExpirationTime = 2592000; // 30 days vm.envUint("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME");
         uint256 reportDelay = 0; // vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
         uint256 minimumProviders = 1; // vm.envUint("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS");
         address dataProvider1 = 0x7061B54AD655E2C7b01EC40Aded0aBC18Af183f8; // backend service
         address dataProvider2 = 0xC83901A3BcD7A4cd66FA3e2737aA4632312A593F; // dev wallet
-        uint256 initialPrice = 2e18;
+        uint256 initialPrice = 1e18;
         // Register ERC20
         uint256 assetType = 1;
-        uint256 riskLevel = 1;
+        uint256 riskLevel = 0;
 
         // Deploy token
         vm.setEnv("DEPLOYMENT_TOKEN_NAME", tokenName);
@@ -78,7 +78,6 @@ contract DeployAndRegisterERC20 is Script {
 
         // Push report to Oracle
         vm.setEnv("TASK_PUSH_PRICE", vm.toString(initialPrice));
-        vm.setEnv("TASK_DATA_PROVIDER", vm.toString(initialPrice));
         pushReport.run();
 
         // Add token to Reserve

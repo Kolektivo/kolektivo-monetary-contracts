@@ -9137,7 +9137,7 @@
       ]
     },
     "SortedOracles": {
-      "address": "0x3C76Aa7De024D9a98E8099b3CF6E0653c22cc5B9",
+      "address": "0x3f13dE6E133a9594E12956ca11CBB7070731490B",
       "abi": [
         {
           "inputs": [
@@ -10610,7 +10610,7 @@
       ]
     },
     "KolektivoGuilder": {
-      "address": "0x49b3b895da4641ce427B21599082054D6643BBd0",
+      "address": "0x358c12C9001a895256b1e19f3C4051cB6fA8ec96",
       "abi": [
         {
           "inputs": [
@@ -11701,7 +11701,7 @@
       ]
     },
     "Exchange": {
-      "address": "0x02BBf71645d0f5CEC234850aDEe939dce97E11C4",
+      "address": "0xb93Afa8c852fa658fEF9A34a2A9eB5850AdB8520",
       "abi": [
         {
           "inputs": [
@@ -12365,7 +12365,7 @@
       ]
     },
     "MentoReserve": {
-      "address": "0xf3E84275C57CCB39C75c2A86B89F2D6E0498aA85",
+      "address": "0x8730A928865206973Ee08C5b768c6C695aEBe6Ba",
       "abi": [
         {
           "inputs": [
@@ -13518,7 +13518,7 @@
       ]
     },
     "MentoRegistry": {
-      "address": "0x7c6d6eD463a98Baa0bb9f876ac2D50eEe0f8ed4B",
+      "address": "0xd1f73cd6C659F5FfEd07be7fFEBcA72c0d5d6131",
       "abi": [
         {
           "inputs": [
@@ -13768,7 +13768,7 @@
       ]
     },
     "Freezer": {
-      "address": "0x63AE3bdF14541D03C07C7Bc7455d5456dc68f904",
+      "address": "0x0c963959174d1df3a4eeA6E58616e98827aE983f",
       "abi": [
         {
           "anonymous": false,

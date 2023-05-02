@@ -48,7 +48,7 @@ contract DeployAndRegisterERC20 is Script {
         uint256 reportDelay = 0; // vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");
         uint256 minimumProviders = 1; // vm.envUint("DEPLOYMENT_ORACLE_MINIMUM_PROVIDERS");
         address dataProvider1 = 0x7061B54AD655E2C7b01EC40Aded0aBC18Af183f8; // backend service
-        address dataProvider2 = 0xC83901A3BcD7A4cd66FA3e2737aA4632312A593F; // dev wallet
+        address dataProvider2 = 0x562F16423C724fE47ee27aABaD43C519F4fCbed0; // dev wallet
         uint256 initialPrice = 1e18;
         // Register ERC20
         uint256 assetType = 1;

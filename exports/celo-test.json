@@ -1052,7 +1052,7 @@
       ]
     },
     "Reserve": {
-      "address": "0x94764Ebbc97e9322FF84Fa586caB61d531717137",
+      "address": "0xFF2B6589Af0856740EFf6876d696c63d11dB5D11",
       "abi": [
         {
           "inputs": [
@@ -3500,7 +3500,7 @@
       ]
     },
     "CuracaoReserveToken": {
-      "address": "0xcB15f505189076673a644609D8405BE3B29D77EF",
+      "address": "0x8b87eeA179005a7A619a3439C243c3A9CA0e1241",
       "abi": [
         {
           "inputs": [
@@ -8935,7 +8935,7 @@
       ]
     },
     "TimeLockVault": {
-      "address": "0xE4725b96248Ee2034016c8b3101772ff2A104023",
+      "address": "0x8dCbe1910a552bD7dB9e0640Fa779FAbe65090c6",
       "abi": [
         {
           "inputs": [],
@@ -9137,7 +9137,7 @@
       ]
     },
     "SortedOracles": {
-      "address": "0x032A83aba5609d63D9001fF662de20D7645405bf",
+      "address": "0x3C76Aa7De024D9a98E8099b3CF6E0653c22cc5B9",
       "abi": [
         {
           "inputs": [
@@ -10610,7 +10610,7 @@
       ]
     },
     "KolektivoGuilder": {
-      "address": "0x0872168119099959DD37ae05d9fD956dd3e7dB9B",
+      "address": "0x49b3b895da4641ce427B21599082054D6643BBd0",
       "abi": [
         {
           "inputs": [
@@ -11701,7 +11701,7 @@
       ]
     },
     "Exchange": {
-      "address": "0x3a7685E56Ba17dA4C15b50B6FAfAb8125bA1cd93",
+      "address": "0x02BBf71645d0f5CEC234850aDEe939dce97E11C4",
       "abi": [
         {
           "inputs": [
@@ -12365,7 +12365,7 @@
       ]
     },
     "MentoReserve": {
-      "address": "0xb9b1346b6f86a26028e073011f9Bfb86396aF082",
+      "address": "0xf3E84275C57CCB39C75c2A86B89F2D6E0498aA85",
       "abi": [
         {
           "inputs": [
@@ -13518,7 +13518,7 @@
       ]
     },
     "MentoRegistry": {
-      "address": "0xf65CfcFE444F2F17720cAbeF1c37Bf29717E7c46",
+      "address": "0x7c6d6eD463a98Baa0bb9f876ac2D50eEe0f8ed4B",
       "abi": [
         {
           "inputs": [
@@ -13768,7 +13768,7 @@
       ]
     },
     "Freezer": {
-      "address": "0xD6641d9205080d4358C6ceC59c4343Ab442fD067",
+      "address": "0x63AE3bdF14541D03C07C7Bc7455d5456dc68f904",
       "abi": [
         {
           "anonymous": false,

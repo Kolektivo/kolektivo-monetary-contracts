@@ -6,6 +6,7 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {TSOwnable} from "solrocket/TSOwnable.sol";
 import "./lib/IUniswapV2Router02.sol";
 import "../interfaces/IReserve.sol";
+import "openzeppelin-contracts/contracts/security/Pausable.sol";
 import "./IVault.sol";
 
 interface CuracaoReserveToken {
@@ -14,7 +15,7 @@ interface CuracaoReserveToken {
     function burn(address from, uint256 amount) external;
 }
 
-contract BalancerV2Proxy is TSOwnable {
+contract BalancerV2Proxy is TSOwnable, Pausable {
     using SafeTransferLib for ERC20;
 
     //--------------------------------------------------------------------------
@@ -82,7 +83,7 @@ contract BalancerV2Proxy is TSOwnable {
         IVault.FundManagement memory funds,
         int256[] memory limits,
         uint256 deadline
-    ) external payable {
+    ) external payable whenNotPaused {
         require(
             (address(assets[0]) == reserveToken &&
                 address(assets[1]) == address(pairToken)) ||
@@ -232,7 +233,7 @@ contract BalancerV2Proxy is TSOwnable {
         IVault.FundManagement memory funds,
         int256[] memory limits,
         uint256 deadline
-    ) external payable {
+    ) external payable whenNotPaused {
         require(
             (address(assets[0]) == reserveToken &&
                 address(assets[1]) == address(pairToken)) ||
@@ -374,6 +375,14 @@ contract BalancerV2Proxy is TSOwnable {
         inBalanceBefore = 0;
     }
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+ 
     function _checkReserveLimits() internal view returns (bool, bool) {
         // reserve backing - percentage of supply backed by reserve
         // as we take some leverage, not whole supply is backed by reserve

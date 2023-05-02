@@ -85,10 +85,8 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
         uint256 deadline
     ) external payable whenNotPaused {
         require(
-            (address(assets[0]) == reserveToken &&
-                address(assets[1]) == address(pairToken)) ||
-                (address(assets[0]) == address(pairToken) &&
-                    address(assets[1]) == reserveToken)
+            (address(assets[0]) == reserveToken && address(assets[1]) == address(pairToken))
+                || (address(assets[0]) == address(pairToken) && address(assets[1]) == reserveToken)
         );
         require(swaps.length == 1);
 
@@ -98,11 +96,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
             outBalanceBefore = pairToken.balanceOf(address(this));
 
             // Transfer the Reserve Token to us
-            ERC20(reserveToken).safeTransferFrom(
-                msg.sender,
-                address(this),
-                totalAmountIn
-            );
+            ERC20(reserveToken).safeTransferFrom(msg.sender, address(this), totalAmountIn);
             uint256 thisAmountIn = totalAmountIn;
             uint256 thisAmountOutMin = minTotalAmountOut;
 
@@ -116,14 +110,8 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
                 // (for ceiling we don't care if a user sells Reserve Tokens since it helps us)
                 if (breach && isFloor) {
                     // Retrieve the corresponding amount from the Reserve
-                    reserve.withdrawERC20(
-                        address(pairToken),
-                        address(this),
-                        withdrawAmount
-                    );
-                    thisAmountIn =
-                        (thisAmountIn * withdrawAmount) /
-                        thisAmountOutMin;
+                    reserve.withdrawERC20(address(pairToken), address(this), withdrawAmount);
+                    thisAmountIn = (thisAmountIn * withdrawAmount) / thisAmountOutMin;
                     thisAmountOutMin = thisAmountOutMin - withdrawAmount;
 
                     swaps[0].amount = thisAmountIn / thisAmountOutMin;
@@ -135,13 +123,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
                 ERC20(reserveToken).approve(address(vault), thisAmountIn);
                 uint256 outAmount = uint256(
                     vault.batchSwap( // exact in
-                        IVault.SwapKind.GIVEN_IN,
-                        swaps,
-                        assets,
-                        funds,
-                        limits,
-                        deadline
-                    )[1] // token out is at index 1, hence the balance delta at index 1 is the balance of tokenOut which was withdrawn from vault/pool
+                    IVault.SwapKind.GIVEN_IN, swaps, assets, funds, limits, deadline)[1] // token out is at index 1, hence the balance delta at index 1 is the balance of tokenOut which was withdrawn from vault/pool
                 );
 
                 // Update the exchange return value with our additional amount
@@ -156,10 +138,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
             pairToken.transfer(msg.sender, outBalanceAfter - outBalanceBefore);
 
             // Burn the surplus of Reserve Tokens that we didn't see on the exchange
-            CuracaoReserveToken(reserveToken).burn(
-                address(this),
-                inBalanceAfter - inBalanceBefore
-            );
+            CuracaoReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
             outBalanceBefore = 0;
             outBalanceAfter = 0;
         } else if (address(assets[1]) == reserveToken) {
@@ -167,11 +146,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
             inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the Pair Token to us
-            pairToken.safeTransferFrom(
-                msg.sender,
-                address(this),
-                totalAmountIn
-            );
+            pairToken.safeTransferFrom(msg.sender, address(this), totalAmountIn);
             uint256 thisAmountIn = totalAmountIn;
             uint256 thisAmountOutMin = minTotalAmountOut;
 
@@ -185,10 +160,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
                 // (for floor we don't care if a user buys Reserve Tokens since it helps us)
                 if (breach && !isFloor) {
                     // Mint the corresponding amount from the Reserve
-                    CuracaoReserveToken(reserveToken).mint(
-                        address(this),
-                        mintAmount
-                    );
+                    CuracaoReserveToken(reserveToken).mint(address(this), mintAmount);
                     thisAmountIn = (thisAmountIn * mintAmount) / thisAmountIn;
                     thisAmountOutMin = thisAmountOutMin - mintAmount;
 
@@ -200,13 +172,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
                 pairToken.approve(address(vault), thisAmountIn);
                 uint256 outAmount = uint256(
                     vault.batchSwap( // exact in
-                        IVault.SwapKind.GIVEN_IN,
-                        swaps,
-                        assets,
-                        funds,
-                        limits,
-                        deadline
-                    )[1] // token out is at index 1, hence the balance delta at index 1 is the balance of tokenOut which was withdrawn from vault/pool
+                    IVault.SwapKind.GIVEN_IN, swaps, assets, funds, limits, deadline)[1] // token out is at index 1, hence the balance delta at index 1 is the balance of tokenOut which was withdrawn from vault/pool
                 );
 
                 // Update the exchange return value with our additional amount
@@ -217,10 +183,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
             inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the resulting tokens to the user
-            ERC20(reserveToken).transfer(
-                msg.sender,
-                inBalanceAfter - inBalanceBefore
-            );
+            ERC20(reserveToken).transfer(msg.sender, inBalanceAfter - inBalanceBefore);
         }
         inBalanceBefore = 0;
         inBalanceAfter = 0;
@@ -235,10 +198,8 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
         uint256 deadline
     ) external payable whenNotPaused {
         require(
-            (address(assets[0]) == reserveToken &&
-                address(assets[1]) == address(pairToken)) ||
-                (address(assets[0]) == address(pairToken) &&
-                    address(assets[1]) == reserveToken)
+            (address(assets[0]) == reserveToken && address(assets[1]) == address(pairToken))
+                || (address(assets[0]) == address(pairToken) && address(assets[1]) == reserveToken)
         );
         require(swaps.length == 1);
 
@@ -249,11 +210,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
             outBalanceBefore = pairToken.balanceOf(address(this));
 
             // Transfer the Reserve Token to us
-            ERC20(reserveToken).safeTransferFrom(
-                msg.sender,
-                address(this),
-                maxTotalAmountIn
-            );
+            ERC20(reserveToken).safeTransferFrom(msg.sender, address(this), maxTotalAmountIn);
             uint256 thisAmountOut = swaps[0].amount; // if swap kind is GEVEN_OUT, swap.amount -> exact amout out
             uint256 thisAmountInMax = maxTotalAmountIn;
 
@@ -267,59 +224,36 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
                 // (for ceiling we don't care if a user sells Reserve Tokens since it helps us)
                 if (breach && isFloor) {
                     // Retrieve the corresponding amount from the Reserve
-                    reserve.withdrawERC20(
-                        address(pairToken),
-                        address(this),
-                        withdrawAmount
-                    );
-                    thisAmountInMax =
-                        (thisAmountInMax * withdrawAmount) /
-                        thisAmountOut;
+                    reserve.withdrawERC20(address(pairToken), address(this), withdrawAmount);
+                    thisAmountInMax = (thisAmountInMax * withdrawAmount) / thisAmountOut;
                     thisAmountOut = thisAmountOut - withdrawAmount;
                 }
             }
             // Approve and execute the exchange swap
             ERC20(reserveToken).approve(address(vault), thisAmountInMax);
             vault.batchSwap( // exact out
-                IVault.SwapKind.GIVEN_OUT,
-                swaps,
-                assets,
-                funds,
-                limits,
-                deadline
-            );
+            IVault.SwapKind.GIVEN_OUT, swaps, assets, funds, limits, deadline);
 
             inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
             outBalanceAfter = pairToken.balanceOf(address(this));
             {
                 uint256 inAmount = inBalanceAfter - inBalanceBefore;
-                uint256 outAmount = outBalanceAfter -
-                    outBalanceBefore +
-                    withdrawAmount;
-                require(
-                    inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
-                );
+                uint256 outAmount = outBalanceAfter - outBalanceBefore + withdrawAmount;
+                require(inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut);
             }
 
             // Transfer the resulting tokens to the user
             pairToken.transfer(msg.sender, outBalanceAfter - outBalanceBefore);
 
             // Burn the surplus of Reserve Tokens
-            CuracaoReserveToken(reserveToken).burn(
-                address(this),
-                inBalanceAfter - inBalanceBefore
-            );
+            CuracaoReserveToken(reserveToken).burn(address(this), inBalanceAfter - inBalanceBefore);
         } else if (address(assets[1]) == reserveToken) {
             // User buys Reserve Token with the Pair Token
             inBalanceBefore = pairToken.balanceOf(address(this));
             outBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the Pair Token to us
-            pairToken.safeTransferFrom(
-                msg.sender,
-                address(this),
-                maxTotalAmountIn
-            );
+            pairToken.safeTransferFrom(msg.sender, address(this), maxTotalAmountIn);
             uint256 thisAmountOut = swaps[0].amount; // if swap kind is GEVEN_OUT, swap.amount -> exact amout out
             uint256 thisAmountInMax = maxTotalAmountIn;
 
@@ -333,37 +267,22 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
                 // (for floor we don't care if a user buys Reserve Tokens since it helps us)
                 if (breach && !isFloor) {
                     // Mint the corresponding amount from the Reserve
-                    CuracaoReserveToken(reserveToken).mint(
-                        address(this),
-                        mintAmount
-                    );
-                    thisAmountInMax =
-                        (thisAmountInMax * mintAmount) /
-                        thisAmountOut;
+                    CuracaoReserveToken(reserveToken).mint(address(this), mintAmount);
+                    thisAmountInMax = (thisAmountInMax * mintAmount) / thisAmountOut;
                     thisAmountOut = thisAmountOut - mintAmount;
                 }
             }
             // Approve and execute the exchange swap
             pairToken.approve(address(vault), thisAmountInMax);
             vault.batchSwap( // exact out
-                IVault.SwapKind.GIVEN_OUT,
-                swaps,
-                assets,
-                funds,
-                limits,
-                deadline
-            ); // exact out
+            IVault.SwapKind.GIVEN_OUT, swaps, assets, funds, limits, deadline); // exact out
 
             inBalanceAfter = pairToken.balanceOf(address(this));
             outBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
             {
                 uint256 inAmount = inBalanceBefore - inBalanceAfter;
-                uint256 outAmount = outBalanceAfter -
-                    outBalanceBefore +
-                    mintAmount;
-                require(
-                    inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
-                );
+                uint256 outAmount = outBalanceAfter - outBalanceBefore + mintAmount;
+                require(inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut);
 
                 // Transfer the resulting tokens to the user
                 ERC20(reserveToken).transfer(msg.sender, outAmount);
@@ -386,7 +305,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable {
     function _checkReserveLimits() internal view returns (bool, bool) {
         // reserve backing - percentage of supply backed by reserve
         // as we take some leverage, not whole supply is backed by reserve
-        (, , uint256 reserveBacking) = reserve.reserveStatus();
+        (,, uint256 reserveBacking) = reserve.reserveStatus();
 
         // Floor
         // checks following

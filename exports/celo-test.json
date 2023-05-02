@@ -1052,7 +1052,7 @@
       ]
     },
     "Reserve": {
-      "address": "0xFF2B6589Af0856740EFf6876d696c63d11dB5D11",
+      "address": "0x90c886cE573695c148052c4A381b24BFDEcE0cC6",
       "abi": [
         {
           "inputs": [
@@ -3500,7 +3500,7 @@
       ]
     },
     "CuracaoReserveToken": {
-      "address": "0x8b87eeA179005a7A619a3439C243c3A9CA0e1241",
+      "address": "0x97664A6cae3c4bE423D29724C83772697B09A430",
       "abi": [
         {
           "inputs": [
@@ -8935,7 +8935,7 @@
       ]
     },
     "TimeLockVault": {
-      "address": "0x8dCbe1910a552bD7dB9e0640Fa779FAbe65090c6",
+      "address": "0xabf854C675de77977FC79630e20180868d423e56",
       "abi": [
         {
           "inputs": [],

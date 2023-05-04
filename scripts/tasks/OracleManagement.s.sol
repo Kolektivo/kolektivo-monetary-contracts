@@ -12,7 +12,7 @@ contract AddProvider is Script {
         // Set new DataProvider to Oracle
         vm.startBroadcast();
         {
-            oracle.addProvider(vm.envAddress("TASK_DATA_PROVIDER"));
+            oracle.addProvider(vm.envAddress("PUBLIC_KEY"));
         }
         vm.stopBroadcast();
 

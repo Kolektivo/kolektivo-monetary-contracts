@@ -305,6 +305,10 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
                 require(
                     inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
                 );
+                // Transfer the resulting tokens to the user
+                if (inAmount > 0) {
+                    ERC20(reserveToken).transfer(msg.sender, inAmount);
+                }
             }
 
             // Burn the surplus of Reserve Tokens
@@ -361,11 +365,14 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
             outBalanceAfter = ERC20(reserveToken).balanceOf(msg.sender);
             {
                 uint256 inAmount = inBalanceAfter - inBalanceBefore;
-                uint256 outAmount = outBalanceAfter -
-                    outBalanceBefore;
+                uint256 outAmount = outBalanceAfter - outBalanceBefore;
                 require(
-                    inAmount <= maxTotalAmountIn && outAmount >= swaps[0].amount
+                    inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
                 );
+                if (inAmount > 0) {
+                    // Transfer the resulting tokens to the user
+                    pairToken.transfer(msg.sender, inAmount);
+                }
             }
         }
         outBalanceAfter = 0;

@@ -103,7 +103,6 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
         if (address(assets[0]) == reserveToken) {
             // User sells Reserve Token for the Pair Token
             inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
-            outBalanceBefore = pairToken.balanceOf(address(this));
 
             // Transfer the Reserve Token to us
             ERC20(reserveToken).safeTransferFrom(
@@ -165,26 +164,14 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
             }
 
             inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
-            outBalanceAfter = pairToken.balanceOf(address(this));
-
-            // Transfer the resulting tokens to the user
-            if (outBalanceAfter - outBalanceBefore != 0) {
-                pairToken.transfer(
-                    msg.sender,
-                    outBalanceAfter - outBalanceBefore
-                );
-            }
 
             // Burn the surplus of Reserve Tokens that we didn't see on the exchange
             CuracaoReserveToken(reserveToken).burn(
                 address(this),
                 inBalanceAfter - inBalanceBefore
             );
-            outBalanceBefore = 0;
-            outBalanceAfter = 0;
         } else if (address(assets[1]) == reserveToken) {
             // User buys Reserve Token with the Pair Token
-            inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
 
             // Transfer the Pair Token to us
             pairToken.safeTransferFrom(
@@ -233,16 +220,6 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
                 outAmount += mintAmount;
                 require(outAmount >= minTotalAmountOut);
             }
-
-            inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
-
-            // Transfer the resulting tokens to the user
-            if (inBalanceAfter - inBalanceBefore != 0) {
-                ERC20(reserveToken).transfer(
-                    msg.sender,
-                    inBalanceAfter - inBalanceBefore
-                );
-            }
         }
         inBalanceBefore = 0;
         inBalanceAfter = 0;
@@ -268,7 +245,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
             // User sells Reserve Token for the Pair Token
             // check the existing balance of the Proxy Pool Contract
             inBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
-            outBalanceBefore = pairToken.balanceOf(address(this));
+            outBalanceBefore = pairToken.balanceOf(msg.sender);
 
             // Transfer the Reserve Token to us
             ERC20(reserveToken).safeTransferFrom(
@@ -319,7 +296,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
             );
 
             inBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
-            outBalanceAfter = pairToken.balanceOf(address(this));
+            outBalanceAfter = pairToken.balanceOf(msg.sender);
             {
                 uint256 inAmount = inBalanceAfter - inBalanceBefore;
                 uint256 outAmount = outBalanceAfter -
@@ -327,14 +304,6 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
                     withdrawAmount;
                 require(
                     inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
-                );
-            }
-
-            // Transfer the resulting tokens to the user
-            if (outBalanceAfter - outBalanceBefore!= 0) {
-                pairToken.transfer(
-                    msg.sender,
-                    outBalanceAfter - outBalanceBefore
                 );
             }
 
@@ -346,7 +315,7 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
         } else if (address(assets[1]) == reserveToken) {
             // User buys Reserve Token with the Pair Token
             inBalanceBefore = pairToken.balanceOf(address(this));
-            outBalanceBefore = ERC20(reserveToken).balanceOf(address(this));
+            outBalanceBefore = ERC20(reserveToken).balanceOf(msg.sender);
 
             // Transfer the Pair Token to us
             pairToken.safeTransferFrom(
@@ -389,18 +358,14 @@ contract BalancerV2Proxy is TSOwnable, Pausable, ERC1155Receiver {
             ); // exact out
 
             inBalanceAfter = pairToken.balanceOf(address(this));
-            outBalanceAfter = ERC20(reserveToken).balanceOf(address(this));
+            outBalanceAfter = ERC20(reserveToken).balanceOf(msg.sender);
             {
-                uint256 inAmount = inBalanceBefore - inBalanceAfter;
+                uint256 inAmount = inBalanceAfter - inBalanceBefore;
                 uint256 outAmount = outBalanceAfter -
-                    outBalanceBefore +
-                    mintAmount;
+                    outBalanceBefore;
                 require(
-                    inAmount <= maxTotalAmountIn && outAmount >= thisAmountOut
+                    inAmount <= maxTotalAmountIn && outAmount >= swaps[0].amount
                 );
-
-                // Transfer the resulting tokens to the user
-                ERC20(reserveToken).transfer(msg.sender, outAmount);
             }
         }
         outBalanceAfter = 0;

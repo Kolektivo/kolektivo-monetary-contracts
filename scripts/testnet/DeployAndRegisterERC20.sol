@@ -42,7 +42,7 @@ contract DeployAndRegisterERC20 is Script {
         // Mock token variables
         string memory tokenName = "Celo Dollar Mock";
         string memory tokenSymbol = "cUSD-T";
-        uint256 amount = 10000e18;
+        uint256 amount = 1000e18;
         // Oracle variables
         uint256 reportExpirationTime = 2592000; // 30 days vm.envUint("DEPLOYMENT_ORACLE_REPORT_EXPIRATION_TIME");
         uint256 reportDelay = 0; // vm.envUint("DEPLOYMENT_ORACLE_REPORT_DELAY");

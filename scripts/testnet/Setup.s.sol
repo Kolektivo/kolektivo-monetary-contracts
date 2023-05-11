@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Script.sol";
 
-import {ReserveToken} from "../../src/ReserveToken.sol";
+import {CuracaoReserveToken} from "../../src/CuracaoReserveToken.sol";
 import {Oracle} from "../../src/Oracle.sol";
 
 import {Reserve} from "../../src/Reserve.sol";
@@ -10,31 +10,26 @@ import {Reserve} from "../../src/Reserve.sol";
 /**
  * @dev Setups the testnet contracts. NEEDS TO BE RUN ONLY ONCE.
  *
- *      - Sets the ReserveToken's mintBurner allowance to the Reserve
+ *      - Sets the CuracaoReserveToken's mintBurner allowance to the Reserve
  *      - Sets the Oracle providers
  */
 contract Setup is Script {
-    // Note that the addresses are copied from the DEPLOYMENT.md doc file.
-    ReserveToken reserveToken =
-        ReserveToken(0x6f10D2FbcBEa5908bc0d4ed3656E61c29Db9c324);
-
-    Oracle treasuryOracle = Oracle(0xED282D1EAbd32C3740Ee82fa1A95bd885A69f3bB);
-    Oracle reserveOracle = Oracle(0xA6B5122385c8aF4a42E9e9217301217B9cdDbC49);
-    Oracle erc20Mock1Oracle =
-        Oracle(0x2066a9c878c26FA29D4fd923031C3C40375d1c0D);
-    Oracle erc20Mock2Oracle =
-        Oracle(0xce37a77D34f05325Ff1CC0744edb2845349307F7);
-    Oracle erc20Mock3Oracle =
-        Oracle(0x923b14F630beA5ED3D47338469c111D6d082B3E8);
-    Oracle geoNFTOracle = Oracle(0xFeF224e7fdFf2279AE42c33Fb47397A89503186b);
-
-    address reserve = 0xBccd7dA2A8065C588caFD210c33FC08b00d36Df9;
-
     function run() external {
-        // Set ReserveToken's mintBurner allowance to Reserve.
+        CuracaoReserveToken reserveToken = CuracaoReserveToken(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN"));
+        Oracle treasuryOracle = Oracle(vm.envAddress("DEPLOYMENT_TREASURY_TOKEN_ORACLE"));
+        Oracle reserveOracle = Oracle(vm.envAddress("DEPLOYMENT_RESERVE_TOKEN_ORACLE"));
+        Oracle erc20Mock1Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_1_ORACLE"));
+        Oracle erc20Mock2Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_2_ORACLE"));
+        Oracle erc20Mock3Oracle = Oracle(vm.envAddress("DEPLOYMENT_MOCK_TOKEN_3_ORACLE"));
+        Oracle geoNFT1Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_1_ORACLE"));
+        Oracle geoNFT2Oracle = Oracle(vm.envAddress("DEPLOYMENT_GEO_NFT_2_ORACLE"));
+
+        address reserve = vm.envAddress("DEPLOYMENT_RESERVE");
+
+        // Set CuracaoReserveToken's mintBurner allowance to Reserve.
         vm.startBroadcast();
         {
-            reserveToken.setMintBurner(reserve);
+            reserveToken.setMintBurner(reserve, true);
         }
         vm.stopBroadcast();
 
@@ -42,12 +37,24 @@ contract Setup is Script {
         // private key the script is executed.
         vm.startBroadcast();
         {
-            treasuryOracle.addProvider(msg.sender);
-            reserveOracle.addProvider(msg.sender);
-            erc20Mock1Oracle.addProvider(msg.sender);
-            erc20Mock2Oracle.addProvider(msg.sender);
-            erc20Mock3Oracle.addProvider(msg.sender);
-            geoNFTOracle.addProvider(msg.sender);
+            treasuryOracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+            reserveOracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+            erc20Mock1Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+            erc20Mock2Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+            erc20Mock3Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+            geoNFT1Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+            geoNFT2Oracle.addProvider(vm.envAddress("WALLET_DEPLOYER"));
+
+            // address ownOracle = vm.envAddress("OWN_ORACLE_ADDRESS");
+            // if(ownOracle != address(0)) {
+            //     treasuryOracle.addProvider(ownOracle);
+            //     reserveOracle.addProvider(ownOracle);
+            //     erc20Mock1Oracle.addProvider(ownOracle);
+            //     erc20Mock2Oracle.addProvider(ownOracle);
+            //     erc20Mock3Oracle.addProvider(ownOracle);
+            //     geoNFT1Oracle.addProvider(ownOracle);
+            //     geoNFT2Oracle.addProvider(ownOracle);
+            // }
         }
         vm.stopBroadcast();
     }

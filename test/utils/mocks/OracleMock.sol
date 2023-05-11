@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.10;
+pragma solidity ^0.8.0;
 
 interface IOracle {
-    function getData() external view returns (uint, bool);
+    function getData() external view returns (uint256, bool);
 }
 
 contract OracleMock is IOracle {
-    uint public data;
+    uint256 public data;
     bool public valid;
 
-    function setDataAndValid(uint data_, bool valid_) external {
+    function setDataAndValid(uint256 data_, bool valid_) external {
         data = data_;
         valid = valid_;
     }
 
-    function setData(uint data_) external {
+    function setData(uint256 data_) external {
         data = data_;
     }
 
@@ -25,8 +25,7 @@ contract OracleMock is IOracle {
     //--------------------------------------------------------------------------
     // IOracle Functions
 
-    function getData() external view returns (uint, bool) {
+    function getData() external view returns (uint256, bool) {
         return (data, valid);
     }
-
 }

@@ -31,6 +31,14 @@ update: ## Update dependencies
 test: ## Run whole testsuite
 	@forge test -vvv
 
+.PHONY: fmt
+fmt: ## Format code
+	@forge fmt
+
+.PHONY: fmt-check
+fmt-check: ## Check whether code formatted correctly
+	@forge fmt --check
+
 # -----------------------------------------------------------------------------
 # Individual Component Tests
 
@@ -47,8 +55,8 @@ testElasticToken: ## Run Elastic Receipt Token tests
 	@forge test -vvv --match-contract "ElasticReceiptToken"
 
 .PHONY: testReserveToken
-testReserveToken: ## Run ReserveToken tests
-	@forge test -vvv --match-contract "ReserveToken"
+testReserveToken: ## Run CuracaoReserveToken tests
+	@forge test -vvv --match-contract "CuracaoReserveToken"
 
 .PHONY: testReserve
 testReserve: ## Run Reserve tests
@@ -57,6 +65,10 @@ testReserve: ## Run Reserve tests
 .PHONY: testGeoNFT
 testGeoNFT: ## Run GeoNFT tests
 	@forge test -vvv --match-contract "GeoNFT"
+
+.PHONY: testMento
+testMento: ## Run Mento tests
+	@forge test -vvv --match-contract "Mento"
 
 # -----------------------------------------------------------------------------
 # Static Analyzers
@@ -91,7 +103,7 @@ cov-report: ## Print coverage report and create lcov report file
 	@forge coverage
 
 # -----------------------------------------------------------------------------
-# Help Command
+# Help Command 
 
 .PHONY: help
 help:

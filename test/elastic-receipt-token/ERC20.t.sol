@@ -7,14 +7,13 @@ import "./Test.t.sol";
  * @dev ERC20 Tests.
  */
 contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
-
     bytes32 constant PERMIT_TYPEHASH =
         keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
-    function testApprove(address owner, address spender, uint amount)
+    function testApprove(address owner, address spender, uint256 amount)
+        public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
-        public
     {
         // Note that an approval of zero is valid.
 
@@ -25,28 +24,28 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
     }
 
     function testApproveInf(address owner, address spender)
+        public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
-        public
     {
         vm.assume(owner != spender);
 
         mintToUser(owner, 1e9);
 
         vm.prank(owner);
-        assertTrue(ert.approve(spender, type(uint).max));
+        assertTrue(ert.approve(spender, type(uint256).max));
 
         vm.prank(spender);
         assertTrue(ert.transferFrom(owner, spender, 1e9));
 
-        assertEq(ert.allowance(owner, spender), type(uint).max);
+        assertEq(ert.allowance(owner, spender), type(uint256).max);
     }
 
-    function testIncreaseAllowance(
-        address owner,
-        address spender,
-        uint erts
-    ) public assumeTestAddress(owner) assumeTestAddress(spender) {
+    function testIncreaseAllowance(address owner, address spender, uint256 erts)
+        public
+        assumeTestAddress(owner)
+        assumeTestAddress(spender)
+    {
         // Note that an allowance increase of zero is valid.
 
         vm.prank(owner);
@@ -55,11 +54,11 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.allowance(owner, spender), erts);
     }
 
-    function testDecreaseAllowance(
-        address owner,
-        address spender,
-        uint erts
-    ) public assumeTestAddress(owner) assumeTestAddress(spender) {
+    function testDecreaseAllowance(address owner, address spender, uint256 erts)
+        public
+        assumeTestAddress(owner)
+        assumeTestAddress(spender)
+    {
         // Note that an allowance increase/decrease of zero is valid.
         vm.assume(owner != address(0));
         vm.assume(spender != address(0));
@@ -73,7 +72,7 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.allowance(owner, spender), 0);
     }
 
-    function testTransfer(address from, address to, uint erts)
+    function testTransfer(address from, address to, uint256 erts)
         public
         assumeTestAddress(from)
         assumeTestAddress(to)
@@ -90,7 +89,7 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.balanceOf(to), erts);
     }
 
-    function testTransferAll(address from, address to, uint erts)
+    function testTransferAll(address from, address to, uint256 erts)
         public
         assumeTestAddress(from)
         assumeTestAddress(to)
@@ -107,7 +106,7 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.balanceOf(to), erts);
     }
 
-    function testTransferFrom(address owner, address spender, uint erts)
+    function testTransferFrom(address owner, address spender, uint256 erts)
         public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
@@ -127,11 +126,7 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.balanceOf(spender), erts);
     }
 
-    function testTransferAllFrom(
-        address owner,
-        address spender,
-        uint erts
-    )
+    function testTransferAllFrom(address owner, address spender, uint256 erts)
         public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
@@ -151,10 +146,11 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.balanceOf(spender), erts);
     }
 
-    function testTransferAllFromWithZeroToken(
-        address owner,
-        address spender
-    ) public assumeTestAddress(owner) assumeTestAddress(spender) {
+    function testTransferAllFromWithZeroToken(address owner, address spender)
+        public
+        assumeTestAddress(owner)
+        assumeTestAddress(spender)
+    {
         vm.assume(owner != spender);
 
         // Create owner balance with bit amount unequal to zero but token
@@ -183,34 +179,26 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         assertEq(ert.allowance(owner, spender), 0);
     }
 
-    function testFailTransferInsufficientBalance(
-        address from,
-        address to,
-        uint erts
-    )
+    function testFailTransferInsufficientBalance(address from, address to, uint256 erts)
         public
         assumeTestAddress(from)
         assumeTestAddress(to)
         assumeTestAmount(erts)
     {
-        mintToUser(from, erts-1);
+        mintToUser(from, erts - 1);
 
         // Fails with underflow due to insufficient balance.
         vm.prank(from);
         ert.transfer(to, erts);
     }
 
-    function testFailTransferFromInsufficientBalance(
-        address owner,
-        address spender,
-        uint erts
-    )
+    function testFailTransferFromInsufficientBalance(address owner, address spender, uint256 erts)
         public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
         assumeTestAmount(erts)
     {
-        mintToUser(owner, erts-1);
+        mintToUser(owner, erts - 1);
 
         vm.prank(owner);
         ert.approve(spender, erts);
@@ -220,11 +208,7 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         ert.transferFrom(owner, owner, erts);
     }
 
-    function testFailTransferFromInsufficientAllowance(
-        address owner,
-        address spender,
-        uint erts
-    )
+    function testFailTransferFromInsufficientAllowance(address owner, address spender, uint256 erts)
         public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
@@ -233,18 +217,14 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         mintToUser(owner, erts);
 
         vm.prank(owner);
-        ert.approve(spender, erts-1);
+        ert.approve(spender, erts - 1);
 
         // Fails with underflow due to insufficient allowance.
         vm.prank(spender);
         ert.transferFrom(owner, owner, erts);
     }
 
-    function testFailTransferAllFromInsufficientAllowance(
-        address owner,
-        address spender,
-        uint erts
-    )
+    function testFailTransferAllFromInsufficientAllowance(address owner, address spender, uint256 erts)
         public
         assumeTestAddress(owner)
         assumeTestAddress(spender)
@@ -253,7 +233,7 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         mintToUser(owner, erts);
 
         vm.prank(owner);
-        ert.approve(spender, erts-1);
+        ert.approve(spender, erts - 1);
 
         // Fails with underflow due to insufficient allowance.
         vm.prank(spender);
@@ -357,5 +337,4 @@ contract ElasticReceiptTokenERC20 is ElasticReceiptTokenTest {
         // Fails due to being a replay attack.
         ert.permit(owner, address(0xCAFE), 1e18, block.timestamp, v, r, s);
     }
-
 }

@@ -12,3 +12,4 @@ reports
 # Environments to ignore
 prod.env
 testnet.env
+.env

@@ -10,7 +10,6 @@ import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
  * @dev onlyOwner Function Tests.
  */
 contract TreasuryOnlyOwner is TreasuryTest {
-
     function testOnlyOwnerFunctionsNotPubliclyCallable(address caller) public {
         if (caller == treasury.owner()) {
             return;
@@ -23,7 +22,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // List asset as bondable + redeemable.
         treasury.listERC20AsBondable(asset);
@@ -55,10 +54,10 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.withdrawERC20(address(1), address(2), 1);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.registerERC20(address(1), address(2), Treasury.AssetType.Default);
+        treasury.registerERC20(address(1), address(2), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        treasury.unregisterERC20(address(1));
+        treasury.deregisterERC20(address(1));
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
         treasury.updateERC20Oracle(asset, address(oracle));
@@ -85,9 +84,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
     function testExecuteTx() public {
         // Call a publicly callable function on the treasury.
         address target = address(treasury);
-        bytes memory callData = abi.encodeWithSignature(
-            "totalValuation()"
-        );
+        bytes memory callData = abi.encodeWithSignature("totalValuation()");
 
         treasury.executeTx(target, callData);
     }
@@ -95,10 +92,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
     function testFailExecuteOnlyOwnerTx() public {
         // Call an onlyOwner function on the treasury.
         address target = address(treasury);
-        bytes memory callData = abi.encodeWithSignature(
-            "listERC20AsBondable()",
-            address(0)
-        );
+        bytes memory callData = abi.encodeWithSignature("listERC20AsBondable()", address(0));
 
         // Fails with OnlyCallableByOwner.
         treasury.executeTx(target, callData);
@@ -125,7 +119,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         treasury.withdrawERC20(address(0), address(1), 1);
     }
 
-    function testWithdrawAsset(address recipient, uint amount) public {
+    function testWithdrawAsset(address recipient, uint256 amount) public {
         vm.assume(recipient != address(0) && recipient != address(treasury));
         vm.assume(amount != 0);
 
@@ -145,18 +139,18 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit ERC20Registered(asset, address(oracle), Treasury.AssetType.Default);
+        emit ERC20Registered(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Function should be idempotent.
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Check that asset is supported.
         assertEq(treasury.registeredERC20s(0), asset);
 
         // Check that asset type is set correctly
-        assertEq(uint(treasury.assetTypeOfERC20(asset)), uint(Treasury.AssetType.Default));
+        assertEq(uint256(treasury.assetTypeOfERC20(asset)), uint256(Treasury.AssetType.Default));
 
         // Check that asset's oracle is correct.
         assertEq(treasury.oraclePerERC20(asset), address(oracle));
@@ -167,35 +161,42 @@ contract TreasuryOnlyOwner is TreasuryTest {
         } catch {
             // Fails due to IndexOutOfBounds.
         }
-        
-        // Unregister asset
-        treasury.unregisterERC20(asset);
+
+        // Deregister asset
+        treasury.deregisterERC20(asset);
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit ERC20Registered(asset, address(oracle), Treasury.AssetType.Stable);
+        emit ERC20Registered(asset, address(oracle), Treasury.AssetType.Stable, Treasury.RiskLevel.Medium);
 
         // Register asset with different asset type
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Stable);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Stable, Treasury.RiskLevel.Medium);
 
         // Check that asset type is set correctly
-        assertEq(uint(treasury.assetTypeOfERC20(asset)), uint(Treasury.AssetType.Stable));
+        assertEq(uint256(treasury.assetTypeOfERC20(asset)), uint256(Treasury.AssetType.Stable));
 
-        treasury.unregisterERC20(asset);
+        // Check that the risk level is set correctly
+        assertEq(uint256(treasury.riskLevelOfERC20(asset)), uint256(Treasury.RiskLevel.Medium));
+
+        treasury.deregisterERC20(asset);
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit ERC20Registered(asset, address(oracle), Treasury.AssetType.Ecological);
-        
+        emit ERC20Registered(asset, address(oracle), Treasury.AssetType.Ecological, Treasury.RiskLevel.High);
+
         // Register asset with different asset type
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Ecological);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Ecological, Treasury.RiskLevel.High);
 
         // Check that asset type is set correctly
-        assertEq(uint(treasury.assetTypeOfERC20(asset)), uint(Treasury.AssetType.Ecological));
+        assertEq(uint256(treasury.assetTypeOfERC20(asset)), uint256(Treasury.AssetType.Ecological));
+
+        // Check that the risk level is set correctly
+        assertEq(uint256(treasury.riskLevelOfERC20(asset)), uint256(Treasury.RiskLevel.High));
     }
 
-     function testRegisterAssetWithType(uint assetType) public {
-        vm.assume(assetType <= 2);
+    function testRegisterAssetWithTypeAndRiskLevel(uint256 assetType, uint256 riskLevel) public {
+        vm.assume(assetType <= uint256(type(Treasury.AssetType).max));
+        vm.assume(riskLevel <= uint256(type(Treasury.RiskLevel).max));
 
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
@@ -204,18 +205,19 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit ERC20Registered(asset, address(oracle), Treasury.AssetType(assetType));
+        emit ERC20Registered(asset, address(oracle), Treasury.AssetType(assetType), Treasury.RiskLevel(riskLevel));
 
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType(assetType));
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType(assetType), Treasury.RiskLevel(riskLevel));
 
         // Check that asset is supported.
         assertEq(treasury.registeredERC20s(0), asset);
 
         // Check that asset type is set correctly
-        assertEq(uint(treasury.assetTypeOfERC20(asset)), assetType);
-    }
+        assertEq(uint256(treasury.assetTypeOfERC20(asset)), assetType);
 
-    
+        // Check that the risk level is set correctly
+        assertEq(uint256(treasury.riskLevelOfERC20(asset)), riskLevel);
+    }
 
     function testRegisterAssetCanNotUpdateOracle() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
@@ -226,9 +228,9 @@ contract TreasuryOnlyOwner is TreasuryTest {
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(1, true);
 
-        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
-        try treasury.registerERC20(asset, address(oracle2), Treasury.AssetType.Default) {
+        try treasury.registerERC20(asset, address(oracle2), Treasury.AssetType.Default, Treasury.RiskLevel.Low) {
             revert();
         } catch {
             // Fails due to not being able to update oracle through the
@@ -244,10 +246,8 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Set oracle as invalid but data as non-zero.
         oracle.setDataAndValid(1, false);
 
-        vm.expectRevert(
-            Errors.StalePriceDeliveredByOracle(asset, address(oracle))
-        );
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        vm.expectRevert(Errors.StalePriceDeliveredByOracle(asset, address(oracle)));
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
     }
 
     function testRegisterAssetDoesNotAcceptOraclePriceOfZero() public {
@@ -258,27 +258,25 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Set oracle as valid but data as zero.
         oracle.setDataAndValid(0, true);
 
-        vm.expectRevert(
-            Errors.StalePriceDeliveredByOracle(asset, address(oracle))
-        );
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        vm.expectRevert(Errors.StalePriceDeliveredByOracle(asset, address(oracle)));
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
     }
 
-    function testUnregisterERC20() public {
+    function testDeregisterERC20() public {
         address asset = address(new ERC20Mock("TOKEN", "TKN", uint8(18)));
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Expect event emission.
         vm.expectEmit(true, true, true, true);
-        emit ERC20Unregistered(asset);
+        emit ERC20Deregistered(asset);
 
-        treasury.unregisterERC20(asset);
+        treasury.deregisterERC20(asset);
 
         // Function should be idempotent.
-        treasury.unregisterERC20(asset);
+        treasury.deregisterERC20(asset);
 
         // Check that asset's oracle was removed.
         assertEq(treasury.oraclePerERC20(asset), address(0));
@@ -296,7 +294,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(2, true);
@@ -320,16 +318,14 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Create second oracle being invalid but data non-zero.
         OracleMock oracle2 = new OracleMock();
         oracle2.setDataAndValid(1, false);
 
         // Check that invalid oracle is not accepted.
-        vm.expectRevert(
-            Errors.StalePriceDeliveredByOracle(asset, address(oracle2))
-        );
+        vm.expectRevert(Errors.StalePriceDeliveredByOracle(asset, address(oracle2)));
         treasury.updateERC20Oracle(asset, address(oracle2));
     }
 
@@ -339,7 +335,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Setup asset with first oracle.
         OracleMock oracle1 = new OracleMock();
         oracle1.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle1), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Create second oracle being vali but data zero.
         OracleMock oracle2 = new OracleMock();
@@ -347,9 +343,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         // Check that oracle data of zero is not accepted.
         oracle2.setDataAndValid(0, true);
-        vm.expectRevert(
-            Errors.StalePriceDeliveredByOracle(asset, address(oracle2))
-        );
+        vm.expectRevert(Errors.StalePriceDeliveredByOracle(asset, address(oracle2)));
         treasury.updateERC20Oracle(asset, address(oracle2));
     }
 
@@ -361,7 +355,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Check that asset is not listed as bondable.
         assertTrue(!treasury.isERC20Bondable(asset));
@@ -384,7 +378,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
         treasury.listERC20AsBondable(asset);
 
         // Expect event emission.
@@ -415,7 +409,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
 
         // Check that asset is not listes as redeemable.
         assertTrue(!treasury.isERC20Redeemable(asset));
@@ -438,7 +432,7 @@ contract TreasuryOnlyOwner is TreasuryTest {
 
         OracleMock oracle = new OracleMock();
         oracle.setDataAndValid(1, true);
-        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default);
+        treasury.registerERC20(asset, address(oracle), Treasury.AssetType.Default, Treasury.RiskLevel.Low);
         treasury.listERC20AsRedeemable(asset);
 
         // Expect event emission.
@@ -463,5 +457,4 @@ contract TreasuryOnlyOwner is TreasuryTest {
         // Fails with AssetIsNotRegistered.
         treasury.listERC20AsRedeemable(asset);
     }
-
 }

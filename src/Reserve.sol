@@ -15,16 +15,16 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 // Internal Interfaces.
 import {IOracle} from "./interfaces/IOracle.sol";
-import {IVestingVault} from "./interfaces/IVestingVault.sol";
+import {ITimeLockVault} from "./interfaces/ITimeLockVault.sol";
 import {IReserve} from "./interfaces/IReserve.sol";
 
 // Internal Libraries.
 import {Wad} from "./lib/Wad.sol";
 
 interface IERC20MintBurn is IERC20 {
-    function mint(address to, uint amount) external;
+    function mint(address to, uint256 amount) external;
 
-    function burn(address from, uint amount) external;
+    function burn(address from, uint256 amount) external;
 }
 
 /**
@@ -69,7 +69,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @dev Modifier to guarantee token amount is valid.
-    modifier validAmount(uint amount) {
+    modifier validAmount(uint256 amount) {
         if (amount == 0) {
             revert Reserve__InvalidAmount();
         }
@@ -87,7 +87,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @dev Modifier to guarantee function is only callable with registered
     ///      ERC721Id instances.
-    modifier isRegisteredERC721Id(address erc721, uint id) {
+    modifier isRegisteredERC721Id(address erc721, uint256 id) {
         if (oraclePerERC721Id[erc721][id] == address(0)) {
             revert Reserve__ERC721IdNotRegistered();
         }
@@ -105,7 +105,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @dev Modifier to guarantee function is only callable with bondable
     ///      ERC721Id instances.
-    modifier isBondableERC721Id(address erc721, uint id) {
+    modifier isBondableERC721Id(address erc721, uint256 id) {
         if (!isERC721IdBondable[erc721][id]) {
             revert Reserve__ERC721IdNotBondable();
         }
@@ -123,7 +123,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @dev Modifier to guarantee function is only callable with redeemable
     ///      ERC721Id instances.
-    modifier isRedeemableERC721Id(address erc721, uint id) {
+    modifier isRedeemableERC721Id(address erc721, uint256 id) {
         if (!isERC721IdRedeemable[erc721][id]) {
             revert Reserve__ERC721IdNotRedeemable();
         }
@@ -132,9 +132,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     /// @dev Modifier to guarantee an ERC20 token bonding with given amount
     ///      does not exceed the bonding limit.
-    modifier isNotExceedingERC20BondingLimit(address erc20, uint amount) {
-        uint balance = ERC20(erc20).balanceOf(address(this));
-        uint limit = bondingLimitPerERC20[erc20];
+    modifier isNotExceedingERC20BondingLimit(address erc20, uint256 amount) {
+        uint256 balance = ERC20(erc20).balanceOf(address(this));
+        uint256 limit = bondingLimitPerERC20[erc20];
 
         // Note that a limit of zero is interpreted as no limit given.
         if (limit != 0 && balance + amount > limit) {
@@ -151,8 +151,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     modifier onBeforeUpdateBacking(bool requireMinBacking) {
         _;
 
-        uint backing;
-        (, , backing) = _reserveStatus();
+        uint256 backing;
+        (,, backing) = _reserveStatus();
 
         if (requireMinBacking && backing < minBacking) {
             revert Reserve__MinimumBackingLimitExceeded();
@@ -163,7 +163,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Constants and Immutables
 
     /// @dev 10,000 bps are 100%.
-    uint private constant BPS = 10_000;
+    uint256 private constant BPS = 10_000;
 
     /// @dev Needs to have 18 decimal precision.
     IERC20MintBurn private immutable _token;
@@ -178,7 +178,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     address public tokenOracle;
 
     /// @inheritdoc IReserve
-    address public vestingVault;
+    address public timeLockVault;
 
     //----------------------------------
     // Asset Mappings
@@ -193,10 +193,13 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => address) public oraclePerERC20;
 
     /// @inheritdoc IReserve
-    mapping(address => mapping(uint => address)) public oraclePerERC721Id;
+    mapping(address => mapping(uint256 => address)) public oraclePerERC721Id;
 
     /// @inheritdoc IReserve
-    mapping(address => AssetType) public typeOfAsset;
+    mapping(address => AssetType) public assetTypeOfERC20;
+
+    /// @inheritdoc IReserve
+    mapping(address => RiskLevel) public riskLevelOfERC20;
 
     //----------------------------------
     // Bonding & Redeeming Mappings
@@ -205,76 +208,59 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     mapping(address => bool) public isERC20Bondable;
 
     /// @inheritdoc IReserve
-    mapping(address => mapping(uint => bool)) public isERC721IdBondable;
+    mapping(address => mapping(uint256 => bool)) public isERC721IdBondable;
 
     /// @inheritdoc IReserve
     mapping(address => bool) public isERC20Redeemable;
 
     /// @inheritdoc IReserve
-    mapping(address => mapping(uint => bool)) public isERC721IdRedeemable;
+    mapping(address => mapping(uint256 => bool)) public isERC721IdRedeemable;
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public bondingLimitPerERC20;
+    mapping(address => uint256) public bondingLimitPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public redeemLimitPerERC20;
+    mapping(address => uint256) public redeemLimitPerERC20;
 
     //----------------------------------
     // Discount Mappings
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public bondingDiscountPerERC20;
+    mapping(address => uint256) public bondingDiscountPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(address => mapping(uint => uint)) public bondingDiscountPerERC721Id;
+    mapping(address => mapping(uint256 => uint256)) public bondingDiscountPerERC721Id;
 
     //----------------------------------
-    // Vesting Mappings
+    // Time Lock Mappings
 
     /// @inheritdoc IReserve
-    mapping(address => uint) public bondingVestingDurationPerERC20;
+    mapping(address => uint256) public bondingTimeLockDurationPerERC20;
 
     /// @inheritdoc IReserve
-    mapping(address => mapping(uint => uint))
-        public bondingVestingDurationPerERC721Id;
+    mapping(address => mapping(uint256 => uint256)) public bondingTimeLockDurationPerERC721Id;
 
     //----------------------------------
     // Reserve Management
 
     /// @inheritdoc IReserve
-    uint public minBacking;
+    uint256 public minBacking;
 
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(
-        address token_,
-        address tokenOracle_,
-        address vestingVault_,
-        uint minBacking_
-    ) {
+    constructor(address token_, address tokenOracle_, address vestingVault_, uint256 minBacking_) {
         // Check token's validity.
         require(token_.code.length != 0);
-
-        // @todo What about oracle and vesting vault checks in constructor.
-        // Check token oracle's validity.
-        //require(_oracleIsValid(tokenOracle_));
-
-        // Check vesting vault's validity.
-        //require(IVestingVault(vestingVault_).token() == token_);
 
         // Set storage.
         _token = IERC20MintBurn(token_);
         tokenOracle = tokenOracle_;
-        vestingVault = vestingVault_;
         minBacking = minBacking_;
-
-        // Give vesting vault infinite approval.
-        IERC20MintBurn(token_).approve(vestingVault_, type(uint).max);
+        timeLockVault = vestingVault_;
 
         // Notify off-chain services.
         emit SetTokenOracle(address(0), tokenOracle_);
-        emit SetVestingVault(address(0), vestingVault_);
         emit SetMinBacking(0, minBacking_);
         emit BackingUpdated(0, BPS);
     }
@@ -283,15 +269,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Public View Functions
 
     /// @inheritdoc IReserve
-    function reserveStatus()
-        external
-        view
-        returns (
-            uint,
-            uint,
-            uint
-        )
-    {
+    function reserveStatus() external view returns (uint256, uint256, uint256) {
         return _reserveStatus();
     }
 
@@ -306,21 +284,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function allRegisteredERC721Ids()
-        external
-        view
-        returns (ERC721Id[] memory)
-    {
+    function allRegisteredERC721Ids() external view returns (ERC721Id[] memory) {
         return registeredERC721Ids;
     }
 
     /// @inheritdoc IERC721Receiver
-    function onERC721Received(
-        address,
-        address,
-        uint,
-        bytes calldata
-    ) external pure returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -334,46 +303,28 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Bond ERC20 Functions
 
     /// @inheritdoc IReserve
-    function bondERC20(address erc20, uint erc20Amount) external onlyOwner {
+    function bondERC20(address erc20, uint256 erc20Amount) external onlyOwner {
         _bondERC20(erc20, msg.sender, msg.sender, erc20Amount);
     }
 
     /// @inheritdoc IReserve
-    function bondERC20From(
-        address erc20,
-        address from,
-        uint erc20Amount
-    ) external onlyOwner {
+    function bondERC20From(address erc20, address from, uint256 erc20Amount) external onlyOwner {
         _bondERC20(erc20, from, msg.sender, erc20Amount);
     }
 
     /// @inheritdoc IReserve
-    function bondERC20To(
-        address erc20,
-        address to,
-        uint erc20Amount
-    ) external onlyOwner {
+    function bondERC20To(address erc20, address to, uint256 erc20Amount) external onlyOwner {
         _bondERC20(erc20, msg.sender, to, erc20Amount);
     }
 
     /// @inheritdoc IReserve
-    function bondERC20FromTo(
-        address erc20,
-        address from,
-        address to,
-        uint erc20Amount
-    ) external onlyOwner {
+    function bondERC20FromTo(address erc20, address from, address to, uint256 erc20Amount) external onlyOwner {
         _bondERC20(erc20, from, to, erc20Amount);
     }
 
     /// @inheritdoc IReserve
     function bondERC20All(address erc20) external onlyOwner {
-        _bondERC20(
-            erc20,
-            msg.sender,
-            msg.sender,
-            ERC20(erc20).balanceOf(msg.sender)
-        );
+        _bondERC20(erc20, msg.sender, msg.sender, ERC20(erc20).balanceOf(msg.sender));
     }
 
     /// @inheritdoc IReserve
@@ -387,11 +338,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function bondERC20AllFromTo(
-        address erc20,
-        address from,
-        address to
-    ) external onlyOwner {
+    function bondERC20AllFromTo(address erc20, address from, address to) external onlyOwner {
         _bondERC20(erc20, from, to, ERC20(erc20).balanceOf(from));
     }
 
@@ -399,35 +346,22 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Bond ERC721Id Functions
 
     /// @inheritdoc IReserve
-    function bondERC721Id(address erc721, uint id) external onlyOwner {
+    function bondERC721Id(address erc721, uint256 id) external onlyOwner {
         _bondERC721Id(erc721, id, msg.sender, msg.sender);
     }
 
     /// @inheritdoc IReserve
-    function bondERC721IdFrom(
-        address erc721,
-        uint id,
-        address from
-    ) external onlyOwner {
+    function bondERC721IdFrom(address erc721, uint256 id, address from) external onlyOwner {
         _bondERC721Id(erc721, id, from, msg.sender);
     }
 
     /// @inheritdoc IReserve
-    function bondERC721IdTo(
-        address erc721,
-        uint id,
-        address to
-    ) external onlyOwner {
+    function bondERC721IdTo(address erc721, uint256 id, address to) external onlyOwner {
         _bondERC721Id(erc721, id, msg.sender, to);
     }
 
     /// @inheritdoc IReserve
-    function bondERC721IdFromTo(
-        address erc721,
-        uint id,
-        address from,
-        address to
-    ) external onlyOwner {
+    function bondERC721IdFromTo(address erc721, uint256 id, address from, address to) external onlyOwner {
         _bondERC721Id(erc721, id, from, to);
     }
 
@@ -438,72 +372,42 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Redeem ERC20 Functions
 
     /// @inheritdoc IReserve
-    function redeemERC20(address erc20, uint tokenAmount) external onlyOwner {
+    function redeemERC20(address erc20, uint256 tokenAmount) external onlyOwner {
         _redeemERC20(erc20, msg.sender, msg.sender, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function redeemERC20From(
-        address erc20,
-        address from,
-        uint tokenAmount
-    ) external onlyOwner {
+    function redeemERC20From(address erc20, address from, uint256 tokenAmount) external onlyOwner {
         _redeemERC20(erc20, from, msg.sender, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function redeemERC20To(
-        address erc20,
-        address to,
-        uint tokenAmount
-    ) external onlyOwner {
+    function redeemERC20To(address erc20, address to, uint256 tokenAmount) external onlyOwner {
         _redeemERC20(erc20, msg.sender, to, tokenAmount);
     }
 
     /// @inheritdoc IReserve
-    function redeemERC20FromTo(
-        address erc20,
-        address from,
-        address to,
-        uint tokenAmount
-    ) external onlyOwner {
+    function redeemERC20FromTo(address erc20, address from, address to, uint256 tokenAmount) external onlyOwner {
         _redeemERC20(erc20, from, to, tokenAmount);
     }
 
     /// @inheritdoc IReserve
     function redeemERC20All(address erc20) external onlyOwner {
-        _redeemERC20(
-            erc20,
-            msg.sender,
-            msg.sender,
-            _token.balanceOf(address(msg.sender))
-        );
+        _redeemERC20(erc20, msg.sender, msg.sender, _token.balanceOf(address(msg.sender)));
     }
 
     /// @inheritdoc IReserve
-    function redeemERC20AllFrom(address erc20, address from)
-        external
-        onlyOwner
-    {
+    function redeemERC20AllFrom(address erc20, address from) external onlyOwner {
         _redeemERC20(erc20, from, msg.sender, _token.balanceOf(address(from)));
     }
 
     /// @inheritdoc IReserve
     function redeemERC20AllTo(address erc20, address to) external onlyOwner {
-        _redeemERC20(
-            erc20,
-            msg.sender,
-            to,
-            _token.balanceOf(address(msg.sender))
-        );
+        _redeemERC20(erc20, msg.sender, to, _token.balanceOf(address(msg.sender)));
     }
 
     /// @inheritdoc IReserve
-    function redeemERC20AllFromTo(
-        address erc20,
-        address from,
-        address to
-    ) external onlyOwner {
+    function redeemERC20AllFromTo(address erc20, address from, address to) external onlyOwner {
         _redeemERC20(erc20, from, to, _token.balanceOf(address(from)));
     }
 
@@ -511,35 +415,22 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Redeem ERC721Id Functions
 
     /// @inheritdoc IReserve
-    function redeemERC721Id(address erc721, uint id) external onlyOwner {
+    function redeemERC721Id(address erc721, uint256 id) external onlyOwner {
         _redeemERC721Id(erc721, id, msg.sender, msg.sender);
     }
 
     /// @inheritdoc IReserve
-    function redeemERC721IdFrom(
-        address erc721,
-        uint id,
-        address from
-    ) external onlyOwner {
+    function redeemERC721IdFrom(address erc721, uint256 id, address from) external onlyOwner {
         _redeemERC721Id(erc721, id, from, msg.sender);
     }
 
     /// @inheritdoc IReserve
-    function redeemERC721IdTo(
-        address erc721,
-        uint id,
-        address to
-    ) external onlyOwner {
+    function redeemERC721IdTo(address erc721, uint256 id, address to) external onlyOwner {
         _redeemERC721Id(erc721, id, msg.sender, to);
     }
 
     /// @inheritdoc IReserve
-    function redeemERC721IdFromTo(
-        address erc721,
-        uint id,
-        address from,
-        address to
-    ) external onlyOwner {
+    function redeemERC721IdFromTo(address erc721, uint256 id, address from, address to) external onlyOwner {
         _redeemERC721Id(erc721, id, from, to);
     }
 
@@ -550,7 +441,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     /// @inheritdoc IReserve
     function executeTx(address target, bytes memory data) external onlyOwner {
         bool success;
-        (success, /*returnData*/) = target.call(data);
+        (success, /*returnData*/ ) = target.call(data);
         require(success);
     }
 
@@ -572,11 +463,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Asset Management
 
     /// @inheritdoc IReserve
-    function registerERC20(
-        address erc20,
-        address oracle,
-        AssetType assetType
-    ) external onlyOwner {
+    function registerERC20(address erc20, address oracle, AssetType assetType, RiskLevel riskLevel)
+        external
+        onlyOwner
+    {
         // Make sure that erc20's code is non-empty.
         // Note that solmate's SafeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -596,24 +486,24 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         require(_oracleIsValid(oracle));
 
         // Revert if asset type is invalid.
-        require(uint(assetType) <= 2);
+        require(uint256(assetType) <= uint256(type(AssetType).max));
+
+        // Revert if risk level is invalid.
+        require(uint256(riskLevel) <= uint256(type(RiskLevel).max));
 
         // Add erc20 and oracle to mappings.
         registeredERC20s.push(erc20);
         oraclePerERC20[erc20] = oracle;
-        typeOfAsset[erc20] = assetType;
+        assetTypeOfERC20[erc20] = assetType;
+        riskLevelOfERC20[erc20] = riskLevel;
 
         // Notify off-chain services.
-        emit ERC20Registered(erc20, assetType);
+        emit ERC20Registered(erc20, assetType, riskLevel);
         emit SetERC20Oracle(erc20, address(0), oracle);
     }
 
     /// @inheritdoc IReserve
-    function registerERC721Id(
-        address erc721,
-        uint id,
-        address oracle
-    ) external onlyOwner {
+    function registerERC721Id(address erc721, uint256 id, address oracle) external onlyOwner {
         // Make sure that erc721Id's code is non-empty.
         require(erc721.code.length != 0);
 
@@ -654,11 +544,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
         // Remove erc20's oracle and asset type.
         delete oraclePerERC20[erc20];
-        delete typeOfAsset[erc20];
+        delete assetTypeOfERC20[erc20];
+        delete riskLevelOfERC20[erc20];
 
         // Remove erc20 from the registeredERC20s array.
-        uint len = registeredERC20s.length;
-        for (uint i; i < len; ) {
+        uint256 len = registeredERC20s.length;
+        for (uint256 i; i < len;) {
             if (erc20 == registeredERC20s[i]) {
                 // It not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
@@ -670,12 +561,14 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 break;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
     /// @inheritdoc IReserve
-    function deregisterERC721Id(address erc721, uint id) external onlyOwner {
+    function deregisterERC721Id(address erc721, uint256 id) external onlyOwner {
         // Do nothing if erc721 is already deregistered.
         // Note that we do not use the isRegisteredERC721Id modifier to be
         // idempotent.
@@ -684,21 +577,13 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         }
 
         // Remove erc721Id's oracle and notify off-chain services.
-        emit SetERC721IdOracle(
-            erc721,
-            id,
-            oraclePerERC721Id[erc721][id],
-            address(0)
-        );
+        emit SetERC721IdOracle(erc721, id, oraclePerERC721Id[erc721][id], address(0));
         delete oraclePerERC721Id[erc721][id];
 
         // Remove erc721Id from the registeredERC721Ids array.
-        uint len = registeredERC721Ids.length;
-        for (uint i; i < len; ) {
-            if (
-                erc721 == registeredERC721Ids[i].erc721 &&
-                id == registeredERC721Ids[i].id
-            ) {
+        uint256 len = registeredERC721Ids.length;
+        for (uint256 i; i < len;) {
+            if (erc721 == registeredERC721Ids[i].erc721 && id == registeredERC721Ids[i].id) {
                 // If not last elem in array, copy last elem to this index.
                 if (i < len - 1) {
                     registeredERC721Ids[i] = registeredERC721Ids[len - 1];
@@ -709,16 +594,14 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 break;
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 
     /// @inheritdoc IReserve
-    function updateOracleForERC20(address erc20, address oracle)
-        external
-        onlyOwner
-        isRegisteredERC20(erc20)
-    {
+    function updateOracleForERC20(address erc20, address oracle) external onlyOwner isRegisteredERC20(erc20) {
         // Cache old oracle.
         address oldOracle = oraclePerERC20[erc20];
 
@@ -736,11 +619,11 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function updateOracleForERC721Id(
-        address erc721,
-        uint id,
-        address oracle
-    ) external onlyOwner isRegisteredERC721Id(erc721, id) {
+    function updateOracleForERC721Id(address erc721, uint256 id, address oracle)
+        external
+        onlyOwner
+        isRegisteredERC721Id(erc721, id)
+    {
         // Cache old oracle.
         address oldOracle = oraclePerERC721Id[erc721][id];
 
@@ -761,77 +644,49 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Bonding & Redeeming Management
 
     /// @inheritdoc IReserve
-    function listERC20AsBondable(address erc20)
-        external
-        onlyOwner
-        isRegisteredERC20(erc20)
-    {
+    function listERC20AsBondable(address erc20) public onlyOwner isRegisteredERC20(erc20) {
         isERC20Bondable[erc20] = true;
         emit ERC20ListedAsBondable(erc20);
     }
 
     /// @inheritdoc IReserve
-    function delistERC20AsBondable(address erc20)
-        external
-        onlyOwner
-        isRegisteredERC20(erc20)
-    {
+    function delistERC20AsBondable(address erc20) external onlyOwner isRegisteredERC20(erc20) {
         isERC20Bondable[erc20] = false;
         emit ERC20DelistedAsBondable(erc20);
     }
 
     /// @inheritdoc IReserve
-    function listERC721IdAsBondable(address erc721, uint id)
-        external
-        onlyOwner
-        isRegisteredERC721Id(erc721, id)
-    {
+    function listERC721IdAsBondable(address erc721, uint256 id) public onlyOwner isRegisteredERC721Id(erc721, id) {
         isERC721IdBondable[erc721][id] = true;
         emit ERC721IdListedAsBondable(erc721, id);
     }
 
     /// @inheritdoc IReserve
-    function delistERC721IdAsBondable(address erc721, uint id)
-        external
-        onlyOwner
-        isRegisteredERC721Id(erc721, id)
-    {
+    function delistERC721IdAsBondable(address erc721, uint256 id) external onlyOwner isRegisteredERC721Id(erc721, id) {
         isERC721IdBondable[erc721][id] = false;
         emit ERC721IdDelistedAsBondable(erc721, id);
     }
 
     /// @inheritdoc IReserve
-    function listERC20AsRedeemable(address erc20)
-        external
-        onlyOwner
-        isRegisteredERC20(erc20)
-    {
+    function listERC20AsRedeemable(address erc20) public onlyOwner isRegisteredERC20(erc20) {
         isERC20Redeemable[erc20] = true;
         emit ERC20ListedAsRedeemable(erc20);
     }
 
     /// @inheritdoc IReserve
-    function delistERC20AsRedeemable(address erc20)
-        external
-        onlyOwner
-        isRegisteredERC20(erc20)
-    {
+    function delistERC20AsRedeemable(address erc20) external onlyOwner isRegisteredERC20(erc20) {
         isERC20Redeemable[erc20] = false;
         emit ERC20DelistedAsRedeemable(erc20);
     }
 
     /// @inheritdoc IReserve
-    function listERC721IdAsRedeemable(address erc721, uint id)
-        external
-        onlyOwner
-        isRegisteredERC721Id(erc721, id)
-    {
+    function listERC721IdAsRedeemable(address erc721, uint256 id) public onlyOwner isRegisteredERC721Id(erc721, id) {
         isERC721IdRedeemable[erc721][id] = true;
         emit ERC721IdListedAsRedeemable(erc721, id);
     }
 
     /// @inheritdoc IReserve
-    function delistERC721IdAsRedeemable(address erc721, uint id)
+    function delistERC721IdAsRedeemable(address erc721, uint256 id)
         external
         onlyOwner
         isRegisteredERC721Id(erc721, id)
@@ -841,11 +696,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function setERC20BondingLimit(address erc20, uint limit)
-        external
-        onlyOwner
-    {
-        uint oldLimit = bondingLimitPerERC20[erc20];
+    function setERC20BondingLimit(address erc20, uint256 limit) public onlyOwner {
+        uint256 oldLimit = bondingLimitPerERC20[erc20];
 
         if (limit != oldLimit) {
             emit SetERC20BondingLimit(erc20, oldLimit, limit);
@@ -854,8 +706,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function setERC20RedeemLimit(address erc20, uint limit) external onlyOwner {
-        uint oldLimit = redeemLimitPerERC20[erc20];
+    function setERC20RedeemLimit(address erc20, uint256 limit) public onlyOwner {
+        uint256 oldLimit = redeemLimitPerERC20[erc20];
 
         if (limit != oldLimit) {
             emit SetERC20RedeemLimit(erc20, oldLimit, limit);
@@ -867,11 +719,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Discount Management
 
     /// @inheritdoc IReserve
-    function setBondingDiscountForERC20(address erc20, uint discount)
-        external
-        onlyOwner
-    {
-        uint oldDiscount = bondingDiscountPerERC20[erc20];
+    function setBondingDiscountForERC20(address erc20, uint256 discount) public onlyOwner {
+        uint256 oldDiscount = bondingDiscountPerERC20[erc20];
 
         if (discount != oldDiscount) {
             emit SetERC20BondingDiscount(erc20, oldDiscount, discount);
@@ -880,12 +729,8 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function setBondingDiscountForERC721Id(
-        address erc721,
-        uint id,
-        uint discount
-    ) external onlyOwner {
-        uint oldDiscount = bondingDiscountPerERC721Id[erc721][id];
+    function setBondingDiscountForERC721Id(address erc721, uint256 id, uint256 discount) public onlyOwner {
+        uint256 oldDiscount = bondingDiscountPerERC721Id[erc721][id];
 
         if (discount != oldDiscount) {
             emit SetERC721IdBondingDiscount(erc721, id, oldDiscount, discount);
@@ -894,58 +739,113 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     //----------------------------------
-    // Vesting Management
+    // TimeLock Management
 
     /// @inheritdoc IReserve
-    function setVestingVault(address vestingVault_) external onlyOwner {
-        if (vestingVault != vestingVault_) {
-            // Check new vesting vault's validity.
-            require(IVestingVault(vestingVault_).token() == address(_token));
+    function setTimeLockVault(address timeLockVault_) external onlyOwner {
+        if (timeLockVault != timeLockVault_) {
+            // Check new time lock vault's authentication system.
+            require(ITimeLockVault(timeLockVault_).isLocker(address(this)));
 
-            // Remove old vesting vault's approval.
-            _token.approve(vestingVault, 0);
+            // Remove old TimeLock vault's approval.
+            _token.approve(timeLockVault, 0);
 
-            // Give new vesting vault infinite approval.
-            _token.approve(vestingVault_, type(uint).max);
+            // Give new TimeLock vault infinite approval.
+            _token.approve(timeLockVault_, type(uint256).max);
 
-            emit SetVestingVault(vestingVault, vestingVault_);
-            vestingVault = vestingVault_;
+            emit SetTimeLockVault(timeLockVault, timeLockVault_);
+            timeLockVault = timeLockVault_;
         }
     }
 
     /// @inheritdoc IReserve
-    function setBondingVestingForERC20(address erc20, uint vestingDuration)
+    function setBondingTimeLockForERC20(address erc20, uint256 timeLockDuration) public onlyOwner {
+        uint256 oldTimeLockDuration = bondingTimeLockDurationPerERC20[erc20];
+
+        if (timeLockDuration != oldTimeLockDuration) {
+            emit SetERC20BondingTimeLock(erc20, oldTimeLockDuration, timeLockDuration);
+            bondingTimeLockDurationPerERC20[erc20] = timeLockDuration;
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setBondingTimeLockForERC721Id(address erc721, uint256 id, uint256 timeLockDuration) public onlyOwner {
+        uint256 oldTimeLockDuration = bondingTimeLockDurationPerERC721Id[erc721][id];
+
+        if (timeLockDuration != oldTimeLockDuration) {
+            emit SetERC721IdBondingTimeLock(erc721, id, oldTimeLockDuration, timeLockDuration);
+            bondingTimeLockDurationPerERC721Id[erc721][id] = timeLockDuration;
+        }
+    }
+
+    //----------------------------------
+    // Bundle Functions
+
+    /// @inheritdoc IReserve
+    function setupAndListERC20Bond(address erc20, uint256 limit, uint256 discount, uint256 timeLockDuration)
         external
         onlyOwner
     {
-        uint oldVestingDuration = bondingVestingDurationPerERC20[erc20];
+        // List ERC20 as bondable if it isn't already
+        if (!isERC20Bondable[erc20]) {
+            listERC20AsBondable(erc20);
+        }
 
-        if (vestingDuration != oldVestingDuration) {
-            emit SetERC20BondingVesting(
-                erc20,
-                oldVestingDuration,
-                vestingDuration
-            );
-            bondingVestingDurationPerERC20[erc20] = vestingDuration;
+        // Set the ERC20's limit if it isn't already
+        if (bondingLimitPerERC20[erc20] != limit) {
+            setERC20BondingLimit(erc20, limit);
+        }
+
+        // Set the ERC20's discount if it isn't already
+        if (bondingDiscountPerERC20[erc20] != discount) {
+            setBondingDiscountForERC20(erc20, discount);
+        }
+
+        // Set the ERC20's TimeLock duration if it isn't already
+        if (bondingTimeLockDurationPerERC20[erc20] != timeLockDuration) {
+            setBondingTimeLockForERC20(erc20, timeLockDuration);
         }
     }
 
     /// @inheritdoc IReserve
-    function setBondingVestingForERC721Id(
-        address erc721,
-        uint id,
-        uint vestingDuration
-    ) external onlyOwner {
-        uint oldVestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
+    function setupAndListERC20Redemption(address erc20, uint256 limit) external onlyOwner {
+        // List ERC20 as redeemable if it isn't already
+        if (!isERC20Redeemable[erc20]) {
+            listERC20AsRedeemable(erc20);
+        }
 
-        if (vestingDuration != oldVestingDuration) {
-            emit SetERC721IdBondingVesting(
-                erc721,
-                id,
-                oldVestingDuration,
-                vestingDuration
-            );
-            bondingVestingDurationPerERC721Id[erc721][id] = vestingDuration;
+        // Set the ERC20's limit if it isn't already
+        if (redeemLimitPerERC20[erc20] != limit) {
+            setERC20RedeemLimit(erc20, limit);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setupAndListERC721IdBond(address erc721, uint256 id, uint256 discount, uint256 timeLockDuration)
+        external
+        onlyOwner
+    {
+        // List ERC721Id as bondable if it isn't already
+        if (!isERC721IdBondable[erc721][id]) {
+            listERC721IdAsBondable(erc721, id);
+        }
+
+        // Set the ERC721Id's discount if it isn't already
+        if (bondingDiscountPerERC721Id[erc721][id] != discount) {
+            setBondingDiscountForERC721Id(erc721, id, discount);
+        }
+
+        // Set the ERC721Id's TimeLock duration if it isn't already
+        if (bondingTimeLockDurationPerERC721Id[erc721][id] != timeLockDuration) {
+            setBondingTimeLockForERC721Id(erc721, id, timeLockDuration);
+        }
+    }
+
+    /// @inheritdoc IReserve
+    function setupAndListERC721IdRedemption(address erc721, uint256 id) external onlyOwner {
+        // List ERC721Id as redeemable if it isn't already
+        if (!isERC721IdRedeemable[erc721][id]) {
+            listERC721IdAsRedeemable(erc721, id);
         }
     }
 
@@ -953,7 +853,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     // Reserve Management
 
     /// @inheritdoc IReserve
-    function setMinBacking(uint minBacking_) external onlyOwner {
+    function setMinBacking(uint256 minBacking_) external onlyOwner {
         require(minBacking_ != 0);
         // Note that it is allowed to set minBacking higher than current backing.
 
@@ -964,18 +864,13 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function withdrawERC20(
-        address erc20,
-        address recipient,
-        uint amount
-    )
+    function withdrawERC20(address erc20, address recipient, uint256 amount)
         external
         validAmount(amount)
         validRecipient(recipient)
         onlyOwner
         onBeforeUpdateBacking(true)
     {
-        // @todo Add Event!
         // Make sure that erc20's code is non-empty.
         // Note that solmate's safeTransferLib does not include this check.
         require(erc20.code.length != 0);
@@ -983,24 +878,26 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         // Transfer erc20 tokens to recipient.
         // Fails if balance is not sufficient.
         ERC20(erc20).safeTransfer(recipient, amount);
+
+        // Notify off-chain services.
+        emit WithdrewERC20(erc20, recipient, amount);
     }
 
     /// @inheritdoc IReserve
-    function withdrawERC721Id(
-        address erc721,
-        uint id,
-        address recipient
-    ) external validRecipient(recipient) onlyOwner onBeforeUpdateBacking(true) {
-        // @todo Add Event!
-        ERC721(erc721).safeTransferFrom(address(this), recipient, id);
-    }
-
-    /// @inheritdoc IReserve
-    function incurDebt(uint amount)
+    function withdrawERC721Id(address erc721, uint256 id, address recipient)
         external
+        validRecipient(recipient)
         onlyOwner
         onBeforeUpdateBacking(true)
     {
+        ERC721(erc721).safeTransferFrom(address(this), recipient, id);
+
+        // Notify off-chain services.
+        emit WithdrewERC721Id(erc721, id, recipient);
+    }
+
+    /// @inheritdoc IReserve
+    function incurDebt(uint256 amount) external onlyOwner onBeforeUpdateBacking(true) {
         // Mint tokens, i.e. create debt.
         _token.mint(msg.sender, amount);
 
@@ -1009,7 +906,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     }
 
     /// @inheritdoc IReserve
-    function payDebt(uint amount)
+    function payDebt(uint256 amount)
         external
         onlyOwner
         // Note that min backing is not enforced. Otherwise it would be
@@ -1030,12 +927,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Bond Functions
 
-    function _bondERC20(
-        address erc20,
-        address from,
-        address to,
-        uint erc20Amount
-    )
+    function _bondERC20(address erc20, address from, address to, uint256 erc20Amount)
         private
         // Note that if an ERC20 is bondable, it is also registered.
         // isRegisteredERC20(erc20)
@@ -1049,7 +941,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         ERC20(erc20).safeTransferFrom(from, address(this), erc20Amount);
 
         // Compute amount of tokens to mint.
-        uint amount = _computeMintAmountGivenERC20(erc20, erc20Amount);
+        uint256 amount = _computeMintAmountGivenERC20(erc20, erc20Amount);
 
         // Mint tokens.
         _commitTokenMintGivenERC20(erc20, to, amount);
@@ -1058,12 +950,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         emit BondedERC20(erc20, erc20Amount, amount);
     }
 
-    function _bondERC721Id(
-        address erc721,
-        uint id,
-        address from,
-        address to
-    )
+    function _bondERC721Id(address erc721, uint256 id, address from, address to)
         private
         // Note that if an ERC721Id is bondable, it is also registered.
         // isRegisteredERC721Id(erc721, id)
@@ -1075,7 +962,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         ERC721(erc721).safeTransferFrom(from, address(this), id);
 
         // Compute amount of tokens to mint.
-        uint amount = _computeMintAmountGivenERC721Id(erc721, id);
+        uint256 amount = _computeMintAmountGivenERC721Id(erc721, id);
 
         // Mint tokens.
         _commitTokenMintGivenERC721Id(erc721, id, to, amount);
@@ -1087,12 +974,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Redeem Functions
 
-    function _redeemERC20(
-        address erc20,
-        address from,
-        address to,
-        uint tokenAmount
-    )
+    function _redeemERC20(address erc20, address from, address to, uint256 tokenAmount)
         private
         // Note that if an ERC20 is redeemable, it is also registered.
         // isRegisteredERC20(erc20)
@@ -1102,22 +984,22 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onBeforeUpdateBacking(true)
     {
         // Calculate valuation of tokens to burn.
-        uint tokenValue = (tokenAmount * _priceOfToken()) / 1e18;
+        uint256 tokenValue = (tokenAmount * _priceOfToken()) / 1e18;
 
         // Calculate the amount of erc20 tokens to withdraw.
-        uint erc20AmountWad = (tokenValue * 1e18) / _priceOfERC20(erc20);
+        uint256 erc20AmountWad = (tokenValue * 1e18) / _priceOfERC20(erc20);
 
         // Convert erc20 amount from wad format.
-        uint erc20Amount = Wad.convertFromWad(erc20, erc20AmountWad);
+        uint256 erc20Amount = Wad.convertFromWad(erc20, erc20AmountWad);
 
         // Revert if balance not sufficient.
-        uint balance = ERC20(erc20).balanceOf(address(this));
+        uint256 balance = ERC20(erc20).balanceOf(address(this));
         if (balance < erc20Amount) {
             revert Reserve__ERC20BalanceNotSufficient();
         }
 
         // Revert if redeem limit exceeded.
-        uint limit = redeemLimitPerERC20[erc20];
+        uint256 limit = redeemLimitPerERC20[erc20];
         if (balance - erc20Amount < limit) {
             revert Reserve__ERC20RedeemLimitExceeded();
         }
@@ -1130,12 +1012,7 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         _token.burn(from, tokenAmount);
     }
 
-    function _redeemERC721Id(
-        address erc721,
-        uint id,
-        address from,
-        address to
-    )
+    function _redeemERC721Id(address erc721, uint256 id, address from, address to)
         private
         // Note that if an ERC721Id is redeemable, it is also registered.
         // isRegisteredERC721Id(erc721, id)
@@ -1144,10 +1021,10 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         onBeforeUpdateBacking(true)
     {
         // Query erc721Id's price oracle.
-        uint priceWad = _priceOfERC721Id(erc721, id);
+        uint256 priceWad = _priceOfERC721Id(erc721, id);
 
         // Calculate the amount of tokens to burn.
-        uint tokenAmount = (priceWad / _priceOfToken()) * 1e18;
+        uint256 tokenAmount = (priceWad / _priceOfToken()) * 1e18;
 
         // Notify off-chain services.
         emit RedeemedERC721Id(erc721, id, tokenAmount);
@@ -1160,19 +1037,15 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         ERC721(erc721).safeTransferFrom(address(this), to, id);
     }
 
-    function _computeMintAmountGivenERC20(address erc20, uint amount)
-        private
-        view
-        returns (uint)
-    {
+    function _computeMintAmountGivenERC20(address erc20, uint256 amount) private view returns (uint256) {
         // Convert erc20 amount to wad format.
-        uint amountWad = Wad.convertToWad(erc20, amount);
+        uint256 amountWad = Wad.convertToWad(erc20, amount);
 
         // Calculate the total value of erc20 tokens.
-        uint valuationWad = (amountWad * _priceOfERC20(erc20)) / 1e18;
+        uint256 valuationWad = (amountWad * _priceOfERC20(erc20)) / 1e18;
 
         // Calculate the number of tokens to mint (no discount applied yet).
-        uint toMint = (valuationWad * 1e18) / _priceOfToken();
+        uint256 toMint = (valuationWad * 1e18) / _priceOfToken();
 
         // Apply discount.
         toMint = _applyBondingDiscountForERC20(erc20, toMint);
@@ -1180,16 +1053,12 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return toMint;
     }
 
-    function _computeMintAmountGivenERC721Id(address erc721, uint id)
-        private
-        view
-        returns (uint)
-    {
+    function _computeMintAmountGivenERC721Id(address erc721, uint256 id) private view returns (uint256) {
         // Note that erc721Ids price equals it's bonding valuation because the
         // amount of tokens bonded is always 1.
 
         // Calculate the number of tokens to mint (no discount applied yet).
-        uint toMint = (_priceOfERC721Id(erc721, id) * 1e18) / _priceOfToken();
+        uint256 toMint = (_priceOfERC721Id(erc721, id) * 1e18) / _priceOfToken();
 
         // Apply discount.
         toMint = _applyBondingDiscountForERC721Id(erc721, id, toMint);
@@ -1200,60 +1069,48 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Reserve Functions
 
-    function _reserveStatus()
-        private
-        view
-        returns (
-            uint,
-            uint,
-            uint
-        )
-    {
-        uint reserveValuation = _reserveValuation();
-        uint supplyValuation = _supplyValuation();
+    function _reserveStatus() private view returns (uint256, uint256, uint256) {
+        uint256 reserveValuation = _reserveValuation();
+        uint256 supplyValuation = _supplyValuation();
 
-        uint backing =
-            supplyValuation == 0
-                ? BPS
-                : (reserveValuation * BPS) / supplyValuation;
+        uint256 backing = supplyValuation == 0 ? BPS : (reserveValuation * BPS) / supplyValuation;
 
         return (reserveValuation, supplyValuation, backing);
     }
 
-    function _supplyValuation() private view returns (uint) {
+    function _supplyValuation() private view returns (uint256) {
         return (_token.totalSupply() * _priceOfToken()) / 1e18;
     }
 
-    function _reserveValuation() private view returns (uint) {
+    function _reserveValuation() private view returns (uint256) {
         return _reserveERC20sValuation() + _reserveERC721IdsValuation();
     }
 
-    function _reserveERC20sValuation() private view returns (uint) {
+    function _reserveERC20sValuation() private view returns (uint256) {
         // The total valuation of registered ERC20 assets in the reserve.
-        uint totalWad;
+        uint256 totalWad;
 
         // Declare variables outside of loop to save gas.
         address erc20;
-        uint balanceWad;
+        uint256 balanceWad;
 
         // Calculate the total valuation of registered ERC20 assets in the
         // reserve.
-        uint len = registeredERC20s.length;
-        for (uint i; i < len; ) {
+        uint256 len = registeredERC20s.length;
+        for (uint256 i; i < len;) {
             erc20 = registeredERC20s[i];
 
             // Fetch erc20 balance in wad format.
-            balanceWad = Wad.convertToWad(
-                erc20,
-                ERC20(erc20).balanceOf(address(this))
-            );
+            balanceWad = Wad.convertToWad(erc20, ERC20(erc20).balanceOf(address(this)));
 
             // Continue/Break if erc20 balance is zero.
             if (balanceWad == 0) {
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked { ++i; }
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
@@ -1261,25 +1118,26 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             // Add asset's valuation to the total valuation.
             totalWad += (balanceWad * _priceOfERC20(erc20)) / 1e18;
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         return totalWad;
     }
 
-    function _reserveERC721IdsValuation() private view returns (uint) {
+    function _reserveERC721IdsValuation() private view returns (uint256) {
         // The total valuation of registered ERC721 assets in the reserve.
-        uint totalWad;
+        uint256 totalWad;
 
         // Declare variables outside of loop to save gas.
         address erc721;
-        uint id;
-        bytes32 erc721IdHash;
+        uint256 id;
 
         // Calculate the total valuation of registered ERC721 assets in the
         // reserve.
-        uint len = registeredERC721Ids.length;
-        for (uint i; i < len; ) {
+        uint256 len = registeredERC721Ids.length;
+        for (uint256 i; i < len;) {
             erc721 = registeredERC721Ids[i].erc721;
             id = registeredERC721Ids[i].id;
 
@@ -1288,7 +1146,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
                 if (i + 1 == len) {
                     break;
                 } else {
-                    unchecked { ++i; }
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
@@ -1296,7 +1156,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
             // Add erc721Id's price to the total valuation.
             totalWad += _priceOfERC721Id(erc721, id);
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         return totalWad;
@@ -1307,15 +1169,15 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
 
     function _oracleIsValid(address oracle) private view returns (bool) {
         bool valid;
-        uint price;
+        uint256 price;
         (price, valid) = IOracle(oracle).getData();
 
         return valid && price != 0;
     }
 
-    function _priceOfToken() private view returns (uint) {
+    function _priceOfToken() private view returns (uint256) {
         // Note that the price is returned in 18 decimal precision.
-        uint price;
+        uint256 price;
         bool valid;
         (price, valid) = IOracle(tokenOracle).getData();
 
@@ -1327,9 +1189,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return price;
     }
 
-    function _priceOfERC20(address erc20) private view returns (uint) {
+    function _priceOfERC20(address erc20) private view returns (uint256) {
         // Note that the price is returned in 18 decimal precision.
-        uint price;
+        uint256 price;
         bool valid;
         (price, valid) = IOracle(oraclePerERC20[erc20]).getData();
 
@@ -1341,13 +1203,9 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
         return price;
     }
 
-    function _priceOfERC721Id(address erc721, uint id)
-        private
-        view
-        returns (uint)
-    {
+    function _priceOfERC721Id(address erc721, uint256 id) private view returns (uint256) {
         // Note that the price is returned in 18 decimal precision.
-        uint price;
+        uint256 price;
         bool valid;
         (price, valid) = IOracle(oraclePerERC721Id[erc721][id]).getData();
 
@@ -1362,71 +1220,54 @@ contract Reserve is TSOwnable, IReserve, IERC721Receiver {
     //----------------------------------
     // Minting Functions
 
-    function _commitTokenMintGivenERC20(
-        address erc20,
-        address to,
-        uint amount
-    ) private {
-        uint vestingDuration = bondingVestingDurationPerERC20[erc20];
+    function _commitTokenMintGivenERC20(address erc20, address to, uint256 amount) private {
+        uint256 timeLockDuration = bondingTimeLockDurationPerERC20[erc20];
 
-        if (vestingDuration == 0) {
-            // No vesting, mint tokens directly to user.
-            _token.mint(to, amount);
-        } else {
-            // Vest token via vesting vault.
+        if (timeLockDuration != 0 && timeLockVault != address(0)) {
+            // Vest token via TimeLock vault.
             _token.mint(address(this), amount);
 
             // Note that the tokens are fetched from address(this) to the
-            // vesting vault.
-            IVestingVault(vestingVault).depositFor(to, amount, vestingDuration);
+            // TimeLock vault.
+            ITimeLockVault(timeLockVault).lock(to, address(_token), amount, timeLockDuration);
+        } else {
+            // No TimeLock, mint tokens directly to user.
+            _token.mint(to, amount);
         }
     }
 
-    function _commitTokenMintGivenERC721Id(
-        address erc721,
-        uint id,
-        address to,
-        uint amount
-    ) private {
-        uint vestingDuration = bondingVestingDurationPerERC721Id[erc721][id];
+    function _commitTokenMintGivenERC721Id(address erc721, uint256 id, address to, uint256 amount) private {
+        uint256 timeLockDuration = bondingTimeLockDurationPerERC721Id[erc721][id];
 
-        if (vestingDuration == 0) {
-            // No vesting, mint tokens directly to user.
-            _token.mint(to, amount);
-        } else {
-            // Vest token via vesting vault.
+        if (timeLockDuration != 0 && timeLockVault != address(0)) {
+            // Vest token via TimeLock vault.
             _token.mint(address(this), amount);
 
             // Note that the tokens are fetched from address(this) to the
-            // vesting vault.
-            IVestingVault(vestingVault).depositFor(to, amount, vestingDuration);
+            // TimeLock vault.
+            ITimeLockVault(timeLockVault).lock(to, address(_token), amount, timeLockDuration);
+        } else {
+            // No TimeLock, mint tokens directly to user.
+            _token.mint(to, amount);
         }
     }
 
     //----------------------------------
     // Discount Functions
 
-    function _applyBondingDiscountForERC20(address erc20, uint amount)
-        private
-        view
-        returns (uint)
-    {
-        uint discount = bondingDiscountPerERC20[erc20];
+    function _applyBondingDiscountForERC20(address erc20, uint256 amount) private view returns (uint256) {
+        uint256 discount = bondingDiscountPerERC20[erc20];
 
-        return discount == 0
-            ? amount
-            : amount + (amount * discount) / BPS;
+        return discount == 0 ? amount : amount + (amount * discount) / BPS;
     }
 
-    function _applyBondingDiscountForERC721Id(
-        address erc721,
-        uint id,
-        uint amount
-    ) private view returns (uint) {
-        uint discount = bondingDiscountPerERC721Id[erc721][id];
+    function _applyBondingDiscountForERC721Id(address erc721, uint256 id, uint256 amount)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 discount = bondingDiscountPerERC721Id[erc721][id];
 
-        return discount == 0
-            ? amount
-            : amount + (amount * discount) / BPS;
+        return discount == 0 ? amount : amount + (amount * discount) / BPS;
     }
 }

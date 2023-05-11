@@ -1,35 +1,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity 0.8.10;
 
 import "./Test.t.sol";
 
 contract ReserveDeployment is ReserveTest {
-
     function testInvariants() public {
         // Check that owner is deployer.
         assertEq(reserve.owner(), address(this));
 
         // Check initial reserve status.
-        uint reserveValuation;
-        uint supplyValuation;
-        uint backing;
+        uint256 reserveValuation;
+        uint256 supplyValuation;
+        uint256 backing;
         (reserveValuation, supplyValuation, backing) = reserve.reserveStatus();
         assertEq(reserveValuation, 0);
         assertEq(supplyValuation, 0);
         assertEq(backing, BPS);
-
-        // Check vesting vault's token approval.
-        assertEq(
-            token.allowance(address(reserve), address(vestingVault)),
-            type(uint).max
-        );
     }
 
     function testConstructor() public {
         // Constructor arguments.
         assertEq(reserve.token(), address(token));
         assertEq(reserve.tokenOracle(), address(tokenOracle));
-        assertEq(reserve.vestingVault(), address(vestingVault));
         assertEq(reserve.minBacking(), DEFAULT_MIN_BACKING);
     }
 
@@ -82,5 +74,4 @@ contract ReserveDeployment is ReserveTest {
         );
     }
     */
-
 }

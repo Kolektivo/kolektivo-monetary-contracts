@@ -7,7 +7,6 @@ import "./Test.t.sol";
  * @dev Deployment Tests.
  */
 contract TreasuryDeployment is TreasuryTest {
-
     function testInvariants() public {
         assertEq(treasury.name(), "Kolektivo Treasury Token");
         assertEq(treasury.symbol(), "KTT");
@@ -15,5 +14,4 @@ contract TreasuryDeployment is TreasuryTest {
 
         assertEq(treasury.owner(), address(this));
     }
-
 }

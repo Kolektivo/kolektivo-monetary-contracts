@@ -24,21 +24,8 @@ contract DeployGeoNFT is Script {
         string memory symbol = vm.envString("DEPLOYMENT_GEONFT_SYMBOL");
 
         // Check settings.
-        require(
-            bytes(name).length != 0,
-            "DeployGeoNFT: Missing env variable: name"
-        );
-        require(
-            bytes(symbol).length != 0,
-            "DeployGeoNFT: Missing env variable: symbol"
-        );
-
-        // Read owner settings from environment variables.
-        address newOwner = vm.envAddress("TRUSTED_OWNER");
-        require(
-            newOwner != address(0),
-            "DeployTreasury: Missing env variable: trusted owner"
-        );
+        require(bytes(name).length != 0, "DeployGeoNFT: Missing env variable: name");
+        require(bytes(symbol).length != 0, "DeployGeoNFT: Missing env variable: symbol");
 
         // Deploy the GeoNFT.
         vm.startBroadcast();
@@ -47,23 +34,10 @@ contract DeployGeoNFT is Script {
         }
         vm.stopBroadcast();
 
+        // Store deployment address in env
+        vm.setEnv("LAST_DEPLOYED_CONTRACT_ADDRESS", vm.toString(address(nft)));
+
         // Log the deployed GeoNFT contract address.
         console2.log("Deployment of GeoNFT at address", address(nft));
-
-        // Initiate owner switch.
-        vm.startBroadcast();
-        {
-            nft.setPendingOwner(newOwner);
-        }
-        vm.stopBroadcast();
-
-        // Check initiation of owner switch.
-        require(
-            nft.pendingOwner() == newOwner,
-            "DeployGeoNFT: Initiating owner switch failed"
-        );
-
-        // Log successful initiation of the owner switch.
-        console2.log("Owner switch succesfully initiated to address", newOwner);
     }
 }

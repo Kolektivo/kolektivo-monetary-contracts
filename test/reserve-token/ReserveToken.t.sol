@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 import "forge-std/Test.sol";
 
-import "src/ReserveToken.sol";
+import "src/CuracaoReserveToken.sol";
 
 import {OracleMock} from "../utils/mocks/OracleMock.sol";
 import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
@@ -14,34 +14,28 @@ import {ERC20Mock} from "../utils/mocks/ERC20Mock.sol";
  */
 library Errors {
     // Inherited from solrocket/TSOwnable.sol
-    bytes internal constant OnlyCallableByOwner =
-        abi.encodeWithSignature("OnlyCallableByOwner()");
+    bytes internal constant OnlyCallableByOwner = abi.encodeWithSignature("OnlyCallableByOwner()");
 
-    bytes internal constant InvalidRecipient =
-        abi.encodeWithSignature("ReserveToken__InvalidRecipient()");
+    bytes internal constant InvalidRecipient = abi.encodeWithSignature("ReserveToken__InvalidRecipient()");
 
-    bytes internal constant InvalidAmount =
-        abi.encodeWithSignature("ReserveToken__InvalidAmount()");
+    bytes internal constant InvalidAmount = abi.encodeWithSignature("ReserveToken__InvalidAmount()");
 
-    bytes internal constant NotMintBurner =
-        abi.encodeWithSignature("ReserveToken__NotMintBurner()");
+    bytes internal constant NotMintBurner = abi.encodeWithSignature("ReserveToken__NotMintBurner()");
 }
 
 /**
- * @dev ReserveToken Tests.
+ * @dev CuracaoReserveToken Tests.
  */
 contract ReserveTokenTest is Test {
     // SuT.
-    ReserveToken token;
+    CuracaoReserveToken token;
 
     // Events copied from SuT.
-    event SetMintBurner(
-        address indexed oldMintBurner,
-        address indexed newMintBurner
-    );
+    event UpdateMintBurner(address indexed mintBurner, bool newStatus);
 
     function setUp() public {
-        token = new ReserveToken("Reserve Token", "RT", address(this));
+        token = new CuracaoReserveToken("Reserve Token", "RT");
+        token.setMintBurner(address(this), true);
     }
 
     function testDeployment() public {
@@ -55,7 +49,7 @@ contract ReserveTokenTest is Test {
         // Constructor arguments.
         assertEq(token.name(), "Reserve Token");
         assertEq(token.symbol(), "RT");
-        assertEq(token.mintBurner(), address(this));
+        assertEq(token.mintBurner(address(this)), true);
     }
 
     //--------------------------------------------------------------------------
@@ -67,23 +61,29 @@ contract ReserveTokenTest is Test {
         vm.startPrank(caller);
 
         vm.expectRevert(Errors.OnlyCallableByOwner);
-        token.setMintBurner(address(1));
+        token.setMintBurner(address(1), true);
     }
 
     function testSetMintBurner(address who) public {
-        if (who != token.mintBurner()) {
+        if (!token.mintBurner(who)) {
             vm.expectEmit(true, true, true, true);
-            emit SetMintBurner(token.mintBurner(), who);
+            emit UpdateMintBurner(who, true);
         }
 
-        token.setMintBurner(who);
-        assertEq(token.mintBurner(), who);
+        token.setMintBurner(who, true);
+        assertEq(token.mintBurner(who), true);
+
+        vm.expectEmit(true, true, true, true);
+        emit UpdateMintBurner(who, false);
+
+        token.setMintBurner(who, false);
+        assertEq(token.mintBurner(who), false);
     }
 
     //--------------------------------------------------------------------------
     // Mint/Burn Tests
 
-    function testMint(address to, uint amount) public {
+    function testMint(address to, uint256 amount) public {
         // Expect revert for invalid recipient.
         if (to == address(0) || to == address(token)) {
             vm.expectRevert(Errors.InvalidRecipient);
@@ -104,7 +104,7 @@ contract ReserveTokenTest is Test {
         assertEq(token.totalSupply(), amount);
     }
 
-    function testBurn(address who, uint mint, uint burn) public {
+    function testBurn(address who, uint256 mint, uint256 burn) public {
         vm.assume(who != address(0) && who != address(token));
         vm.assume(mint != 0 && mint >= burn);
 
@@ -119,8 +119,7 @@ contract ReserveTokenTest is Test {
 
         token.burn(who, burn);
 
-        assertEq(token.balanceOf(who), mint-burn);
-        assertEq(token.totalSupply(), mint-burn);
+        assertEq(token.balanceOf(who), mint - burn);
+        assertEq(token.totalSupply(), mint - burn);
     }
-
 }

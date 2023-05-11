@@ -16,7 +16,7 @@ import {TSOwnable} from "solrocket/TSOwnable.sol";
  *
  * @author byterocket
  */
-contract ReserveToken is ERC20, TSOwnable {
+contract CuracaoReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Errors
 
@@ -32,12 +32,10 @@ contract ReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Events
 
-    /// @notice Event emitted when mintBurner address changed.
-    /// @param oldMintBurner The old mintBurner address.
-    /// @param newMintBurner The new mintBurner address.
-    event SetMintBurner(
-        address indexed oldMintBurner, address indexed newMintBurner
-    );
+    /// @notice Event emitted when a mintBurner address is updated.
+    /// @param mintBurner The mintBurner address.
+    /// @param newStatus The new status of the mintBurner (true = active).
+    event UpdateMintBurner(address indexed mintBurner, bool newStatus);
 
     //--------------------------------------------------------------------------
     // Modifiers
@@ -51,7 +49,7 @@ contract ReserveToken is ERC20, TSOwnable {
     }
 
     /// @dev Modifier to guarantee token amount is valid.
-    modifier validAmount(uint amount) {
+    modifier validAmount(uint256 amount) {
         if (amount == 0) {
             revert ReserveToken__InvalidAmount();
         }
@@ -60,7 +58,7 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @dev Modifier to guarantee function is only callable by mintBurner.
     modifier onlyMintBurner() {
-        if (msg.sender != mintBurner) {
+        if (!mintBurner[msg.sender]) {
             revert ReserveToken__NotMintBurner();
         }
         _;
@@ -69,40 +67,27 @@ contract ReserveToken is ERC20, TSOwnable {
     //--------------------------------------------------------------------------
     // Storage
 
-    /// @notice The address being eligible for mint and burn operations.
+    /// @notice The addresses that are eligible for mint and burn operations.
     /// @dev Changeable by owner.
-    address public mintBurner;
+    mapping(address => bool) public mintBurner;
 
     //--------------------------------------------------------------------------
     // Constructor
 
-    constructor(string memory name, string memory symbol, address mintBurner_)
-        ERC20(name, symbol, uint8(18))
-    {
-        mintBurner = mintBurner_;
-    }
+    constructor(string memory name, string memory symbol) ERC20(name, symbol, uint8(18)) {}
 
     //--------------------------------------------------------------------------
     // onlyWhitelisted Mutating Functions
 
     /// @notice Mints an amount of KOL tokens to some address.
     /// @dev Only callable by mintBurner address.
-    function mint(address to, uint amount)
-        external
-        validRecipient(to)
-        validAmount(amount)
-        onlyMintBurner
-    {
+    function mint(address to, uint256 amount) external validRecipient(to) validAmount(amount) onlyMintBurner {
         super._mint(to, amount);
     }
 
     /// @notice Burns an amount of KOL tokens from some address.
     /// @dev Only callable by mintBurner address.
-    function burn(address from, uint amount)
-        external
-        validAmount(amount)
-        onlyMintBurner
-    {
+    function burn(address from, uint256 amount) external validAmount(amount) onlyMintBurner {
         super._burn(from, amount);
     }
 
@@ -111,10 +96,10 @@ contract ReserveToken is ERC20, TSOwnable {
 
     /// @notice Sets the mintBurner address.
     /// @dev Only callable by owner.
-    function setMintBurner(address who) external onlyOwner {
-        if (who != mintBurner) {
-            emit SetMintBurner(mintBurner, who);
-            mintBurner = who;
+    function setMintBurner(address who, bool status) external onlyOwner {
+        if (mintBurner[who] != status) {
+            emit UpdateMintBurner(who, status);
+            mintBurner[who] = status;
         }
     }
 
@@ -124,18 +109,13 @@ contract ReserveToken is ERC20, TSOwnable {
     // Note that the functions are overidden in order to enforce the validAmount
     // and validRecipient modifiers.
 
-    function approve(address spender, uint amount)
-        public
-        override (ERC20)
-        validRecipient(spender)
-        returns (bool)
-    {
+    function approve(address spender, uint256 amount) public override(ERC20) validRecipient(spender) returns (bool) {
         return super.approve(spender, amount);
     }
 
-    function transfer(address to, uint amount)
+    function transfer(address to, uint256 amount)
         public
-        override (ERC20)
+        override(ERC20)
         validRecipient(to)
         validAmount(amount)
         returns (bool)
@@ -143,9 +123,9 @@ contract ReserveToken is ERC20, TSOwnable {
         return super.transfer(to, amount);
     }
 
-    function transferFrom(address from, address to, uint amount)
+    function transferFrom(address from, address to, uint256 amount)
         public
-        override (ERC20)
+        override(ERC20)
         validRecipient(to)
         validAmount(amount)
         returns (bool)

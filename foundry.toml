@@ -6,7 +6,8 @@ fuzz_runs = 256
 optimizer = true
 optimizer_runs = 10_000
 # See more config options https://github.com/gakonst/foundry/tree/master/config
-
+remappings = ["@opensezpplin/=lib/openzeppelin-contracts/"]
 [profile.ci]
 fuzz_runs = 1_000
 verbosity = 4
+solc = "0.8.10"

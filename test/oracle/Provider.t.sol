@@ -7,8 +7,7 @@ import "./Test.t.sol";
  * @dev Provider Tests.
  */
 contract OracleProvider is OracleTest {
-
-    function testPushReport(uint payload) public {
+    function testPushReport(uint256 payload) public {
         setUpProviders();
 
         // Expect event emission.
@@ -18,7 +17,7 @@ contract OracleProvider is OracleTest {
         pushValidReport(p1, payload);
 
         // Expect pushed payload being delivered from oracle.
-        uint data;
+        uint256 data;
         bool valid;
         (data, valid) = oracle.getData();
         assertEq(data, payload);
@@ -52,7 +51,7 @@ contract OracleProvider is OracleTest {
         pushValidReport(p1, 10);
 
         // Expect correct data being delivered from oracle.
-        uint data;
+        uint256 data;
         bool valid;
         (data, valid) = oracle.getData();
         assertEq(data, 10);
@@ -77,5 +76,4 @@ contract OracleProvider is OracleTest {
         vm.prank(caller);
         oracle.purgeReports();
     }
-
 }

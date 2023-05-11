@@ -66,7 +66,7 @@ contract DeployMento is Script {
                 18, // _decimals
                 address(registry), // registryAddress
                 FixidityLib.newFixed(1).unwrap(), // inflationRate
-                1 * 547 * 24 * 60 * 60, // inflationFactorUpdatePeriod 1,5 years
+                1 * 548 * 24 * 60 * 60, // inflationFactorUpdatePeriod 1,5 years
                 "Exchange" // exchangeIdentifier
             );
             token = KolektivoGuilder(deployUupsProxy(tokenImplementation, proxyAdmin, initData));
@@ -80,7 +80,7 @@ contract DeployMento is Script {
             initData = abi.encodeWithSignature(
                 "initialize(address,uint256,uint256,uint256,uint256,bytes32[],uint256[],uint256,uint256)",
                 address(registry),
-                1 * 547 * 24 * 60 * 60, // _tobinTaxStalenessThreshold 1,5 years
+                1 * 548 * 24 * 60 * 60, // _tobinTaxStalenessThreshold 1,5 years
                 FixidityLib.newFixed(1).unwrap(), // _spendingRatio
                 0, // _frozenGold
                 0, // _frozenDays
